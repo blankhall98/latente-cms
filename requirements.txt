@@ -10,6 +10,7 @@ PyJWT==2.9.0
 alembic>=1.13.2,<2
 typing_extensions>=4.12.2
 bcrypt==4.0.1
+jsonschema==4.23.0
 
 # Dev
 pytest==8.3.0
