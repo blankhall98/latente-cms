@@ -1,8 +1,7 @@
 # app/api/v1/endpoints/content.py
-# ⟶ Añadimos GET /sections/{id}/schema-active y GET /sections/{id}/registry,
-#    y el PATCH para activar versiones con compat-check.
+# ── Sustituimos el "placeholder" por dependencias reales de RBAC
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 
@@ -22,19 +21,24 @@ from app.services.registry_service import (
     get_active_schema as rs_get_active_schema,
     can_activate_version
 )
+from app.services.publish_service import (
+    transition_entry_status, compute_etag, apply_cache_headers
+)
+from app.api.deps.auth import require_permission, get_current_user_id, user_has_permission  # <-- importar deps
 
 router = APIRouter()
 
-# Hook RBAC (placeholder)
-def require_permission(permission: str):
-    def _dep():
-        return True
-    return _dep
-
-
 # ----- Sections -----
-@router.post("/sections", response_model=SectionOut, dependencies=[Depends(require_permission("content:write"))])
-def create_section_endpoint(payload: SectionCreate, db: Session = Depends(get_db)):
+@router.post("/sections", response_model=SectionOut)
+def create_section_endpoint(
+    payload: SectionCreate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    # Chequeo de permiso con tenant del payload (no viene por query)
+    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:write")
+
     section = create_section(
         db,
         tenant_id=payload.tenant_id,
@@ -46,16 +50,22 @@ def create_section_endpoint(payload: SectionCreate, db: Session = Depends(get_db
     db.refresh(section)
     return section
 
-
 # ----- Section Schemas -----
-@router.post("/section-schemas", response_model=SectionSchemaOut, dependencies=[Depends(require_permission("content:write"))])
-def add_schema_version_endpoint(payload: SectionSchemaCreate, db: Session = Depends(get_db)):
+@router.post("/section-schemas", response_model=SectionSchemaOut)
+def add_schema_version_endpoint(
+    payload: SectionSchemaCreate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:write")
+
     ss = add_schema_version(
         db,
         tenant_id=payload.tenant_id,
         section_id=payload.section_id,
         version=payload.version,
-        schema=payload.schema,     # el body viene como "schema"
+        schema=payload.schema,
         title=payload.title,
         is_active=payload.is_active or False,
     )
@@ -63,10 +73,8 @@ def add_schema_version_endpoint(payload: SectionSchemaCreate, db: Session = Depe
     db.refresh(ss)
     return ss
 
-
 @router.patch("/section-schemas/{tenant_id}/{section_id}/{version}", response_model=SectionSchemaOut, dependencies=[Depends(require_permission("content:write"))])
 def update_schema_endpoint(tenant_id: int, section_id: int, version: int, patch: SectionSchemaUpdate, db: Session = Depends(get_db)):
-    # si se solicita activar: correr compat-check
     if patch.is_active is True:
         ok, errs = can_activate_version(db, tenant_id=tenant_id, section_id=section_id, target_version=version)
         if not ok:
@@ -82,7 +90,6 @@ def update_schema_endpoint(tenant_id: int, section_id: int, version: int, patch:
             db.rollback()
             raise HTTPException(status_code=404, detail=str(e))
 
-    # si no es activación, permitir cambiar solo el título
     ss = db.scalar(
         select(SectionSchema).where(
             and_(
@@ -100,8 +107,7 @@ def update_schema_endpoint(tenant_id: int, section_id: int, version: int, patch:
     db.refresh(ss)
     return ss
 
-
-# ----- Nuevos endpoints de lectura (útiles para la UI) -----
+# ----- Lectura auxiliar -----
 @router.get("/sections/{section_id}/schema-active", dependencies=[Depends(require_permission("content:read"))])
 def get_active_schema_endpoint(section_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
     ss = rs_get_active_schema(db, tenant_id=tenant_id, section_id=section_id)
@@ -123,10 +129,15 @@ def get_registry_endpoint(section_id: int, tenant_id: int | None = Query(None), 
         return {"registry": None, "message": "No registry declared for this section key."}
     return {"registry": reg}
 
-
 # ----- Entries -----
-@router.post("/entries", response_model=EntryOut, dependencies=[Depends(require_permission("content:write"))])
-def create_entry_endpoint(payload: EntryCreate, db: Session = Depends(get_db)):
+@router.post("/entries", response_model=EntryOut)
+def create_entry_endpoint(
+    payload: EntryCreate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:write")
     try:
         entry = create_entry(db, payload)
         db.commit()
@@ -135,7 +146,6 @@ def create_entry_endpoint(payload: EntryCreate, db: Session = Depends(get_db)):
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.patch("/entries/{entry_id}", response_model=EntryOut, dependencies=[Depends(require_permission("content:write"))])
 def update_entry_endpoint(entry_id: int, tenant_id: int, patch: EntryUpdate, db: Session = Depends(get_db)):
@@ -148,7 +158,6 @@ def update_entry_endpoint(entry_id: int, tenant_id: int, patch: EntryUpdate, db:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(e))
 
-
 @router.get("/entries", response_model=list[EntryOut], dependencies=[Depends(require_permission("content:read"))])
 def list_entries_endpoint(
     tenant_id: int = Query(...),
@@ -158,12 +167,73 @@ def list_entries_endpoint(
     offset: int = 0,
     db: Session = Depends(get_db),
 ):
-    entries = list_entries(
-        db,
-        tenant_id=tenant_id,
-        section_id=section_id,
-        status=status,
-        limit=limit,
-        offset=offset,
-    )
-    return entries
+    return list_entries(db, tenant_id=tenant_id, section_id=section_id, status=status, limit=limit, offset=offset)
+
+# ----- Publish / Unpublish / Archive (requieren content:publish) -----
+def _get_entry_or_404(db: Session, entry_id: int, tenant_id: int | None) -> Entry:
+    # 1) Obtén por ID (más robusto ante estados de sesión)
+    entry = db.get(Entry, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    # 2) Si viene tenant_id en la query, valida coherencia multi-tenant
+    if tenant_id is not None and entry.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    return entry
+
+@router.post("/entries/{entry_id}/publish", response_model=EntryOut, dependencies=[Depends(require_permission("content:publish"))])
+def publish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+    try:
+        entry = _get_entry_or_404(db, entry_id, tenant_id)
+        transition_entry_status(db, entry, "published")
+        db.commit()
+        db.refresh(entry)
+        return entry
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/entries/{entry_id}/unpublish", response_model=EntryOut, dependencies=[Depends(require_permission("content:publish"))])
+def unpublish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+    try:
+        entry = _get_entry_or_404(db, entry_id, tenant_id)
+        transition_entry_status(db, entry, "draft")
+        db.commit()
+        db.refresh(entry)
+        return entry
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/entries/{entry_id}/archive", response_model=EntryOut, dependencies=[Depends(require_permission("content:publish"))])
+def archive_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+    try:
+        entry = _get_entry_or_404(db, entry_id, tenant_id)
+        transition_entry_status(db, entry, "archived")
+        db.commit()
+        db.refresh(entry)
+        return entry
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/entries/{entry_id}/preview", response_model=EntryOut, dependencies=[Depends(require_permission("content:read"))])
+def preview_entry(
+    entry_id: int,
+    tenant_id: int = Query(...),
+    if_none_match: str | None = Header(default=None, alias="If-None-Match"),
+    db: Session = Depends(get_db),
+    response: Response = None,
+):
+    entry = _get_entry_or_404(db, entry_id, tenant_id)
+    etag = compute_etag(entry)
+    if if_none_match and if_none_match == etag:
+        resp = Response(status_code=304)
+        apply_cache_headers(resp, status=entry.status)
+        resp.headers["ETag"] = etag
+        return resp
+    apply_cache_headers(response, status=entry.status)
+    response.headers["ETag"] = etag
+    return entry
+

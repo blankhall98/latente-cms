@@ -77,6 +77,8 @@ class EntryOut(EntryBase):
     id: int
     tenant_id: int
     section_id: int
+    published_at: Optional[datetime] = None
+    archived_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
