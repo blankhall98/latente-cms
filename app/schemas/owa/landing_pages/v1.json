@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LandingPage@1 (OWA monolítico)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "hero": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "subtitle": { "type": "string", "maxLength": 200 },
+        "image": { "type": "string", "format": "uri" },
+        "cta": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "url": { "type": "string", "format": "uri" }
+          },
+          "required": ["label","url"]
+        }
+      },
+      "required": ["title"]
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "icon": { "type": "string" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "text": { "type": "string", "minLength": 1, "maxLength": 200 }
+        },
+        "required": ["title","text"]
+      }
+    },
+    "footer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+              "url": { "type": "string", "format": "uri" }
+            },
+            "required": ["label","url"]
+          }
+        },
+        "copyright": {
+          "type": "string",
+          "maxLength": 140
+        }
+      }
+    },
+    "seo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "maxLength": 70 },
+        "description": { "type": "string", "maxLength": 160 }
+      }
+    }
+  },
+  "required": ["hero"]
+}
