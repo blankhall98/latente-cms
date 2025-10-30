@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
-    String, Integer, ForeignKey, DateTime, Enum, UniqueConstraint, Index, func
+    String, Integer, ForeignKey, DateTime, Enum, UniqueConstraint, Index, func, Column, BigInteger
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -79,3 +79,28 @@ class Entry(Base):
         Index("ix_entries_archived_at", "archived_at"),
     )
 
+class EntryVersion(Base):
+    __tablename__ = "entry_versions"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    tenant_id = Column(BigInteger, nullable=False, index=True)
+    entry_id = Column(BigInteger, ForeignKey("entries.id", ondelete="CASCADE"), nullable=False, index=True)
+    section_id = Column(BigInteger, ForeignKey("sections.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # contador por entry: 1..N (inmutable)
+    version_idx = Column(Integer, nullable=False)
+
+    # estado en el snapshot
+    schema_version = Column(Integer, nullable=False)
+    status = Column(String(16), nullable=False)
+    data = Column(JSONB, nullable=False)
+
+    # metadatos
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    created_by = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reason = Column(String(32), nullable=False)  # 'create' | 'update' | 'publish' | 'unpublish' | 'archive' | 'restore'
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "entry_id", "version_idx", name="uq_entry_versions_per_entry"),
+        Index("ix_entry_versions_tenant_entry_idx", "tenant_id", "entry_id", "version_idx"),
+    )

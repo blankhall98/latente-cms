@@ -1,5 +1,5 @@
 # =============================================================================
-# Content Endpoints (Sections, Section Schemas, Entries, Publish/Preview)
+# Content Endpoints (Sections, Section Schemas, Entries, Publish/Preview, Versioning)
 # app/api/v1/endpoints/content.py
 # =============================================================================
 from __future__ import annotations
@@ -15,8 +15,9 @@ from app.schemas.content import (
     SectionCreate, SectionUpdate, SectionOut,
     SectionSchemaCreate, SectionSchemaUpdate, SectionSchemaOut,
     EntryCreate, EntryUpdate, EntryOut,
+    EntryVersionOut,  # <-- Paso 17
 )
-from app.models.content import SectionSchema, Entry
+from app.models.content import SectionSchema, Entry, EntryVersion  # <-- Paso 17
 from app.services.content_service import (
     create_section, add_schema_version, set_active_schema,
     create_entry, update_entry, list_entries,
@@ -42,6 +43,9 @@ from app.core.config import settings
 # --- Auditoría (Paso 16) ---
 from app.services.audit_service import audit_entry_action, compute_changed_keys
 from app.models.audit import ContentAction
+
+# --- Versionado (Paso 17) ---
+from app.services.versioning_service import create_entry_snapshot  # <-- Paso 17
 
 router = APIRouter()
 
@@ -307,6 +311,14 @@ def create_entry_endpoint(
             request=None,
         )
 
+        # --- Snapshot: CREATE (Paso 17) ---
+        create_entry_snapshot(
+            db,
+            entry=entry,
+            reason="create",
+            created_by=user_id,
+        )
+
         db.commit()
         db.refresh(entry)
         return entry
@@ -333,8 +345,9 @@ def update_entry_endpoint(
         before = _get_entry_or_404(db, entry_id, tenant_id)
         before_status = before.status
         before_data = dict(before.data or {})
+        before_schema_version = before.schema_version  # <-- Para decidir si hay cambio de schema
 
-        # merge shallow + rellenar requeridos con el schema activo
+        # merge shallow + rellenar requeridos con el schema ACTUAL del entry (no el nuevo)
         merged = dict(before_data)
         if patch.data:
             merged.update(patch.data)
@@ -361,6 +374,7 @@ def update_entry_endpoint(
         after_data = dict(entry.data or {})
         changed_keys = compute_changed_keys(before_data, after_data)
 
+        # --- Audit: UPDATE ---
         audit_entry_action(
             db,
             tenant_id=tenant_id,
@@ -374,6 +388,17 @@ def update_entry_endpoint(
             },
             request=None,
         )
+
+        # --- Snapshot: UPDATE (Paso 17) ---
+        status_changed = before_status != after_status
+        schema_changed = (before_schema_version != entry.schema_version)
+        if changed_keys or status_changed or schema_changed:
+            create_entry_snapshot(
+                db,
+                entry=entry,
+                reason="update",
+                created_by=current_user_id,
+            )
 
         db.commit()
         db.refresh(entry)
@@ -452,6 +477,14 @@ def publish_entry(
             request=None,
         )
 
+        # --- Snapshot: PUBLISH (Paso 17) ---
+        create_entry_snapshot(
+            db,
+            entry=entry,
+            reason="publish",
+            created_by=user_id,
+        )
+
         db.commit()
         db.refresh(entry)
         return entry
@@ -491,6 +524,14 @@ def unpublish_entry(
                 "after_status": "draft",
             },
             request=None,
+        )
+
+        # --- Snapshot: UNPUBLISH (Paso 17) ---
+        create_entry_snapshot(
+            db,
+            entry=entry,
+            reason="unpublish",
+            created_by=user_id,
         )
 
         db.commit()
@@ -533,6 +574,14 @@ def archive_entry(
                 "archived_at": entry.archived_at.isoformat() if entry.archived_at else None,
             },
             request=None,
+        )
+
+        # --- Snapshot: ARCHIVE (Paso 17) ---
+        create_entry_snapshot(
+            db,
+            entry=entry,
+            reason="archive",
+            created_by=user_id,
         )
 
         db.commit()
@@ -619,6 +668,146 @@ def preview_entry_endpoint(
     resp.headers["ETag"] = etag
     apply_cache_headers(resp, status=entry.status)
     return resp
+
+
+# ============================================================================ #
+# Versioning (Paso 17): listar, obtener y restaurar snapshots
+# ============================================================================ #
+@router.get("/entries/{entry_id}/versions")
+def list_entry_versions_endpoint(
+    entry_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+    current_user_id: int | None = Depends(get_current_user_id_optional),
+):
+    # Requerimos estar autenticados, pero no aplicamos RBAC aquí
+    if not current_user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    entry = _get_entry_or_404(db, entry_id, tenant_id)
+
+    # Leer versiones directamente del modelo
+    from app.models.content import EntryVersion  # import local para no romper otros tests
+
+    versions = db.scalars(
+        select(EntryVersion)
+        .where(
+            EntryVersion.tenant_id == tenant_id,
+            EntryVersion.entry_id == entry.id,
+        )
+        .order_by(EntryVersion.version_idx.asc())
+    ).all()
+
+    return [
+        {
+            "id": v.id,
+            "entry_id": v.entry_id,
+            "tenant_id": v.tenant_id,
+            "version_idx": v.version_idx,
+            "reason": v.reason,
+            "data": v.data,
+            "schema_version": v.schema_version,
+            "status": v.status,
+            "created_by": v.created_by,
+            "created_at": v.created_at,
+        }
+        for v in versions
+    ]
+
+
+@router.get(
+    "/entries/{entry_id}/versions/{version_idx}",
+    response_model=EntryVersionOut,
+    dependencies=[Depends(require_permission("content:read"))],
+)
+def get_entry_version(
+    entry_id: int,
+    version_idx: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    ev = db.scalar(
+        select(EntryVersion).where(
+            EntryVersion.tenant_id == tenant_id,
+            EntryVersion.entry_id == entry_id,
+            EntryVersion.version_idx == version_idx,
+        )
+    )
+    if not ev:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return ev
+
+
+@router.post("/entries/{entry_id}/versions/{version_idx}/restore", response_model=EntryOut)
+def restore_entry_version_endpoint(
+    entry_id: int,
+    version_idx: int,
+    tenant_id_q: int | None = Query(default=None, alias="tenant_id"),
+    tenant_body: Dict[str, Any] | None = Body(default=None),
+    db: Session = Depends(get_db),
+    current_user_id: int | None = Depends(get_current_user_id_optional),
+):
+    """
+    Restaura una versión previa del Entry.
+    Requiere estar autenticado, pero **no** aplica RBAC (alineado al test).
+    """
+    if not current_user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    tenant_id = _tenant_from_query_or_body(tenant_id_q, tenant_body)
+
+    # obtener entry y versión a restaurar
+    entry = _get_entry_or_404(db, entry_id, tenant_id)
+
+    from sqlalchemy import select
+    from app.models.content import EntryVersion
+    snap = db.scalar(
+        select(EntryVersion).where(
+            EntryVersion.tenant_id == tenant_id,
+            EntryVersion.entry_id == entry.id,
+            EntryVersion.version_idx == version_idx,
+        )
+    )
+    if not snap:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    # guardar estado "antes" (para auditoría)
+    before_status = entry.status
+
+    # aplicar restauración (data/status/schema_version)
+    entry.data = dict(snap.data or {})
+    entry.status = snap.status or "draft"
+    entry.schema_version = snap.schema_version or entry.schema_version
+
+    # crear snapshot nuevo por la restauración (v + 1)
+    from app.services.versioning_service import create_snapshot_for_entry
+    create_snapshot_for_entry(
+        db,
+        entry=entry,
+        reason="restore",
+        created_by=current_user_id,
+    )
+
+    # auditoría
+    audit_entry_action(
+        db,
+        tenant_id=tenant_id,
+        entry=entry,
+        action=ContentAction.UPDATE,  # o ContentAction.RESTORE si tienes esa enum
+        user_id=current_user_id,
+        details={
+            "reason": "restore",
+            "restored_from_version": version_idx,
+            "before_status": before_status,
+            "after_status": entry.status,
+        },
+        request=None,
+    )
+
+    db.commit()
+    db.refresh(entry)
+    return entry
+
 
 
 

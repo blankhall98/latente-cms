@@ -86,3 +86,17 @@ class EntryOut(EntryBase):
     created_at: datetime
     updated_at: datetime
 
+class EntryVersionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    tenant_id: int
+    entry_id: int
+    section_id: int
+    version_idx: int
+    schema_version: int
+    status: EntryStatus
+    data: dict
+    reason: str
+    created_at: datetime
+    created_by: Optional[int] = None
+
