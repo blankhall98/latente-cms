@@ -61,10 +61,20 @@ def _attach(db: Session, user: User, tenant: Tenant, role: Role):
     db.add(ut); db.flush()
     return ut
 
-def _grant(db: Session, role: Role, perm: Permission):
-    rp = RolePermission(role_id=role.id, permission_id=perm.id)
-    db.add(rp); db.flush()
-    return rp
+def _grant(db, role, perm):
+    from sqlalchemy import select
+    from app.models.auth import RolePermission
+
+    exists = db.scalar(
+        select(RolePermission.id)
+        .where(RolePermission.role_id == role.id,
+               RolePermission.permission_id == perm.id)
+        .limit(1)
+    )
+    if not exists:
+        rp = RolePermission(role_id=role.id, permission_id=perm.id)
+        db.add(rp)
+        db.flush()
 
 def _mk_entry(db: Session, tenant_id: int, section_id: int):
     payload = EntryCreate(

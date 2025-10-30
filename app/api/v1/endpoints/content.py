@@ -1,41 +1,80 @@
 # app/api/v1/endpoints/content.py
-# ── Sustituimos el "placeholder" por dependencias reales de RBAC
+# =============================================================================
+# Content Endpoints (Sections, Section Schemas, Entries, Publish/Preview)
+# - Incluye RBAC (require_permission / user_has_permission)
+# - Valida JSON Schema a través del service de contenido
+# - Soporta "Preview Tokens" (JWT HMAC) para vistas de preview sin login (Paso 13)
+# - Mantiene ETag / Cache-Control (Paso 11)
+# - Corrige prefijo del router para que las rutas queden bajo /api/v1/content/*
+#   (el router v1 se monta en app/api/router.py con prefix="/api/v1")
+# =============================================================================
 from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, Header
-from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
+from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.content import (
     SectionCreate, SectionUpdate, SectionOut,
     SectionSchemaCreate, SectionSchemaUpdate, SectionSchemaOut,
-    EntryCreate, EntryUpdate, EntryOut
+    EntryCreate, EntryUpdate, EntryOut,
 )
 from app.models.content import SectionSchema, Entry
 from app.services.content_service import (
     create_section, add_schema_version, set_active_schema,
-    create_entry, update_entry, list_entries
+    create_entry, update_entry, list_entries,
 )
 from app.services.registry_service import (
     get_registry_for_section,
     get_active_schema as rs_get_active_schema,
-    can_activate_version
+    can_activate_version,
 )
 from app.services.publish_service import (
-    transition_entry_status, compute_etag, apply_cache_headers
+    transition_entry_status, compute_etag, apply_cache_headers,
 )
-from app.api.deps.auth import require_permission, get_current_user_id, user_has_permission  # <-- importar deps
+from app.api.deps.auth import (
+    require_permission,
+    get_current_user_id,
+    get_current_user_id_optional,
+    user_has_permission,
+)
+from app.security.preview_tokens import (
+    create_preview_token, verify_preview_token, PreviewTokenError,
+)
+from app.core.config import settings
 
 router = APIRouter()
 
-# ----- Sections -----
+
+# ============================================================================ #
+# Helpers
+# ============================================================================ #
+def _get_entry_or_404(db: Session, entry_id: int, tenant_id: int | None) -> Entry:
+    """
+    Lookup robusto:
+    1) Trae por ID (más estable).
+    2) Si tenant_id viene, valida coherencia multi-tenant.
+    """
+    entry = db.get(Entry, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    if tenant_id is not None and entry.tenant_id != tenant_id:
+        # No exponemos existencia cross-tenant
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return entry
+
+
+# ============================================================================ #
+# Sections
+# ============================================================================ #
 @router.post("/sections", response_model=SectionOut)
 def create_section_endpoint(
     payload: SectionCreate,
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    # Chequeo de permiso con tenant del payload (no viene por query)
+    # RBAC: permiso por tenant del payload
     if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
 
@@ -50,7 +89,10 @@ def create_section_endpoint(
     db.refresh(section)
     return section
 
-# ----- Section Schemas -----
+
+# ============================================================================ #
+# Section Schemas
+# ============================================================================ #
 @router.post("/section-schemas", response_model=SectionSchemaOut)
 def add_schema_version_endpoint(
     payload: SectionSchemaCreate,
@@ -73,12 +115,27 @@ def add_schema_version_endpoint(
     db.refresh(ss)
     return ss
 
-@router.patch("/section-schemas/{tenant_id}/{section_id}/{version}", response_model=SectionSchemaOut, dependencies=[Depends(require_permission("content:write"))])
-def update_schema_endpoint(tenant_id: int, section_id: int, version: int, patch: SectionSchemaUpdate, db: Session = Depends(get_db)):
+
+@router.patch(
+    "/section-schemas/{tenant_id}/{section_id}/{version}",
+    response_model=SectionSchemaOut,
+    dependencies=[Depends(require_permission("content:write"))],
+)
+def update_schema_endpoint(
+    tenant_id: int,
+    section_id: int,
+    version: int,
+    patch: SectionSchemaUpdate,
+    db: Session = Depends(get_db),
+):
+    # Activación de versión (respetando reglas del registry)
     if patch.is_active is True:
         ok, errs = can_activate_version(db, tenant_id=tenant_id, section_id=section_id, target_version=version)
         if not ok:
-            raise HTTPException(status_code=400, detail={"message": "Activation blocked by registry policy", "errors": errs})
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "Activation blocked by registry policy", "errors": errs},
+            )
         try:
             ss = set_active_schema(db, tenant_id=tenant_id, section_id=section_id, version=version)
             if patch.title is not None:
@@ -90,6 +147,7 @@ def update_schema_endpoint(tenant_id: int, section_id: int, version: int, patch:
             db.rollback()
             raise HTTPException(status_code=404, detail=str(e))
 
+    # Actualización simple (p. ej., title)
     ss = db.scalar(
         select(SectionSchema).where(
             and_(
@@ -107,9 +165,16 @@ def update_schema_endpoint(tenant_id: int, section_id: int, version: int, patch:
     db.refresh(ss)
     return ss
 
-# ----- Lectura auxiliar -----
+
+# ============================================================================ #
+# Lectura auxiliar (registry y schema activo)
+# ============================================================================ #
 @router.get("/sections/{section_id}/schema-active", dependencies=[Depends(require_permission("content:read"))])
-def get_active_schema_endpoint(section_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+def get_active_schema_endpoint(
+    section_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
     ss = rs_get_active_schema(db, tenant_id=tenant_id, section_id=section_id)
     if not ss:
         return {"active": None, "message": "No active schema for this section."}
@@ -122,14 +187,22 @@ def get_active_schema_endpoint(section_id: int, tenant_id: int = Query(...), db:
         }
     }
 
+
 @router.get("/sections/{section_id}/registry", dependencies=[Depends(require_permission("content:read"))])
-def get_registry_endpoint(section_id: int, tenant_id: int | None = Query(None), db: Session = Depends(get_db)):
+def get_registry_endpoint(
+    section_id: int,
+    tenant_id: int | None = Query(None),
+    db: Session = Depends(get_db),
+):
     reg = get_registry_for_section(db, section_id=section_id, tenant_id=tenant_id)
     if not reg:
         return {"registry": None, "message": "No registry declared for this section key."}
     return {"registry": reg}
 
-# ----- Entries -----
+
+# ============================================================================ #
+# Entries CRUD
+# ============================================================================ #
 @router.post("/entries", response_model=EntryOut)
 def create_entry_endpoint(
     payload: EntryCreate,
@@ -147,8 +220,18 @@ def create_entry_endpoint(
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.patch("/entries/{entry_id}", response_model=EntryOut, dependencies=[Depends(require_permission("content:write"))])
-def update_entry_endpoint(entry_id: int, tenant_id: int, patch: EntryUpdate, db: Session = Depends(get_db)):
+
+@router.patch(
+    "/entries/{entry_id}",
+    response_model=EntryOut,
+    dependencies=[Depends(require_permission("content:write"))],
+)
+def update_entry_endpoint(
+    entry_id: int,
+    tenant_id: int,
+    patch: EntryUpdate,
+    db: Session = Depends(get_db),
+):
     try:
         entry = update_entry(db, entry_id, tenant_id, patch)
         db.commit()
@@ -158,7 +241,12 @@ def update_entry_endpoint(entry_id: int, tenant_id: int, patch: EntryUpdate, db:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.get("/entries", response_model=list[EntryOut], dependencies=[Depends(require_permission("content:read"))])
+
+@router.get(
+    "/entries",
+    response_model=list[EntryOut],
+    dependencies=[Depends(require_permission("content:read"))],
+)
 def list_entries_endpoint(
     tenant_id: int = Query(...),
     section_id: int | None = Query(None),
@@ -167,22 +255,24 @@ def list_entries_endpoint(
     offset: int = 0,
     db: Session = Depends(get_db),
 ):
-    return list_entries(db, tenant_id=tenant_id, section_id=section_id, status=status, limit=limit, offset=offset)
+    return list_entries(
+        db,
+        tenant_id=tenant_id,
+        section_id=section_id,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
 
-# ----- Publish / Unpublish / Archive (requieren content:publish) -----
-def _get_entry_or_404(db: Session, entry_id: int, tenant_id: int | None) -> Entry:
-    # 1) Obtén por ID (más robusto ante estados de sesión)
-    entry = db.get(Entry, entry_id)
-    if not entry:
-        raise HTTPException(status_code=404, detail="Entry not found")
 
-    # 2) Si viene tenant_id en la query, valida coherencia multi-tenant
-    if tenant_id is not None and entry.tenant_id != tenant_id:
-        raise HTTPException(status_code=404, detail="Entry not found")
-
-    return entry
-
-@router.post("/entries/{entry_id}/publish", response_model=EntryOut, dependencies=[Depends(require_permission("content:publish"))])
+# ============================================================================ #
+# Publish / Unpublish / Archive  (requieren content:publish)
+# ============================================================================ #
+@router.post(
+    "/entries/{entry_id}/publish",
+    response_model=EntryOut,
+    dependencies=[Depends(require_permission("content:publish"))],
+)
 def publish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -194,7 +284,12 @@ def publish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depe
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/entries/{entry_id}/unpublish", response_model=EntryOut, dependencies=[Depends(require_permission("content:publish"))])
+
+@router.post(
+    "/entries/{entry_id}/unpublish",
+    response_model=EntryOut,
+    dependencies=[Depends(require_permission("content:publish"))],
+)
 def unpublish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -206,7 +301,12 @@ def unpublish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = De
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/entries/{entry_id}/archive", response_model=EntryOut, dependencies=[Depends(require_permission("content:publish"))])
+
+@router.post(
+    "/entries/{entry_id}/archive",
+    response_model=EntryOut,
+    dependencies=[Depends(require_permission("content:publish"))],
+)
 def archive_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -218,22 +318,103 @@ def archive_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depe
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/entries/{entry_id}/preview", response_model=EntryOut, dependencies=[Depends(require_permission("content:read"))])
-def preview_entry(
+
+# ============================================================================ #
+# Preview Tokens (Paso 13)
+# - Emisión de token temporal (permiso content:publish requerido)
+# - Consumo del token en preview (sin login) o preview con login (sin token)
+# - ETag / Cache-Control aplicados en la respuesta de preview
+# ============================================================================ #
+@router.post("/entries/{entry_id}/preview-token")
+def issue_preview_token_endpoint(
     entry_id: int,
     tenant_id: int = Query(...),
+    expires_in: int | None = Query(None, ge=60, le=86400),
+    schema_version: int | None = Query(None, ge=1),
+    db: Session = Depends(get_db),
+    current_user_id: int | None = Depends(get_current_user_id_optional),
+):
+    """
+    Emite un token de preview temporal (JWT HMAC).
+    Requiere autenticación + permiso de publicar (también podrías crear permiso 'content:preview:issue').
+    """
+    if not current_user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    if not user_has_permission(db, current_user_id, tenant_id, "content:publish"):
+        raise HTTPException(status_code=403, detail="Not allowed to issue preview tokens")
+
+    entry = _get_entry_or_404(db, entry_id, tenant_id)
+    tok = create_preview_token(
+        tenant_id=tenant_id,
+        entry_id=entry.id,
+        schema_version=schema_version or entry.schema_version,
+        expires_in=expires_in,
+    )
+    return {"token": tok, "expires_in": expires_in or settings.PREVIEW_TOKEN_EXPIRE_SECONDS}
+
+
+@router.get("/entries/{entry_id}/preview")
+def preview_entry_endpoint(
+    entry_id: int,
+    tenant_id: int | None = Query(None),
+    token: str | None = Query(None, description="Preview token (JWT)"),
     if_none_match: str | None = Header(default=None, alias="If-None-Match"),
     db: Session = Depends(get_db),
-    response: Response = None,
+    current_user_id: int | None = Depends(get_current_user_id_optional),
 ):
+    """
+    Preview dual:
+    - Con token: valida firma/exp y fuerza tenant/entry del token (no usa query).
+    - Sin token: requiere autenticación (puedes exigir permiso 'content:preview' si deseas).
+    Devuelve JSON renderizado con ETag y Cache-Control adecuados.
+    """
+    # --- Autorización y binding seguro ---
+    if token:
+        try:
+            data = verify_preview_token(token)
+        except PreviewTokenError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+        tenant_id = int(data["tenant_id"])
+        entry_id = int(data["entry_id"])
+        forced_schema_version = int(data.get("schema_version", 0)) or None
+    else:
+        if not current_user_id:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        # Si quieres reforzar: exigir permiso explícito de preview interno.
+        # if not user_has_permission(db, current_user_id, tenant_id, "content:preview"):
+        #     raise HTTPException(status_code=403, detail="Not allowed to preview")
+        forced_schema_version = None
+
+    # --- Lookup del entry ---
     entry = _get_entry_or_404(db, entry_id, tenant_id)
-    etag = compute_etag(entry)
+
+    # --- Payload de salida (preview render minimal) ---
+    import hashlib
+    import json
+    payload = {
+        "id": entry.id,
+        "tenant_id": entry.tenant_id,
+        "section_id": entry.section_id,
+        "slug": entry.slug,
+        "status": entry.status,
+        "schema_version": forced_schema_version or entry.schema_version,
+        "data": entry.data,
+    }
+    body = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
+
+    # --- ETag / Cache-Control ---
+    etag = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    # Conditional GET: If-None-Match → 304
     if if_none_match and if_none_match == etag:
         resp = Response(status_code=304)
         apply_cache_headers(resp, status=entry.status)
         resp.headers["ETag"] = etag
         return resp
-    apply_cache_headers(response, status=entry.status)
-    response.headers["ETag"] = etag
-    return entry
+
+    resp = Response(content=body, media_type="application/json")
+    resp.headers["ETag"] = etag
+    apply_cache_headers(resp, status=entry.status)
+    return resp
+
 
