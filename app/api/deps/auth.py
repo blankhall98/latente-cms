@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.auth import (
     UserTenant,
+    User,
     UserTenantStatus,
     Role,
     RolePermission,
@@ -46,28 +47,31 @@ def get_current_user_id_optional(
 # ---------------------------
 # Autorización por permisos (robusta con INNER JOINs)
 # ---------------------------
-def user_has_permission(db: Session, user_id: int, tenant_id: int, perm_key: str) -> bool:
-    """
-    Verifica si el usuario (user_id) dentro del tenant (tenant_id)
-    tiene, vía su rol activo en ese tenant, el permiso con key == perm_key.
-    Política 100% basada en permisos (sin lista blanca de roles).
-    """
-    q = (
-        select(func.count())
-        .select_from(UserTenant)
-        .join(Role, Role.id == UserTenant.role_id)
-        .join(RolePermission, RolePermission.role_id == Role.id)
-        .join(Permission, Permission.id == RolePermission.permission_id)
+def user_has_permission(db, user_id: int | None, tenant_id: int | None, perm_key: str) -> bool:
+    # --- BYPASS SUPERADMIN (nuevo) ---
+    if user_id:
+        u = db.get(User, user_id)
+        if u and getattr(u, "is_superadmin", False):
+            return True
+    # ---------------------------------
+
+    if not user_id or not tenant_id:
+        return False
+
+    # (resto de tu consulta por joins)
+    stmt = (
+        select(Permission.key)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .join(Role, Role.id == RolePermission.role_id)
+        .join(UserTenant, UserTenant.role_id == Role.id)
         .where(
-            and_(
-                UserTenant.user_id == user_id,
-                UserTenant.tenant_id == tenant_id,
-                UserTenant.status == UserTenantStatus.active,
-                Permission.key == perm_key,
-            )
+            UserTenant.user_id == user_id,
+            UserTenant.tenant_id == tenant_id,
+            Permission.key == perm_key
         )
+        .limit(1)
     )
-    return (db.scalar(q) or 0) > 0
+    return db.scalar(stmt) is not None
 
 
 def _resolve_tenant_id(possible_tenant_id: int | None, request: Request) -> int:

@@ -1,0 +1,294 @@
+{
+  "replace": true,
+  "sections": [
+    {
+      "type": "NavBar",
+      "schema_version": 1,
+      "data": {
+        "brand": { "text": "OWA", "href": "/" },
+        "leftLinks": [
+          { "label": "BECOME A MEMBER", "href": "/membership" },
+          { "label": "BOOK A SESSION",  "href": "/book" }
+        ],
+        "rightLinks": [
+          { "label": "SERVICES",  "href": "/services" },
+          { "label": "SCIENCE",   "href": "/science" },
+          { "label": "THERAPIES", "href": "/therapies", "external": true }
+        ]
+      }
+    },
+    {
+      "type": "HeroTwoUp",
+      "schema_version": 1,
+      "data": {
+        "media": [
+          { "type": "image", "url": "https://example.com/owa-hero-left.jpg",  "alt": "Water texture close-up" },
+          { "type": "image", "url": "https://example.com/owa-hero-right.jpg", "alt": "Woman in sauna, profile" }
+        ],
+        "overlay": {
+          "headingPrefix": "ONE WITH ",
+          "headingSuffix": "",
+          "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"],
+          "fallbackHeading": "ONE WITH MIND",
+          "align": "center",
+          "scrimOpacity": 0.35
+        },
+        "layout": { "gap": 24, "ratio": "auto", "stackBreakpoint": "md" }
+      }
+    },
+    {
+      "type": "IntroBlurbCTAs",
+      "schema_version": 1,
+      "data": {
+        "heading": "EXPERIENCE THE ART OF BEING WELL",
+        "body": "OWA is Mexico City's first wellness club of its kind—bringing together the essential pillars of human wellbeing in one place. By integrating contrast therapies, nutrition, supplementation, social connection, and hospitality, OWA creates an integrated ecosystem designed for vitality.",
+        "ctas": [
+          { "label": "BOOK A SESSION",  "href": "/book",       "style": "outline" },
+          { "label": "BECOME A MEMBER", "href": "/membership", "style": "primary" },
+          { "label": "STAY AT OWA",     "href": "/stay",       "style": "outline" }
+        ],
+        "align": "center"
+      }
+    },
+    {
+      "type": "DiscoverGrid",
+      "schema_version": 1,
+      "data": {
+        "title": "DISCOVER OWA",
+        "intro": "From our wellness club and café to our guest residences and creative collaborations, OWA brings together the essential dimensions of wellbeing under one vision.",
+        "align": "left",
+        "items": [
+          {
+            "image": "https://example.com/discover-wellness-club.jpg",
+            "imageAlt": "Close-up of face with water droplets",
+            "title": "WELLNESS CLUB",
+            "cta": { "label": "BOOK A SESSION", "href": "/book", "style": "outline" },
+            "description": "Step into a space of rhythm and release. With private saunas, invigorating cold plunges, and serene lounge areas, OWA’s Wellness Club is designed for mindful recovery—alone or with others."
+          },
+          {
+            "image": "https://example.com/discover-sesen-room.jpg",
+            "imageAlt": "Bowl of matcha",
+            "title": "SESEN ROOM X OWA",
+            "cta": { "label": "LEARN MORE", "href": "/sesen-room", "style": "outline" },
+            "description": "SESEN Room x OWA brings Mexico City’s most trusted name in supplements to Roma Norte—premium formulations and a restorative food offering for those who see nutrition as a cornerstone of wellbeing."
+          },
+          {
+            "image": "https://example.com/discover-casa-owa.jpg",
+            "imageAlt": "Calm bedroom interior at Casa OWA",
+            "title": "CASA OWA",
+            "cta": { "label": "RESERVE YOUR STAY", "href": "/stay", "style": "outline" },
+            "description": "Nine elevated residences with concierge service and full access to the Wellness Club—an immersive OWA experience beyond a typical hotel stay."
+          },
+          {
+            "image": "https://example.com/discover-collaborations.jpg",
+            "imageAlt": "Woman in steam with ice splash",
+            "title": "COLLABORATIONS",
+            "cta": { "label": "CONTACT US TO GET STARTED", "href": "/collaborate", "style": "outline" },
+            "description": "Curated happenings—wellness sessions, cultural gatherings, and intimate events that bring people together. Each collaboration reflects OWA’s spirit of connection, creativity, and wellbeing."
+          }
+        ]
+      }
+    },
+    {
+      "type": "TherapiesAccordion",
+      "schema_version": 1,
+      "data": {
+        "title": "THERAPIES",
+        "intro": "OWA's therapies are designed as modern rituals of recovery—powerful practices that balance body and mind. From contrast therapy to advanced technologies, each session is an invitation to reset, restore, and realign.",
+        "sideImage": {
+          "url": "https://example.com/therapies-side.jpg",
+          "alt": "Warm wood sauna interior"
+        },
+        "layout": { "mediaPosition": "right" },
+        "items": [
+          {
+            "title": "SAUNA",
+            "description": "Step into deep heat to release, restore, and recharge. Our saunas support detoxification, relaxation, and the body's natural rhythm of renewal.",
+            "benefits": [
+              "Promotes detoxification",
+              "Relieves stress",
+              "Improves cardiovascular health",
+              "Enhances skin vitality",
+              "Aids muscle recovery"
+            ],
+            "cta": { "label": "BOOK A SESSION", "href": "/book", "style": "outline" }
+          },
+          {
+            "title": "COLD PLUNGE",
+            "description": "Awaken your system with the invigorating power of cold immersion. A timeless practice that sharpens focus, reduces inflammation, and leaves you renewed.",
+            "benefits": [
+              "Boosts circulation",
+              "Reduces muscle soreness",
+              "Strengthens immune system",
+              "Increases mental clarity",
+              "Elevates mood"
+            ],
+            "cta": { "label": "BOOK A SESSION", "href": "/book", "style": "outline" }
+          },
+          {
+            "title": "HYPERBARIC CHAMBER",
+            "description": "Breathe in pure oxygen at higher pressure to accelerate the body's healing process. Hyperbaric therapy supports cellular regeneration and overall vitality.",
+            "benefits": [
+              "Accelerates recovery from fatigue or injury",
+              "Boosts oxygen delivery to tissues",
+              "Enhances brain function",
+              "Supports immune health",
+              "Promotes longevity"
+            ],
+            "cta": { "label": "BOOK A SESSION", "href": "/book", "style": "outline" }
+          },
+          {
+            "title": "ZERO GRAVITY CHAIR",
+            "description": "Experience weightless relaxation that releases tension from the body. The zero gravity chair relieves pressure, improves circulation, and induces deep calm.",
+            "benefits": [
+              "Reduces spinal pressure",
+              "Improves blood flow",
+              "Eases joint and muscle tension",
+              "Promotes relaxation",
+              "Supports restorative sleep"
+            ],
+            "cta": { "label": "BOOK A SESSION", "href": "/book", "style": "outline" }
+          }
+        ],
+        "bottomCallout": {
+          "text": "We are on a mission to explore integrative wellbeing and continuously evolve our spaces as centers of restoration, connection, and growth",
+          "cta": { "label": "DISCOVER THE SCIENCE", "href": "/science", "style": "outline" }
+        }
+      }
+    },
+    {
+      "type": "MembershipsGrid",
+      "schema_version": 1,
+      "data": {
+        "title": "MEMBERSHIPS",
+        "intro": "Memberships at OWA are designed to meet you where you are. Whether you join as a full member, visit often with a travel pass, or drop in for a day, each option offers access to our therapies, spaces, and community—tailored to your schedule.",
+        "items": [
+          {
+            "indexLabel": "01",
+            "image": "https://example.com/membership-full-access.jpg",
+            "imageAlt": "Close-up back/shoulder with water",
+            "title": "FULL ACCESS",
+            "cta": { "label": "GET STARTED", "href": "/join/full", "style": "outline" },
+            "description": "Your everyday sanctuary—unlimited access to the OWA way of life."
+          },
+          {
+            "indexLabel": "02",
+            "image": "https://example.com/membership-travel-pass.jpg",
+            "imageAlt": "Woman in teal light, blurred motion",
+            "title": "TRAVEL PASS",
+            "cta": { "label": "GET STARTED", "href": "/join/travel", "style": "outline" },
+            "description": "Up to 10 visits per month, no expiration. For those who come and go without restrictions."
+          },
+          {
+            "indexLabel": "03",
+            "image": "https://example.com/membership-day-pass.jpg",
+            "imageAlt": "Ice rock texture",
+            "title": "DAY PASS",
+            "cta": { "label": "GET STARTED", "href": "/join/day", "style": "outline" },
+            "description": "For those who seek a single day of restoration and reset."
+          }
+        ]
+      }
+    },
+    {
+      "type": "HeroMediaOverlay",
+      "schema_version": 2,
+      "data": {
+        "media": [
+          { "type": "image", "url": "https://example.com/owa-mid-hero.jpg", "alt": "Shoulders in ice bath" }
+        ],
+        "overlay": {
+          "headingPrefix": "ONE WITH ",
+          "headingSuffix": "",
+          "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"],
+          "fallbackHeading": "ONE WITH MIND",
+          "align": "center",
+          "scrimOpacity": 0.25
+        }
+      }
+    },
+    {
+      "type": "SocialGallery",
+      "schema_version": 1,
+      "data": {
+        "heading": "FOLLOW US",
+        "handle": "@owa.wellness",
+        "profileUrl": "https://www.instagram.com/owa.wellness/",
+        "source": "manual",
+        "images": [
+          { "url": "https://example.com/ig1.jpg", "alt": "Hand in cold plunge" },
+          { "url": "https://example.com/ig2.jpg", "alt": "Interior art fountain" },
+          { "url": "https://example.com/ig3.jpg", "alt": "Abstract light and bubbles" },
+          { "url": "https://example.com/ig4.jpg", "alt": "Back and shoulder close-up" }
+        ]
+      }
+    },
+    {
+      "type": "Footer",
+      "schema_version": 1,
+      "data": {
+        "title": "CONTACT",
+        "contact": {
+          "heading": "GET IN TOUCH",
+          "addressLines": [
+            "Sinaloa 49 Col. Roma Norte",
+            "México, CDMX. CP. 6700"
+          ],
+          "email": "hello@owawellness.com",
+          "emailHref": "mailto:hello@owawellness.com",
+          "phone": "+52 555 505 7158",
+          "phoneHref": "tel:+525555057158"
+        },
+        "groups": [
+          {
+            "heading": "EXPLORE",
+            "links": [
+              { "label": "The OWA Experience", "href": "/experience" },
+              { "label": "The Science", "href": "/science" },
+              { "label": "Our Timers & FAQ's", "href": "/faq" },
+              { "label": "Policies", "href": "/policies" }
+            ]
+          },
+          {
+            "heading": "CONNECT",
+            "links": [
+              { "label": "Instagram", "href": "https://instagram.com/owa.wellness", "external": true },
+              { "label": "Spotify", "href": "https://spotify.com", "external": true },
+              { "label": "Careers", "href": "/careers" }
+            ]
+          },
+          {
+            "heading": "BOOK",
+            "links": [
+              { "label": "Book a Session", "href": "/book" },
+              { "label": "Become a Member", "href": "/membership" },
+              { "label": "Stay at OWA", "href": "/stay" },
+              { "label": "Host Your Event", "href": "/events" }
+            ]
+          },
+          {
+            "heading": "STAY IN THE LOOP",
+            "links": []
+          }
+        ],
+        "newsletter": {
+          "heading": "STAY IN THE LOOP",
+          "subtext": "Be the first to know about our new experiences and collaborations",
+          "action": "Subscribe",
+          "placeholder": "Email Address",
+          "submitHref": "/api/forms/newsletter"
+        },
+        "bottomBar": {
+          "leftNote": "Creative Strategy @ Latente",
+          "legalLinks": [
+            { "label": "Terms of Service", "href": "/terms" },
+            { "label": "Privacy Policy", "href": "/privacy" },
+            { "label": "Cookies", "href": "/cookies" },
+            { "label": "Disclaimers", "href": "/disclaimers" }
+          ],
+          "copyright": "© All rights reserved 2025"
+        }
+      }
+    }
+  ]
+}

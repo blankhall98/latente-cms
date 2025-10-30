@@ -1,0 +1,551 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OWA Landing v2 (components)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "replace": { "type": "boolean" },
+    "seo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "maxLength": 70 },
+        "description": { "type": "string", "maxLength": 160 }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string", "enum": [
+            "NavBar",
+            "HeroTwoUp",
+            "IntroBlurbCTAs",
+            "DiscoverGrid",
+            "TherapiesAccordion",
+            "MembershipsGrid",
+            "HeroMediaOverlay",
+            "SocialGallery",
+            "Footer"
+          ]},
+          "schema_version": { "type": "integer", "minimum": 1 },
+          "data": { "type": "object" }
+        },
+        "required": ["type", "schema_version", "data"]
+      }
+    }
+  },
+  "required": ["sections"],
+  "allOf": [
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "NavBar" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "NavBar" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "brand": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "text": { "type": "string", "minLength": 1, "maxLength": 40 },
+                              "href": { "type": "string", "format": "uri-reference" }
+                            },
+                            "required": ["text", "href"]
+                          },
+                          "leftLinks": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+                                "href": { "type": "string", "format": "uri-reference" },
+                                "external": { "type": "boolean" }
+                              },
+                              "required": ["label", "href"]
+                            }
+                          },
+                          "rightLinks": { "$ref": "#/$defs/linksArray" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "HeroTwoUp" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "HeroTwoUp" } } },
+                  "then": {
+                    "properties": {
+                      "data": { "$ref": "#/$defs/heroTwoUp" }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "IntroBlurbCTAs" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "IntroBlurbCTAs" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "heading": { "type": "string", "minLength": 1, "maxLength": 120 },
+                          "body": { "type": "string", "minLength": 1, "maxLength": 800 },
+                          "align": { "type": "string", "enum": ["left", "center", "right"] },
+                          "ctas": { "$ref": "#/$defs/ctasArray" }
+                        },
+                        "required": ["heading", "body"]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "DiscoverGrid" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "DiscoverGrid" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+                          "intro": { "type": "string", "minLength": 1, "maxLength": 800 },
+                          "align": { "type": "string", "enum": ["left", "center", "right"] },
+                          "items": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "image": { "type": "string", "format": "uri-reference" },
+                                "imageAlt": { "type": "string", "maxLength": 120 },
+                                "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+                                "description": { "type": "string", "maxLength": 600 },
+                                "cta": { "$ref": "#/$defs/cta" }
+                              },
+                              "required": ["title", "description"]
+                            }
+                          }
+                        },
+                        "required": ["title", "items"]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "TherapiesAccordion" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "TherapiesAccordion" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "title": { "type": "string" },
+                          "intro": { "type": "string" },
+                          "sideImage": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "url": { "type": "string", "format": "uri-reference" },
+                              "alt": { "type": "string" }
+                            },
+                            "required": ["url"]
+                          },
+                          "layout": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "mediaPosition": { "type": "string", "enum": ["left", "right"] }
+                            }
+                          },
+                          "items": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "title": { "type": "string", "minLength": 1 },
+                                "description": { "type": "string", "minLength": 1 },
+                                "benefits": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "items": { "type": "string", "minLength": 1 }
+                                },
+                                "cta": { "$ref": "#/$defs/cta" }
+                              },
+                              "required": ["title", "description"]
+                            }
+                          },
+                          "bottomCallout": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "text": { "type": "string" },
+                              "cta": { "$ref": "#/$defs/cta" }
+                            },
+                            "required": ["text"]
+                          }
+                        },
+                        "required": ["items"]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "MembershipsGrid" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "MembershipsGrid" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "title": { "type": "string" },
+                          "intro": { "type": "string" },
+                          "items": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "indexLabel": { "type": "string", "maxLength": 4 },
+                                "image": { "type": "string", "format": "uri-reference" },
+                                "imageAlt": { "type": "string" },
+                                "title": { "type": "string" },
+                                "description": { "type": "string" },
+                                "cta": { "$ref": "#/$defs/cta" }
+                              },
+                              "required": ["title", "description"]
+                            }
+                          }
+                        },
+                        "required": ["items"]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "HeroMediaOverlay" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "HeroMediaOverlay" } } },
+                  "then": {
+                    "properties": {
+                      "schema_version": { "const": 2 },
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "media": { "$ref": "#/$defs/mediaArray" },
+                          "overlay": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "headingPrefix": { "type": "string" },
+                              "headingSuffix": { "type": "string" },
+                              "rotatingWords": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 8,
+                                "items": { "type": "string", "minLength": 1, "maxLength": 24 }
+                              },
+                              "fallbackHeading": { "type": "string" },
+                              "align": { "type": "string", "enum": ["left", "center", "right"] },
+                              "scrimOpacity": { "type": "number", "minimum": 0, "maximum": 1 }
+                            }
+                          }
+                        },
+                        "required": ["media", "overlay"]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "SocialGallery" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "SocialGallery" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "heading": { "type": "string" },
+                          "handle": { "type": "string" },
+                          "profileUrl": { "type": "string", "format": "uri-reference" },
+                          "source": { "type": "string", "enum": ["manual", "instagram", "cms"] },
+                          "images": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "url": { "type": "string", "format": "uri-reference" },
+                                "alt": { "type": "string" }
+                              },
+                              "required": ["url"]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "sections": { "items": { "properties": { "type": { "const": "Footer" } } } } } },
+      "then": {
+        "properties": {
+          "sections": {
+            "items": {
+              "allOf": [
+                {
+                  "if": { "properties": { "type": { "const": "Footer" } } },
+                  "then": {
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "title": { "type": "string" },
+                          "contact": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "heading": { "type": "string" },
+                              "addressLines": {
+                                "type": "array",
+                                "items": { "type": "string" }
+                              },
+                              "email": { "type": "string" },
+                              "emailHref": { "type": "string", "format": "uri-reference" },
+                              "phone": { "type": "string" },
+                              "phoneHref": { "type": "string", "format": "uri-reference" }
+                            }
+                          },
+                          "groups": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "heading": { "type": "string" },
+                                "links": { "$ref": "#/$defs/linksArray" }
+                              }
+                            }
+                          },
+                          "newsletter": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "heading": { "type": "string" },
+                              "subtext": { "type": "string" },
+                              "action": { "type": "string" },
+                              "placeholder": { "type": "string" },
+                              "submitHref": { "type": "string", "format": "uri-reference" }
+                            }
+                          },
+                          "bottomBar": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "leftNote": { "type": "string" },
+                              "legalLinks": { "$ref": "#/$defs/linksArray" },
+                              "copyright": { "type": "string", "maxLength": 160 }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "linksArray": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "href": { "type": "string", "format": "uri-reference" },
+          "external": { "type": "boolean" }
+        },
+        "required": ["label", "href"]
+      }
+    },
+    "cta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "href": { "type": "string", "format": "uri-reference" },
+        "style": { "type": "string", "enum": ["primary", "outline", "link"] }
+      },
+      "required": ["label", "href"]
+    },
+    "mediaArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string", "enum": ["image", "video"] },
+          "url": { "type": "string", "format": "uri-reference" },
+          "alt": { "type": "string" }
+        },
+        "required": ["type", "url"]
+      }
+    },
+    "heroTwoUp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "media": { "$ref": "#/$defs/mediaArray" },
+        "overlay": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "headingPrefix": { "type": "string" },
+            "headingSuffix": { "type": "string" },
+            "rotatingWords": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": { "type": "string", "minLength": 1, "maxLength": 24 }
+            },
+            "fallbackHeading": { "type": "string" },
+            "align": { "type": "string", "enum": ["left", "center", "right"] },
+            "scrimOpacity": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "gap": { "type": "number", "minimum": 0, "maximum": 96 },
+            "ratio": { "type": "string" },
+            "stackBreakpoint": { "type": "string", "enum": ["sm", "md", "lg"] }
+          }
+        }
+      },
+      "required": ["media", "overlay"]
+    },
+    "ctasArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/cta" }
+    }
+  }
+}
+
