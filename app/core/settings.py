@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     IDEMPOTENCY_ENABLED: bool = os.getenv("IDEMPOTENCY_ENABLED", "true").lower() == "true"
     IDEMPOTENCY_TTL_SECONDS: int = int(os.getenv("IDEMPOTENCY_TTL_SECONDS", "86400"))
 
+    # --- Webhooks (Paso 20) ---
+    WEBHOOKS_ENABLED: bool = True
+    WEBHOOK_TIMEOUT_SECONDS: int = 5
+    WEBHOOK_MAX_RETRIES: int = 3
+    WEBHOOK_BACKOFF_SECONDS: int = 1
+
+    # Útil para pruebas: ejecuta el envío en el mismo hilo/event loop (sin create_task)
+    WEBHOOKS_SYNC_FOR_TEST: bool = False
+
     # ================== Pydantic v2 ================
     # ¡No usar `class Config` en v2!
     model_config = SettingsConfigDict(

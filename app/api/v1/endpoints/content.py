@@ -8,6 +8,9 @@ from typing import Any, Dict, Optional
 import time
 from collections import defaultdict
 
+import asyncio
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, Header, Body, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, and_
@@ -53,6 +56,9 @@ from app.services.versioning_service import create_entry_snapshot  # <-- Paso 17
 # --- Paso 18: caps & idempotencia ---
 from app.utils.payload_guard import enforce_entry_data_size
 from app.utils.idempotency import maybe_replay_idempotent, remember_idempotent_success
+
+# --- Paso 20: Webhooks ---
+from app.services.webhook_service import emit_event_async
 
 router = APIRouter()
 
@@ -144,6 +150,32 @@ def _fill_required_defaults(schema: Dict[str, Any] | None, data: Dict[str, Any])
             data[key] = _fill_required_defaults(prop_schema, val)
 
     return data
+
+
+# ---------------------------------------------------------------------------
+# Paso 20: helper para disparar webhooks desde endpoints síncronos
+# ---------------------------------------------------------------------------
+def _trigger_webhook(db: Session, tenant_id: int, event: str, payload: Dict[str, Any]) -> None:
+    """
+    Dispara emit_event_async de forma segura desde este endpoint síncrono.
+    - En modo test (WEBHOOKS_SYNC_FOR_TEST=True): se usa asyncio.run para
+      ejecutar de forma bloqueante y determinística.
+    - En modo normal: intenta programar create_task en el loop activo; si
+      no hay loop (hilo de worker), hace un asyncio.run fire-and-forget.
+    """
+    try:
+        if getattr(settings, "WEBHOOKS_SYNC_FOR_TEST", False):
+            asyncio.run(emit_event_async(db, tenant_id, event, payload))
+            return
+        # Intentar programar en el event loop actual (si existe)
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            loop.create_task(emit_event_async(db, tenant_id, event, payload))
+        else:
+            asyncio.run(emit_event_async(db, tenant_id, event, payload))
+    except RuntimeError:
+        # No hay loop en este hilo → ejecutar ad-hoc
+        asyncio.run(emit_event_async(db, tenant_id, event, payload))
 
 
 # ============================================================================ #
@@ -550,6 +582,18 @@ def publish_entry(
         db.commit()
         db.refresh(entry)
 
+        # --- Paso 20: Webhook content.published ---
+        payload = {
+            "tenant_id": tenant_id,
+            "section_id": entry.section_id,
+            "entry_id": entry.id,
+            "slug": entry.slug,
+            "schema_version": entry.schema_version,
+            "status": entry.status,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        _trigger_webhook(db, tenant_id, "content.published", payload)
+
         # Respuesta + memo idempotente
         resp = JSONResponse(
             content=EntryOut.model_validate(entry).model_dump(mode="json"),
@@ -605,6 +649,19 @@ def unpublish_entry(
 
         db.commit()
         db.refresh(entry)
+
+        # --- Paso 20: Webhook content.unpublished ---
+        payload = {
+            "tenant_id": tenant_id,
+            "section_id": entry.section_id,
+            "entry_id": entry.id,
+            "slug": entry.slug,
+            "schema_version": entry.schema_version,
+            "status": entry.status,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        _trigger_webhook(db, tenant_id, "content.unpublished", payload)
+
         return entry
     except ValueError as e:
         db.rollback()
@@ -655,6 +712,19 @@ def archive_entry(
 
         db.commit()
         db.refresh(entry)
+
+        # --- Paso 20: Webhook content.archived ---
+        payload = {
+            "tenant_id": tenant_id,
+            "section_id": entry.section_id,
+            "entry_id": entry.id,
+            "slug": entry.slug,
+            "schema_version": entry.schema_version,
+            "status": entry.status,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        _trigger_webhook(db, tenant_id, "content.archived", payload)
+
         return entry
     except ValueError as e:
         db.rollback()
@@ -876,5 +946,3 @@ def restore_entry_version_endpoint(
     db.commit()
     db.refresh(entry)
     return entry
-
-
