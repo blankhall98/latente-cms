@@ -5,8 +5,11 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
+import time
+from collections import defaultdict
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, Header, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, Header, Body, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 
@@ -47,7 +50,35 @@ from app.models.audit import ContentAction
 # --- Versionado (Paso 17) ---
 from app.services.versioning_service import create_entry_snapshot  # <-- Paso 17
 
+# --- Paso 18: caps & idempotencia ---
+from app.utils.payload_guard import enforce_entry_data_size
+from app.utils.idempotency import maybe_replay_idempotent, remember_idempotent_success
+
 router = APIRouter()
+
+# =======================
+# Rate limit (in-memory)
+# =======================
+# bucket por minuto, clave = (user_id, tenant_id, minute_bucket)
+_RL_COUNTER: dict[tuple[int, int, int], int] = defaultdict(int)
+
+def _check_write_rate_limit(user_id: int, tenant_id: int) -> None:
+    """
+    Limita escrituras por usuario y tenant en ventana de 1 minuto.
+    Respeta settings.RATELIMIT_ENABLED y settings.RATELIMIT_WRITE_PER_MIN.
+    Lanza HTTP 429 si se excede.
+    """
+    if not getattr(settings, "RATELIMIT_ENABLED", False):
+        return
+    limit = int(getattr(settings, "RATELIMIT_WRITE_PER_MIN", 0) or 0)
+    if limit <= 0:
+        return
+    bucket = int(time.time() // 60)
+    key = (int(user_id), int(tenant_id), bucket)
+    _RL_COUNTER[key] += 1
+    if _RL_COUNTER[key] > limit:
+        # No seguimos con la operación; 429 Too Many Requests
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
 
 def _get_entry_or_404(db: Session, entry_id: int, tenant_id: int | None) -> Entry:
@@ -271,14 +302,29 @@ def get_registry_endpoint(
 )
 def create_entry_endpoint(
     payload: EntryCreate,
+    request: Request,
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
     """
     Crear Entry (los tests no exigen permiso content:write aquí).
     Autocompleta recursivamente requeridos del JSON Schema activo.
+    Aplica:
+      - Paso 18: Idempotency-Key (replay) y cap de tamaño de data.
+      - Paso 18: Rate limit de escrituras por minuto (user+tenant).
     """
-    # 1) Autocompletar requeridos según SectionSchema si existe
+    # 1) Idempotencia (replay si ya fue procesado)
+    replay = maybe_replay_idempotent(request.headers.get("Idempotency-Key"))
+    if replay:
+        return replay
+
+    # 2) Rate limit (solo para nuevas ejecuciones, no replays)
+    _check_write_rate_limit(user_id=user_id, tenant_id=payload.tenant_id)
+
+    # 3) Cap de tamaño
+    enforce_entry_data_size(payload.data or {})
+
+    # 4) Autocompletar requeridos según SectionSchema si existe
     ss = db.scalar(
         select(SectionSchema).where(
             and_(
@@ -302,7 +348,7 @@ def create_entry_endpoint(
             tenant_id=payload.tenant_id,
             entry=entry,
             action=ContentAction.CREATE,
-            user_id=user_id,  # <- tests esperan el ID real
+            user_id=user_id,
             details={
                 "status": entry.status,
                 "schema_version": entry.schema_version,
@@ -321,7 +367,14 @@ def create_entry_endpoint(
 
         db.commit()
         db.refresh(entry)
-        return entry
+
+        # Respuesta + memo idempotente (Paso 18)
+        resp = JSONResponse(
+            content=EntryOut.model_validate(entry).model_dump(mode="json"),
+            status_code=201,
+        )
+        remember_idempotent_success(request.headers.get("Idempotency-Key"), resp)
+        return resp
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
@@ -367,6 +420,9 @@ def update_entry_endpoint(
         if getattr(patch, "schema_version", None) is None:
             patch.schema_version = before.schema_version
         patch.data = merged
+
+        # (Opcional) Cap de tamaño también en update si cambió data (Paso 18)
+        enforce_entry_data_size(patch.data or {})
 
         entry = update_entry(db, entry_id, tenant_id, patch)
 
@@ -445,6 +501,7 @@ def _tenant_from_query_or_body(tenant_id_q: Optional[int], tenant_body: Optional
 @router.post("/entries/{entry_id}/publish", response_model=EntryOut)
 def publish_entry(
     entry_id: int,
+    request: Request,  # mantener antes de params con default
     tenant_id_q: int | None = Query(default=None, alias="tenant_id"),
     tenant_body: Dict[str, Any] | None = Body(default=None),
     db: Session = Depends(get_db),
@@ -452,6 +509,11 @@ def publish_entry(
 ):
     from app.api.deps import auth as auth_deps
     tenant_id = _tenant_from_query_or_body(tenant_id_q, tenant_body)
+
+    # Idempotencia
+    replay = maybe_replay_idempotent(request.headers.get("Idempotency-Key"))
+    if replay:
+        return replay
 
     if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
         raise HTTPException(status_code=403, detail="Missing permission: content:publish")
@@ -487,7 +549,14 @@ def publish_entry(
 
         db.commit()
         db.refresh(entry)
-        return entry
+
+        # Respuesta + memo idempotente
+        resp = JSONResponse(
+            content=EntryOut.model_validate(entry).model_dump(mode="json"),
+            status_code=200,
+        )
+        remember_idempotent_success(request.headers.get("Idempotency-Key"), resp)
+        return resp
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
@@ -807,9 +876,5 @@ def restore_entry_version_endpoint(
     db.commit()
     db.refresh(entry)
     return entry
-
-
-
-
 
 

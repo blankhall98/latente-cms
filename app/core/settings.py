@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import List, Union
-
+import os
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -29,6 +29,17 @@ class Settings(BaseSettings):
     # ==================== CORS =====================
     # Acepta lista JSON en .env (recomendado) o CSV simple
     BACKEND_CORS_ORIGINS: List[Union[str, AnyHttpUrl]] = []
+
+    # Paso 18 — Feature flags y umbrales
+    RATELIMIT_ENABLED: bool = os.getenv("RATELIMIT_ENABLED", "false").lower() == "true"
+    RATELIMIT_WRITE_PER_MIN: int = int(os.getenv("RATELIMIT_WRITE_PER_MIN", "60"))
+    RATELIMIT_DELIVERY_PER_MIN: int = int(os.getenv("RATELIMIT_DELIVERY_PER_MIN", "200"))
+    RATELIMIT_PREVIEWTOKEN_PER_MIN: int = int(os.getenv("RATELIMIT_PREVIEWTOKEN_PER_MIN", "20"))
+
+    MAX_ENTRY_DATA_KB: int = int(os.getenv("MAX_ENTRY_DATA_KB", "256"))
+
+    IDEMPOTENCY_ENABLED: bool = os.getenv("IDEMPOTENCY_ENABLED", "true").lower() == "true"
+    IDEMPOTENCY_TTL_SECONDS: int = int(os.getenv("IDEMPOTENCY_TTL_SECONDS", "86400"))
 
     # ================== Pydantic v2 ================
     # ¡No usar `class Config` en v2!

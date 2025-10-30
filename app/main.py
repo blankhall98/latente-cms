@@ -9,6 +9,10 @@ from app.api.delivery.router import router as delivery_router
 app = create_app()
 configure_logging()
 
+if settings.RATELIMIT_ENABLED:
+    from app.middleware.ratelimit import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware)
+
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # 👉 Delivery pública (fuera de /api/v1)
