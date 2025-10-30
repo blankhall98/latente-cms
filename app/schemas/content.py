@@ -2,7 +2,7 @@
 # Pydantic — requests/responses para Sections, Schemas y Entries
 from __future__ import annotations
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, Any
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -67,10 +67,14 @@ class EntryCreate(EntryBase):
     section_id: int
 
 class EntryUpdate(BaseModel):
+    tenant_id: int                               # <-- necesario para el test
     slug: Optional[str] = Field(None, max_length=128)
     status: Optional[EntryStatus] = None
-    data: Optional[dict] = None
+    data: Optional[Dict[str, Any]] = None
     schema_version: Optional[int] = Field(None, ge=1)
+
+    # Evita 422 por campos adicionales que no uses
+    model_config = ConfigDict(extra="ignore")
 
 class EntryOut(EntryBase):
     model_config = ConfigDict(from_attributes=True)

@@ -72,3 +72,7 @@ def _override_get_db(db: Session):
         # Limpia el override para la siguiente prueba
         app.dependency_overrides.pop(get_db, None)
 
+# Alias para compatibilidad con tests que esperan 'db_session'
+@pytest.fixture
+def db_session(db):
+    return db
