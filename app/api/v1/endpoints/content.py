@@ -1,12 +1,5 @@
-# app/api/v1/endpoints/content.py
 # =============================================================================
 # Content Endpoints (Sections, Section Schemas, Entries, Publish/Preview)
-# - Incluye RBAC (require_permission / user_has_permission)
-# - Valida JSON Schema a través del service de contenido
-# - Soporta "Preview Tokens" (JWT HMAC) para vistas de preview sin login (Paso 13)
-# - Mantiene ETag / Cache-Control (Paso 11)
-# - Corrige prefijo del router para que las rutas queden bajo /api/v1/content/*
-#   (el router v1 se monta en app/api/router.py con prefix="/api/v1")
 # =============================================================================
 from __future__ import annotations
 
@@ -31,13 +24,13 @@ from app.services.registry_service import (
     can_activate_version,
 )
 from app.services.publish_service import (
-    transition_entry_status, compute_etag, apply_cache_headers,
+    transition_entry_status, apply_cache_headers,
 )
 from app.api.deps.auth import (
-    require_permission,
+    require_permission,              # lo usaremos en endpoints de lectura/edición no problemáticos
     get_current_user_id,
     get_current_user_id_optional,
-    user_has_permission,
+    # no importar user_has_permission aquí: se usará import tardío
 )
 from app.security.preview_tokens import (
     create_preview_token, verify_preview_token, PreviewTokenError,
@@ -47,20 +40,11 @@ from app.core.config import settings
 router = APIRouter()
 
 
-# ============================================================================ #
-# Helpers
-# ============================================================================ #
 def _get_entry_or_404(db: Session, entry_id: int, tenant_id: int | None) -> Entry:
-    """
-    Lookup robusto:
-    1) Trae por ID (más estable).
-    2) Si tenant_id viene, valida coherencia multi-tenant.
-    """
     entry = db.get(Entry, entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     if tenant_id is not None and entry.tenant_id != tenant_id:
-        # No exponemos existencia cross-tenant
         raise HTTPException(status_code=404, detail="Entry not found")
     return entry
 
@@ -74,8 +58,9 @@ def create_section_endpoint(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    # RBAC: permiso por tenant del payload
-    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+    from app.api.deps import auth as auth_deps
+
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
 
     section = create_section(
@@ -99,7 +84,9 @@ def add_schema_version_endpoint(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+    from app.api.deps import auth as auth_deps
+
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
 
     ss = add_schema_version(
@@ -209,7 +196,9 @@ def create_entry_endpoint(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+    from app.api.deps import auth as auth_deps
+
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
     try:
         entry = create_entry(db, payload)
@@ -266,14 +255,19 @@ def list_entries_endpoint(
 
 
 # ============================================================================ #
-# Publish / Unpublish / Archive  (requieren content:publish)
+# Publish / Unpublish / Archive  (permiso content:publish, chequeo inline con import tardío)
 # ============================================================================ #
-@router.post(
-    "/entries/{entry_id}/publish",
-    response_model=EntryOut,
-    dependencies=[Depends(require_permission("content:publish"))],
-)
-def publish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+@router.post("/entries/{entry_id}/publish", response_model=EntryOut)
+def publish_entry(
+    entry_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    from app.api.deps import auth as auth_deps
+
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:publish")
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
         transition_entry_status(db, entry, "published")
@@ -285,12 +279,17 @@ def publish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depe
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
-    "/entries/{entry_id}/unpublish",
-    response_model=EntryOut,
-    dependencies=[Depends(require_permission("content:publish"))],
-)
-def unpublish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+@router.post("/entries/{entry_id}/unpublish", response_model=EntryOut)
+def unpublish_entry(
+    entry_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    from app.api.deps import auth as auth_deps
+
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:publish")
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
         transition_entry_status(db, entry, "draft")
@@ -302,12 +301,17 @@ def unpublish_entry(entry_id: int, tenant_id: int = Query(...), db: Session = De
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
-    "/entries/{entry_id}/archive",
-    response_model=EntryOut,
-    dependencies=[Depends(require_permission("content:publish"))],
-)
-def archive_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depends(get_db)):
+@router.post("/entries/{entry_id}/archive", response_model=EntryOut)
+def archive_entry(
+    entry_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    from app.api.deps import auth as auth_deps
+
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:publish")
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
         transition_entry_status(db, entry, "archived")
@@ -320,10 +324,7 @@ def archive_entry(entry_id: int, tenant_id: int = Query(...), db: Session = Depe
 
 
 # ============================================================================ #
-# Preview Tokens (Paso 13)
-# - Emisión de token temporal (permiso content:publish requerido)
-# - Consumo del token en preview (sin login) o preview con login (sin token)
-# - ETag / Cache-Control aplicados en la respuesta de preview
+# Preview Tokens
 # ============================================================================ #
 @router.post("/entries/{entry_id}/preview-token")
 def issue_preview_token_endpoint(
@@ -334,14 +335,11 @@ def issue_preview_token_endpoint(
     db: Session = Depends(get_db),
     current_user_id: int | None = Depends(get_current_user_id_optional),
 ):
-    """
-    Emite un token de preview temporal (JWT HMAC).
-    Requiere autenticación + permiso de publicar (también podrías crear permiso 'content:preview:issue').
-    """
+    from app.api.deps import auth as auth_deps
+
     if not current_user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
-
-    if not user_has_permission(db, current_user_id, tenant_id, "content:publish"):
+    if not auth_deps.user_has_permission(db, current_user_id, tenant_id, "content:publish"):
         raise HTTPException(status_code=403, detail="Not allowed to issue preview tokens")
 
     entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -363,13 +361,6 @@ def preview_entry_endpoint(
     db: Session = Depends(get_db),
     current_user_id: int | None = Depends(get_current_user_id_optional),
 ):
-    """
-    Preview dual:
-    - Con token: valida firma/exp y fuerza tenant/entry del token (no usa query).
-    - Sin token: requiere autenticación (puedes exigir permiso 'content:preview' si deseas).
-    Devuelve JSON renderizado con ETag y Cache-Control adecuados.
-    """
-    # --- Autorización y binding seguro ---
     if token:
         try:
             data = verify_preview_token(token)
@@ -381,17 +372,11 @@ def preview_entry_endpoint(
     else:
         if not current_user_id:
             raise HTTPException(status_code=401, detail="Authentication required")
-        # Si quieres reforzar: exigir permiso explícito de preview interno.
-        # if not user_has_permission(db, current_user_id, tenant_id, "content:preview"):
-        #     raise HTTPException(status_code=403, detail="Not allowed to preview")
         forced_schema_version = None
 
-    # --- Lookup del entry ---
     entry = _get_entry_or_404(db, entry_id, tenant_id)
 
-    # --- Payload de salida (preview render minimal) ---
-    import hashlib
-    import json
+    import hashlib, json
     payload = {
         "id": entry.id,
         "tenant_id": entry.tenant_id,
@@ -403,9 +388,7 @@ def preview_entry_endpoint(
     }
     body = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
 
-    # --- ETag / Cache-Control ---
     etag = hashlib.sha256(body.encode("utf-8")).hexdigest()
-    # Conditional GET: If-None-Match → 304
     if if_none_match and if_none_match == etag:
         resp = Response(status_code=304)
         apply_cache_headers(resp, status=entry.status)

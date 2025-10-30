@@ -40,12 +40,15 @@ def _mk_tenant(db: Session) -> Tenant:
     db.add(t); db.flush()
     return t
 
-def _mk_role(db: Session, key="author", label="Author") -> Role:
-    existing = db.query(Role).filter_by(key=key).first()
-    if existing:
-        return existing
-    r = Role(key=key, label=label, scope="core", is_system=False)
-    db.add(r); db.flush()
+def _mk_role(db: Session, base_key: str = "author", label: str = "Author") -> Role:
+    """
+    Crea SIEMPRE un rol nuevo y limpio, con key única,
+    para evitar colisiones con seeds (que podrían tener permisos).
+    """
+    unique_key = f"{base_key}_{uuid.uuid4().hex[:8]}"
+    r = Role(key=unique_key, label=label, is_system=False)
+    db.add(r)
+    db.flush()
     return r
 
 def _perm(db: Session, key: str) -> Permission:
