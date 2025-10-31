@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }} · {{ tenant.name }}{% endblock %}
+{% block content %}
+
+<div class="container py-4" style="max-width:760px;">
+  <a href="/admin/tenants/{{ tenant.id }}/sections" class="btn btn-link">&larr; Volver a secciones</a>
+  <h1 class="h5 mt-2">{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }}</h1>
+
+  <div class="card p-3 mt-3">
+    <form method="post" action="{{ '/admin/tenants/' ~ tenant.id ~ '/sections/create' if mode == 'create' else '/admin/tenants/' ~ tenant.id ~ '/sections/' ~ section.id ~ '/update' }}">
+      <div class="mb-3">
+        <label class="form-label">Nombre de la sección</label>
+        <input class="form-control" name="name" value="{{ section.name if section else '' }}" required>
+        <div class="form-text">Ejemplos: “Landing”, “Noticias”, “Testimonios”. Esto es lo que verá tu cliente.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Clave interna</label>
+        <input class="form-control" name="key" value="{{ section.key if section else '' }}" required>
+        <div class="form-text">Identificador interno (ej. <code>LandingPages</code>). Debe ser única dentro del proyecto.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Descripción (opcional)</label>
+        <textarea class="form-control" name="description" rows="3">{{ section.description if section and section.description else '' }}</textarea>
+        <div class="form-text">Una breve nota para recordar qué tipo de contenido tendrá esta sección.</div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-cta" type="submit">{{ 'Crear sección' if mode == 'create' else 'Guardar cambios' }}</button>
+        <a class="btn btn-owa-outline" href="/admin/tenants/{{ tenant.id }}/sections">Cancelar</a>
+        {% if mode == 'edit' %}
+          <a class="btn btn-outline-secondary ms-auto"
+             href="/admin/entries?tenant_id={{ tenant.id }}&section_id={{ section.id }}">Abrir contenido</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="alert alert-info mt-3">
+    <strong>¿Qué sigue?</strong> Una vez creada la sección, podrás entrar a <em>Abrir contenido</em> para gestionar las páginas/bloques
+    que el cliente editará. No necesitas explicar formatos técnicos: la interfaz guiará al usuario paso a paso.
+  </div>
+</div>
+
+{% endblock %}

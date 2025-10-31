@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Entries · Latente CMS{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <a href="/admin" class="btn btn-link">&larr; Dashboard</a>
+
+  <div class="d-flex justify-content-between align-items-center mt-2">
+    <h1 class="h4 m-0">
+      Entries
+      {% if section %}
+        · {{ section.name }} ({{ section.key }})
+      {% elif tenant %}
+        · {{ tenant.name }} (selecciona sección)
+      {% else %}
+        · Selecciona tenant y sección
+      {% endif %}
+    </h1>
+
+    <div class="d-flex gap-2">
+      {% if tenant and section %}
+        <a class="btn btn-cta" href="/admin/entries/new/blocks?tenant_id={{ tenant.id }}&section_id={{ section.id }}">Nuevo (fácil)</a>
+        <a class="btn btn-outline-secondary" href="/admin/entries/new?tenant_id={{ tenant.id }}&section_id={{ section.id }}">Nuevo (JSON)</a>
+      {% else %}
+        <a class="btn btn-outline-secondary disabled" aria-disabled="true" title="Selecciona tenant y sección primero">Nuevo</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if msg %}<div class="alert alert-success mt-3">{{ msg }}</div>{% endif %}
+
+  <!-- Filtros -->
+  <form class="card p-3 mt-3" method="get" action="/admin/entries" id="filtersForm">
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Tenant</label>
+        <select class="form-select" name="tenant_id" id="tenantSelect">
+          <option value="">— Selecciona —</option>
+          {% for t in tenants %}
+            <option value="{{ t.id }}" {% if tenant and tenant.id == t.id %}selected{% endif %}>
+              {{ t.name }} ({{ t.slug }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Section</label>
+        <select class="form-select" name="section_id" id="sectionSelect" {% if not tenant %}disabled{% endif %}>
+          <option value="">— Selecciona —</option>
+          {% if sections_for_tenant %}
+            {% for s in sections_for_tenant %}
+              <option value="{{ s.id }}" {% if section and section.id == s.id %}selected{% endif %}>
+                {{ s.name }} ({{ s.key }})
+              </option>
+            {% endfor %}
+          {% endif %}
+        </select>
+        <div class="form-text">Primero elige un tenant.</div>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">Status</label>
+        <select class="form-select" name="status">
+          <option value="">Todos</option>
+          {% for st in ["draft","published","archived"] %}
+            <option value="{{ st }}" {% if status_q == st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">Slug</label>
+        <input class="form-control" name="slug" value="{{ slug_q or '' }}" placeholder="p. ej. home">
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-owa-outline" type="submit">Aplicar</button>
+        <a class="btn btn-outline-secondary" href="/admin/entries">Limpiar</a>
+        {% if tenant and section %}
+        <a class="btn btn-link ms-auto" href="/admin/tenants/{{ tenant.id }}/sections/{{ section.id }}">Editar sección</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Tabla -->
+  <div class="card p-0 mt-3">
+    <div class="table-responsive">
+      <table class="table align-middle m-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:80px;">ID</th>
+            <th>Slug</th>
+            <th style="width:140px;">Status</th>
+            <th style="width:120px;">Schema v</th>
+            <th style="width:320px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr>
+            <td>{{ e.id }}</td>
+            <td class="fw-semibold">{{ e.slug }}</td>
+            <td>
+              {% if e.status == 'published' %}
+                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">published</span>
+              {% elif e.status == 'draft' %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">draft</span>
+              {% elif e.status == 'archived' %}
+                <span class="badge bg-dark-subtle text-dark-emphasis border border-dark-subtle">archived</span>
+              {% else %}
+                <span class="badge bg-light text-dark">{{ e.status }}</span>
+              {% endif %}
+            </td>
+            <td>{{ e.schema_version }}</td>
+            <td>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-primary" href="/admin/entries/{{ e.id }}/blocks">Editar (fácil)</a>
+                <a class="btn btn-sm btn-outline-secondary" href="/admin/entries/{{ e.id }}">Avanzado (JSON)</a>
+
+                {% if e.status != 'published' %}
+                  <form method="post" action="/admin/entries/{{ e.id }}/publish" class="d-inline">
+                    <button class="btn btn-sm btn-success" type="submit">Publicar</button>
+                  </form>
+                {% else %}
+                  <form method="post" action="/admin/entries/{{ e.id }}/unpublish" class="d-inline">
+                    <button class="btn btn-sm btn-warning" type="submit">Despublicar</button>
+                  </form>
+                {% endif %}
+
+                {% if tenant and section %}
+                  <a class="btn btn-sm btn-outline-primary" target="_blank"
+                     href="/delivery/v1/tenants/{{ tenant.slug }}/sections/{{ section.key }}/entries/{{ e.slug }}">
+                    Ver Delivery
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-muted p-4">Sin entries</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tenantSelect = document.getElementById('tenantSelect');
+  const sectionSelect = document.getElementById('sectionSelect');
+  const form = document.getElementById('filtersForm');
+
+  tenantSelect?.addEventListener('change', async (e) => {
+    const tid = e.target.value;
+    sectionSelect.innerHTML = '<option value="">— Selecciona —</option>';
+    sectionSelect.disabled = !tid;
+    if (!tid) return;
+
+    try{
+      const res = await fetch(`/admin/tenants/${tid}/sections.json`);
+      if(!res.ok) return;
+      const data = await res.json();
+      for(const s of data){
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.key})`;
+        sectionSelect.appendChild(opt);
+      }
+    }catch(_){}
+  });
+</script>
+{% endblock %}
+
+

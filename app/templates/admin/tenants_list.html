@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Projects · Latente CMS{% endblock %}
+{% block content %}
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="h4 m-0">Projects (Tenants)</h1>
+    {% if user and user.is_superadmin %}
+      <a class="btn btn-cta" href="/admin/tenants/new">New Project</a>
+    {% endif %}
+  </div>
+
+  {% if msg %}<div class="alert alert-success mt-3">{{ msg }}</div>{% endif %}
+
+  <div class="card p-0 mt-3">
+    <table class="table align-middle m-0">
+      <thead>
+        <tr>
+          <th style="width:80px;">ID</th>
+          <th>Name</th>
+          <th>Slug</th>
+          <th style="width:160px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tenants %}
+        <tr>
+          <td>{{ t.id }}</td>
+          <td>{{ t.name }}</td>
+          <td><code>{{ t.slug }}</code></td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/tenants/{{ t.id }}">Edit</a>
+            <a class="btn btn-sm btn-outline-primary" href="/admin/tenants/{{ t.id }}/sections">Ver secciones</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-muted">No projects to show.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

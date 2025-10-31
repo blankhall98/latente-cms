@@ -1,0 +1,251 @@
+/* =========================================================
+   Latente CMS · Admin UI — v1.2
+   Paleta LUXE + estilo limpio, con KPIs refinados.
+   ========================================================= */
+
+/* -------------------------
+   Tokens (LUXE) y tipografía
+   ------------------------- */
+:root{
+  /* Base */
+  --bg: #f3f1ea;        /* off-white cálido */
+  --surface: #ffffff;
+  --surface-2: #EFE9E1;
+  --text-1: #322D29;
+  --text-2: #5D5550;
+  --muted:  #7A736E;
+  --border: #D1C7BD;
+
+  /* Brand */
+  --primary:    #322D29;
+  --primary-2:  #72383D;
+  --primary-ink:#FFFFFF;
+  --focus:      #AC9C8D;
+
+  /* Realce suave */
+  --accent-soft: #E7E0D8;
+
+  /* Gradientes / efectos */
+  --grad-1: linear-gradient(135deg, #322D29 0%, #72383D 100%);
+  --grad-soft:
+    radial-gradient(800px 400px at 15% -20%, rgba(50,45,41,.06), transparent 60%),
+    radial-gradient(600px 300px at 85% -10%, rgba(114,56,61,.06), transparent 55%);
+
+  /* Radii & Shadows */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+  --shadow-md: 0 12px 28px rgba(0,0,0,.08);
+
+  /* Typography */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+/* -------------------------
+   Reset mínimo y base
+   ------------------------- */
+*{ box-sizing: border-box; }
+html{ scroll-behavior: smooth; }
+body.z2h-body{
+  margin:0; background: var(--bg); color: var(--text-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.container{ max-width: 1140px; }
+
+/* Selección y links */
+::selection{ background: rgba(50,45,41,.14); }
+a{ color: var(--primary); text-decoration: none; transition: color .18s ease; }
+a:hover{ color: #201C19; }
+
+/* -------------------------
+   Navbar (admin)
+   ------------------------- */
+.z2h-nav{
+  position: sticky; top: 0; z-index: 1030;
+  background: rgba(255,255,255,.88);
+  backdrop-filter: saturate(160%) blur(10px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.z2h-nav .container{ padding: .55rem 1rem; }
+.z2h-brand--owa{
+  font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
+}
+.z2h-brand--badge{
+  padding:.2rem .5rem; border-radius:999px; background:#EFE9E1;
+  border:1px solid var(--border); color:var(--text-2); font-size:.72rem; letter-spacing:.1em;
+}
+.navbar .nav-link{
+  position: relative; padding: .55rem .7rem; margin: 0 .1rem;
+  color: var(--text-2); font-weight: 600; border-radius: 9px;
+  transition: color .15s ease, background-color .15s ease;
+}
+.navbar .nav-link::after{
+  content:""; position:absolute; left:.7rem; right:.7rem; bottom:.25rem; height:2px;
+  background: rgba(50,45,41,.35); border-radius:2px; transform:scaleX(0); transform-origin:left;
+  transition: transform .18s ease;
+}
+.navbar .nav-link:hover{ color: var(--text-1); background: rgba(2,6,23,.03); }
+.navbar .nav-link:hover::after,
+.navbar .nav-link.active::after{ transform: scaleX(1); }
+
+/* Right controls */
+.z2h-select{ background:#faf8f5; border:1px solid var(--border); }
+.btn.btn-outline{ border:1px solid var(--border); background:#fff; }
+
+/* -------------------------
+   Tarjetas / contenedores
+   ------------------------- */
+.card{
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.z2h-card{ border-radius: 16px; }
+
+/* Divider suave */
+.z2h-divider{
+  width:100%; height:1px;
+  background: linear-gradient(90deg, rgba(50,45,41,0), rgba(50,45,41,.18), rgba(50,45,41,0));
+  opacity:.6;
+}
+
+/* -------------------------
+   Botones
+   ------------------------- */
+.btn{
+  border-radius: var(--radius);
+  padding:.62rem 1rem;
+  font-weight:700; letter-spacing:.06em; text-transform: uppercase;
+  transition: filter .18s ease, transform .1s ease, background-color .18s ease, border-color .18s ease;
+}
+.btn:active{ transform: translateY(1px); }
+
+.btn-primary{
+  background: var(--grad-1);
+  color: var(--primary-ink);
+  border: 1px solid #5C3B3E;
+  box-shadow: 0 10px 24px rgba(114,56,61,.18);
+}
+.btn-primary:hover{ filter: brightness(1.04); }
+
+.btn-outline{
+  background: transparent;
+  color: var(--text-1);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover{
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color:#0b0b0b;
+}
+
+/* -------------------------
+   Formularios
+   ------------------------- */
+.form-control{
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff; color: var(--text-1);
+  padding: .6rem .75rem;
+}
+.form-control:focus{
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 .2rem rgba(172,156,141,.22);
+}
+label.form-label{ font-weight: 600; color: var(--text-1); }
+
+/* -------------------------
+   Login
+   ------------------------- */
+.z2h-auth-wrap{
+  min-height: calc(100vh - 56px);
+  display: grid; align-items: center;
+  padding: 2rem 0;
+  background: var(--grad-soft);
+}
+.z2h-auth-form .form-control{ border-radius: 10px; }
+.z2h-auth-form .btn-lg{ border-radius: 12px; }
+.text-muted{ color: var(--text-2) !important; }
+.small code{ background: #f6f3ee; padding:.1rem .3rem; border-radius:6px; border:1px solid var(--border); }
+
+/* =========================
+   == Dashboard (STEP 2) ==
+   ========================= */
+
+/* Hero oscuro, con glow suave */
+.z2h-dash-hero{
+  background: #0f0e0d; color:#fff;
+  border-radius: 18px;
+  overflow: hidden; position: relative; isolation: isolate;
+  box-shadow: 0 18px 40px rgba(30,12,8,.22);
+}
+.z2h-dash-hero::before{
+  content:""; position:absolute; inset:-20% -20% auto -20%; height:70%;
+  background: var(--grad-soft);
+  filter: blur(16px); opacity:.9; z-index:0;
+}
+.z2h-dash-hero .z2h-hero-title{
+  position:relative; z-index:1; letter-spacing:.14em; text-transform: uppercase;
+}
+.z2h-dash-hero .lead{ position:relative; z-index:1; color: rgba(255,255,255,.88); }
+.z2h-dash-hero .btn{ position:relative; z-index:1; }
+
+/* KPIs refinados */
+.z2h-kpis{
+  display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:1rem;
+}
+.z2h-kpi{
+  background: #fff; border:1px solid #E4DBD3;
+  border-radius: 16px; padding: 1rem 1.1rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,.05);
+}
+.z2h-kpi .z2h-kpi-label{
+  font-size:.78rem; color:#7B746E; letter-spacing:.12em;
+  text-transform: uppercase; margin-bottom:.25rem;
+}
+.z2h-kpi .z2h-kpi-value{
+  display:flex; align-items:baseline; gap:.35rem;
+  font-weight:900; line-height:1;
+  /* escala fluida, pero más grande que antes */
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+  color:#191716;
+}
+.z2h-kpi .z2h-kpi-suffix{
+  font-size:.85rem; color:#8b847f; font-weight:700; letter-spacing:.08em;
+}
+
+/* Listas/rails */
+.z2h-card-list{ display:flex; flex-direction:column; gap:.5rem; }
+.z2h-list-item{
+  display:grid; grid-template-columns:1fr auto; align-items:center; gap:1rem;
+  padding:.8rem .5rem .8rem 0; border-top:1px dashed var(--border);
+}
+.z2h-list-item:first-child{ border-top:0; }
+.z2h-list-title{ font-weight:800; color:var(--text-1); }
+.z2h-list-sub{ font-size:.92rem; color:var(--text-2); }
+
+/* Footer */
+.z2h-footer{
+  border-top:1px solid var(--border);
+  padding: 1.1rem 0;
+  color: var(--muted);
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(6px);
+}
+.z2h-footer a{ color: inherit; }
+.z2h-footer a:hover{ text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 991.98px){
+  .z2h-kpis{ grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 575.98px){
+  .z2h-kpis{ grid-template-columns: 1fr 1fr; }
+}
+

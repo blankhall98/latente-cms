@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión · Latente CMS{% endblock %}
+{% block content %}
+<section class="z2h-auth-wrap">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+        <div class="card z2h-card shadow-sm">
+          <div class="card-body p-4 p-lg-5">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <a href="/" class="navbar-brand z2h-brand--owa m-0">LATENTE CMS</a>
+              <span class="badge text-bg-light">Admin</span>
+            </div>
+
+            <h1 class="h4 mb-2">Bienvenido</h1>
+            <p class="text-muted mb-4">Ingresa con tu correo y contraseña.</p>
+
+            {% if error %}
+              <div class="alert alert-danger" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="/login" class="z2h-auth-form" novalidate>
+              <div class="mb-3">
+                <label for="email" class="form-label">Correo</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="tú@empresa.com" required>
+              </div>
+
+              <div class="mb-2">
+                <label for="password" class="form-label d-flex justify-content-between">
+                  <span>Contraseña</span>
+                  <a href="#" class="small link-secondary disabled" tabindex="-1" aria-disabled="true">¿Olvidaste tu contraseña?</a>
+                </label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
+              </div>
+
+              <div class="d-grid mt-4">
+                <button class="btn btn-primary btn-lg" type="submit">Entrar</button>
+              </div>
+            </form>
+
+            <div class="z2h-demo-help mt-4">
+              <div class="small text-muted">
+                <strong>Demo:</strong> 
+                usa <code>zero2hero@demo.com</code> o <code>latente@demo.com</code> para entrar como superadmin, 
+                o <code>owa@demo.com</code> para acceder al tenant OWA.
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="text-center small text-muted mt-3 mb-0">© Latente · Panel de contenido</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+

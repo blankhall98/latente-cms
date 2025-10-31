@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Editar Entry · Latente CMS{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <a href="/admin/entries?tenant_id={{ entry.tenant_id }}&section_id={{ entry.section_id }}" class="btn btn-link">&larr; Volver</a>
+  <h1 class="h4 mt-2">Editar: <code>{{ entry.slug }}</code></h1>
+
+  {% if msg %}<div class="alert alert-success mt-3">{{ msg }}</div>{% endif %}
+  {% if err %}<div class="alert alert-danger mt-3">{{ err }}</div>{% endif %}
+
+  <div class="card p-3 mt-3">
+    <form method="post" action="/admin/entries/{{ entry.id }}/update" onsubmit="return formatBeforeSubmit();">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Schema version</label>
+          <input class="form-control" type="number" name="schema_version" min="1" value="{{ entry.schema_version }}">
+          {% if schema_active %}
+          <div class="form-text">Activo: v{{ schema_active.version }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="draft" {% if entry.status == "draft" %}selected{% endif %}>draft</option>
+            <option value="published" {% if entry.status == "published" %}selected{% endif %}>published</option>
+            <option value="archived" {% if entry.status == "archived" %}selected{% endif %}>archived</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Info</label>
+          <div class="form-text">
+            Tenant: {{ entry.tenant_id }} · Section: {{ entry.section_id }} · ID: {{ entry.id }}
+          </div>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Data (JSON)</label>
+          <textarea id="data_json" name="data_json" class="form-control" rows="18">{{ entry.data | tojson(indent=2) }}</textarea>
+          <div class="form-text">Pega/edita JSON válido. Se validará en backend.</div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+        <button class="btn btn-success" formaction="/admin/entries/{{ entry.id }}/publish" formmethod="post">Publicar</button>
+        <button class="btn btn-warning" formaction="/admin/entries/{{ entry.id }}/unpublish" formmethod="post">Despublicar</button>
+        <button class="btn btn-outline-danger" formaction="/admin/entries/{{ entry.id }}/archive" formmethod="post">Archivar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function formatBeforeSubmit(){
+  const ta = document.getElementById('data_json');
+  try{
+    const parsed = JSON.parse(ta.value);
+    ta.value = JSON.stringify(parsed, null, 2);
+    return true;
+  }catch(e){
+    alert("JSON inválido: " + e.message);
+    return false;
+  }
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Secciones · {{ tenant.name }} · Latente CMS{% endblock %}
+{% block content %}
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <a href="/admin/tenants" class="btn btn-link p-0">&larr; Proyectos</a>
+      <h1 class="h4 m-0 mt-1">Secciones de {{ tenant.name }}</h1>
+      <p class="text-muted mb-0">Las secciones son grupos de páginas o bloques que tu cliente va a poder editar (por ejemplo: “Landing”, “Noticias”, “Testimonios”).</p>
+    </div>
+    <div>
+      <a class="btn btn-cta" href="/admin/tenants/{{ tenant.id }}/sections/new">Nueva sección</a>
+    </div>
+  </div>
+
+  {% if msg %}<div class="alert alert-success mt-3">{{ msg }}</div>{% endif %}
+
+  <div class="card mt-3">
+    <table class="table align-middle m-0">
+      <thead>
+        <tr>
+          <th style="width:80px;">ID</th>
+          <th>Nombre</th>
+          <th>Clave</th>
+          <th>Descripción</th>
+          <th style="width:250px;" class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sections %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td class="fw-semibold">{{ s.name }}</td>
+          <td><code>{{ s.key }}</code></td>
+          <td class="text-muted">{{ s.description or '-' }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary"
+               href="/admin/entries?tenant_id={{ tenant.id }}&section_id={{ s.id }}">
+              Abrir contenido
+            </a>
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/tenants/{{ tenant.id }}/sections/{{ s.id }}">
+              Editar
+            </a>
+            <form method="post" action="/admin/tenants/{{ tenant.id }}/sections/{{ s.id }}/delete" class="d-inline"
+                  onsubmit="return confirm('¿Eliminar esta sección? Esta acción no se puede deshacer.');">
+              <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-muted">Aún no hay secciones en este proyecto.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-info mt-3">
+    <strong>Tip:</strong> La <em>clave</em> identifica internamente la sección (ej. <code>LandingPages</code>). El nombre es lo que verá el cliente.
+  </div>
+</div>
+
+{% endblock %}

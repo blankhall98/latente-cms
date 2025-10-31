@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENV: str = "dev"
 
+    DEBUG: bool = True
+
     # ================== Auth / JWT =================
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
