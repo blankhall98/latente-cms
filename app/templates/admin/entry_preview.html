@@ -1,0 +1,239 @@
+<!--app/templates/admin/entry_preview.html-->
+{% extends "base.html" %}
+{% block title %}Vista previa · Latente CMS{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<section class="card z2h-card p-3 p-md-4 mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <div class="z2h-brand--badge mb-1">Vista previa</div>
+      <h1 class="h4 m-0">{{ entry.slug }}</h1>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline" href="{{ delivery_url }}" target="_blank" rel="noopener">Ver en Delivery</a>
+      <a class="btn btn-primary" href="/admin/entries/{{ entry.id }}/edit">Editar</a>
+    </div>
+  </div>
+
+  <div class="text-muted small mt-2">
+    Tenant: <strong>{{ tenant.name }}</strong> · Sección: <strong>{{ section.name }}</strong> ·
+    Estado: <span class="badge z2h-badge">{{ entry.status }}</span>
+    {% if preview_model.meta.seo %}
+      · SEO: <em>{{ preview_model.meta.seo.title or '—' }}</em>
+    {% endif %}
+  </div>
+</section>
+
+<div class="row g-4" id="preview-root">
+  <!-- Sidebar TOC -->
+  <aside class="col-12 col-lg-3">
+    <div class="z2h-toc card z2h-card p-3">
+      <div class="fw-semibold mb-2">Contenido</div>
+      <ul class="list-unstyled m-0">
+        {% for it in preview_model.toc %}
+          <li class="mb-1"><a class="z2h-toc-link" href="#{{ it.anchor }}">{{ it.label }}</a></li>
+        {% endfor %}
+      </ul>
+      <div class="z2h-divider my-3"></div>
+      <div class="small text-muted mb-2">
+        Replace: {% if preview_model.meta.replace %}<span class="badge bg-success-subtle text-success">Sí</span>{% else %}<span class="badge bg-secondary-subtle text-muted">No</span>{% endif %}
+      </div>
+
+      <!-- Toggle campos técnicos -->
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="toggleTech">
+        <label class="form-check-label small" for="toggleTech">Mostrar campos técnicos</label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="col-12 col-lg-9">
+    {% if preview_model.sections and preview_model.sections|length > 0 %}
+      {% for s in preview_model.sections %}
+        {% set sec_idx0 = loop.index0 %}
+        <section id="{{ s.anchor }}" class="card z2h-card p-3 p-md-4 mb-4">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+            <div>
+              <h2 class="h5 m-0">{{ s.title }}</h2>
+              {% if s.subtitle %}<div class="text-muted small">{{ s.subtitle }}</div>{% endif %}
+            </div>
+            <!-- Botón que apunta al JSON de ESTA sección -->
+            <button class="btn btn-sm btn-outline" data-toggle-json="#json-sec-{{ sec_idx0 }}">Ver JSON</button>
+          </div>
+
+          {% for b in s.blocks %}
+            {# Oculta por defecto los bloques técnicos #}
+            <div class="z2h-block{% if b.tech_only %} tech-only{% endif %}">
+              {% if b.title %}<h3 class="h6 mt-2 mb-2">{{ b.title }}</h3>{% endif %}
+
+              {% if b.kind == "cards" %}
+                <div class="row g-3">
+                  {% for c in b.payload %}
+                    <div class="col-12 col-md-6 col-xl-4">
+                      <div class="z2h-card-soft h-100 p-3">
+                        {% if c.image %}
+                          <div class="ratio ratio-16x9 rounded mb-2 overflow-hidden">
+                            <img src="{{ c.image }}" alt="{{ c.image_alt or c.title or 'image' }}" class="w-100 h-100" style="object-fit:cover;">
+                          </div>
+                        {% endif %}
+                        {% if c.badges %}<div class="mb-1">{% for bd in c.badges %}<span class="badge z2h-badge me-1">{{ bd }}</span>{% endfor %}</div>{% endif %}
+                        {% if c.title %}<div class="fw-semibold mb-1">{{ c.title }}</div>{% endif %}
+                        {% if c.description %}<div class="text-muted small mb-2">{{ c.description }}</div>{% endif %}
+                        {% if c.buttons and c.buttons|length > 0 %}
+                          <div class="d-flex flex-wrap gap-2">
+                            {% for btt in c.buttons[:3] %}
+                              <a class="btn btn-sm btn-outline" href="{{ btt.href }}" {% if btt.external %}target="_blank" rel="noopener"{% endif %}>{{ btt.label }}</a>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+
+              {% elif b.kind == "media" %}
+                <div class="row g-2">
+                  {% for m in b.payload %}
+                    <div class="col-12 col-md-6">
+                      <div class="ratio ratio-16x9 rounded overflow-hidden border">
+                        {% if m.type == 'video' %}
+                          <video src="{{ m.url }}" controls class="w-100 h-100" style="object-fit:cover;"></video>
+                        {% else %}
+                          <img src="{{ m.url }}" alt="{{ m.alt or 'media' }}" class="w-100 h-100" style="object-fit:cover;">
+                        {% endif %}
+                      </div>
+                      {% if m.alt %}<div class="small text-muted mt-1">{{ m.alt }}</div>{% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+
+              {% elif b.kind == "table" %}
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead><tr><th>#</th><th>Data</th></tr></thead>
+                    <tbody>
+                      {% for row in b.payload %}
+                        <tr>
+                          <td class="text-muted small">{{ loop.index }}</td>
+                          <td><pre class="m-0 small" style="white-space:pre-wrap">{{ row | tojson(indent=2) }}</pre></td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+              {% elif b.kind == "kv" %}
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <tbody>
+                      {% for k, v in b.payload.items() %}
+                        <tr>
+                          <td class="text-muted small" style="width:30%">{{ k }}</td>
+                          <td>
+                            {% if v is mapping or v is sequence and not v is string %}
+                              <pre class="m-0 small" style="white-space:pre-wrap">{{ v | tojson(indent=2) }}</pre>
+                            {% else %}
+                              {{ v }}
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+              {% elif b.kind == "list" %}
+                <ul class="mb-0">
+                  {% for el in b.payload %}<li>{{ el }}</li>{% endfor %}
+                </ul>
+
+              {% elif b.kind == "text" %}
+                <div class="text-muted">{{ b.payload }}</div>
+
+              {% elif b.kind == "json" %}
+                <!-- Fijamos el id del JSON por sección usando la variable del bucle externo -->
+                <pre id="json-sec-{{ sec_idx0 }}" class="z2h-json mt-3" style="display:none; white-space:pre-wrap;">{{ b.payload | tojson(indent=2) }}</pre>
+              {% endif %}
+            </div>
+
+            {% if not loop.last %}<div class="z2h-divider my-3"></div>{% endif %}
+          {% endfor %}
+        </section>
+      {% endfor %}
+    {% else %}
+      <section class="card z2h-card p-4"><div class="text-muted">No hay contenido para mostrar.</div></section>
+    {% endif %}
+  </main>
+</div>
+
+<script>
+  // Copiar link
+  document.getElementById('copy-link')?.addEventListener('click', function(){
+    const url = this.getAttribute('data-url') || window.location.href;
+    navigator.clipboard.writeText(url).then(()=>{ this.innerText='¡Copiado!'; setTimeout(()=>this.innerText='Copiar link',1200); });
+  });
+
+  // Toggle JSON por sección
+  document.querySelectorAll('[data-toggle-json]')?.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const sel = btn.getAttribute('data-toggle-json'); if(!sel) return;
+      const node = document.querySelector(sel); if(!node) return;
+      const show = node.style.display !== 'block';
+      node.style.display = show ? 'block' : 'none';
+      btn.innerText = show ? 'Ocultar JSON' : 'Ver JSON';
+    });
+  });
+
+  // Toggle campos técnicos (ocultos por defecto)
+  (function(){
+    const root = document.getElementById('preview-root');
+    const toggle = document.getElementById('toggleTech');
+    if (toggle && root) {
+      toggle.addEventListener('change', function(){
+        if (toggle.checked) root.classList.add('show-tech');
+        else root.classList.remove('show-tech');
+      });
+    }
+  })();
+</script>
+
+<style>
+  /* Oculta por defecto los bloques técnicos */
+  .tech-only { display: none; }
+  .show-tech .tech-only { display: block; }
+
+  .z2h-toc{ position: sticky; top: 84px; }
+  .z2h-toc-link{ text-decoration:none; }
+  .z2h-toc-link:hover{ text-decoration:underline; }
+  .z2h-card-soft{
+    background: var(--surface-2, #fafafa);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: var(--radius, 10px);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.05));
+  }
+  .ratio{ position: relative; width:100%; }
+  .ratio:before{ display:block; content:""; }
+  .ratio-16x9:before{ padding-top:56.25%; }
+  .ratio > img, .ratio > video{ position:absolute; inset:0; }
+
+  .z2h-json {
+    background: var(--bs-tertiary-bg);
+    border: 1px dashed var(--bs-border-color);
+    padding: .75rem;
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: .85rem;
+  }
+</style>
+
+{% endblock %}
+
+
+
+
+
+
+

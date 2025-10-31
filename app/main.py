@@ -7,6 +7,7 @@ from app.core.settings import settings
 from app.api.delivery.router import router as delivery_router
 from app.web.admin.router import admin_router
 from app.web.auth.router import auth_router
+from app.api.delivery.preview import router as delivery_preview_router
 
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -31,6 +32,7 @@ def root_to_login():
 app.include_router(api_router, prefix=settings.API_V1_STR)
 # Delivery pública
 app.include_router(delivery_router)
+app.include_router(delivery_preview_router)
 # Admin (Jinja) + Auth
 app.include_router(auth_router)          # /login, /logout
 app.include_router(admin_router)         # /admin/*

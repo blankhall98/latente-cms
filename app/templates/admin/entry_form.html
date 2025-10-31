@@ -1,77 +1,49 @@
-{% extends "admin/base.html" %}
-{% block title %}{{ 'Nuevo' if mode == 'create' else 'Editar' }} Entry · Latente CMS{% endblock %}
+<!--app/templates/admin/entry_form.html-->
+{% extends "base.html" %}
 {% block content %}
+<div class="container py-4">
+  <h2 class="mb-3">{{ 'New entry' if mode=='create' else 'Edit entry' }}</h2>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h5 class="mb-0">{{ 'Nuevo Entry' if mode == 'create' else 'Editar Entry' }}</h5>
-  <a class="btn btn-owa-outline" href="/admin/entries?tenant_id={{ tenant_id }}&section_id={{ section_id }}">Volver</a>
-</div>
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
 
-<div class="row g-3">
-  <div class="col-12 col-lg-7">
-    <div class="card p-3">
-      <form action="{{ '/admin/entries/create' if mode == 'create' else '/admin/entries/' ~ entry.id ~ '/update' }}" method="post">
-        {% if mode == 'create' %}
-          <input type="hidden" name="tenant_id" value="{{ tenant_id }}">
-          <input type="hidden" name="section_id" value="{{ section_id }}">
-        {% endif %}
+  <form method="post">
+    {% if mode == 'create' %}
+      <input type="hidden" name="tenant_slug" value="{{ tenant_slug }}"/>
+      <input type="hidden" name="section_key" value="{{ section_key }}"/>
+    {% endif %}
 
-        <div class="mb-3">
-          <label class="form-label">Slug</label>
-          <input class="form-control" name="slug" value="{{ entry.slug if entry else '' }}" required>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Schema version</label>
-          <input class="form-control" type="number" name="schema_version" min="1" value="{{ entry.schema_version if entry else 1 }}" required>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" name="status">
-            <option value="draft" {{ 'selected' if entry and entry.status=='draft' else '' }}>draft</option>
-            <option value="published" {{ 'selected' if entry and entry.status=='published' else '' }}>published</option>
-            <option value="archived" {{ 'selected' if entry and entry.status=='archived' else '' }}>archived</option>
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Data (JSON)</label>
-          <textarea class="form-control" name="data_json" rows="16" spellcheck="false">{{ entry.data | tojson(indent=2) if entry else '{\n  "sections": []\n}' }}</textarea>
-          <div class="form-text">Pega el JSON (valida que sea correcto). Se guarda tal cual.</div>
-        </div>
-
-        <div class="d-flex gap-2">
-          <button class="btn btn-owa-outline" type="submit">Guardar</button>
-          {% if mode == 'edit' and entry.status != 'published' %}
-            <form action="/admin/entries/{{ entry.id }}/publish" method="post" class="d-inline">
-              <button class="btn btn-cta" type="submit">Publicar</button>
-            </form>
-          {% endif %}
-          {% if mode == 'edit' and entry.status == 'published' %}
-            <form action="/admin/entries/{{ entry.id }}/unpublish" method="post" class="d-inline">
-              <button class="btn btn-owa-outline" type="submit">Unpublish</button>
-            </form>
-          {% endif %}
-        </div>
-      </form>
+    <div class="mb-3">
+      <label class="form-label">Slug</label>
+      <input class="form-control" name="slug" value="{{ initial.slug }}" placeholder="home" required />
     </div>
-  </div>
 
-  {% if entry %}
-  <div class="col-12 col-lg-5">
-    <div class="card p-3">
-      <h6 class="mb-2">Vista JSON (solo lectura)</h6>
-      <pre class="p-2 bg-light border rounded" style="max-height: 520px; overflow:auto;"><code>{{ entry | tojson(indent=2) }}</code></pre>
-      <div class="mt-2">
-        <a class="btn btn-outline-secondary btn-sm" target="_blank"
-           href="/delivery/v1/tenants/{{ entry.tenant.slug if entry.tenant else tenant_id }}/sections/{{ entry.section.key if entry.section else section_id }}/entries/{{ entry.slug }}">
-          Ver Delivery (detalle)
-        </a>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Schema version</label>
+        <input class="form-control" name="schema_version" type="number" min="1" value="{{ initial.schema_version or 3 }}" required />
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Status</label>
+        <select class="form-select" name="status">
+          <option value="draft" {{ 'selected' if initial.status=='draft' else '' }}>draft</option>
+          <option value="published" {{ 'selected' if initial.status=='published' else '' }}>published</option>
+          <option value="archived" {{ 'selected' if initial.status=='archived' else '' }}>archived</option>
+        </select>
       </div>
     </div>
-  </div>
-  {% endif %}
-</div>
 
+    <div class="mb-3">
+      <label class="form-label">Data (JSON)</label>
+      <textarea class="form-control" name="data_json" rows="18" spellcheck="false">{{ initial.data }}</textarea>
+      <div class="form-text">Pega aquí el JSON del entry. Debe validar contra el schema activo.</div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Guardar</button>
+      <a class="btn btn-secondary" href="/admin/entries">Cancelar</a>
+    </div>
+  </form>
+</div>
 {% endblock %}

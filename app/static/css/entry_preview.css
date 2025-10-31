@@ -1,0 +1,27 @@
+/* --- Preview UX polish (safe, no theme break) --- */
+.z2h-eyebrow{ font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-3,#6b7280); }
+.z2h-sec-title{ display:flex; align-items:baseline; gap:.5rem; }
+.z2h-sec-sub{ color:var(--text-3,#6b7280); }
+
+.z2h-block + .z2h-block{ margin-top:1rem; }
+.z2h-placeholder{ color:var(--text-3,#6b7280); font-style:italic; }
+
+.table.table-sm tbody tr:nth-child(odd){ background:var(--surface-2,#f7f7f7); }
+
+/* Definition list for KV */
+.z2h-dl{ display:grid; grid-template-columns: minmax(160px, 30%) 1fr; gap:.5rem .75rem; }
+.z2h-dt{ color:var(--text-3,#6b7280); }
+.z2h-dd pre{ margin:0; white-space:pre-wrap; }
+
+/* Cards */
+.z2h-card-soft{ border-radius:16px; transition:transform .08s ease, box-shadow .12s ease; }
+.z2h-card-soft:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,.06); }
+
+/* Clamps */
+.z2h-clamp-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.z2h-clamp-4{ display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* TOC */
+.z2h-toc{ position:sticky; top:84px; }
+.z2h-toc a{ color:inherit; text-decoration:none; }
+.z2h-toc a:hover{ text-decoration:underline; }

@@ -1,13 +1,23 @@
+<!--app/templates/admin/section_form.html-->
 {% extends "base.html" %}
-{% block title %}{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }} · {{ tenant.name }}{% endblock %}
+{% block title %}{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }} · {{ tenant.name if tenant else '' }}{% endblock %}
 {% block content %}
 
 <div class="container py-4" style="max-width:760px;">
-  <a href="/admin/tenants/{{ tenant.id }}/sections" class="btn btn-link">&larr; Volver a secciones</a>
+  <a href="/admin/sections?tenant_id={{ tenant.id if tenant else '' }}" class="btn btn-link">&larr; Volver a secciones</a>
   <h1 class="h5 mt-2">{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }}</h1>
 
+  {% if err %}<div class="alert alert-danger mt-3">{{ err }}</div>{% endif %}
+
   <div class="card p-3 mt-3">
-    <form method="post" action="{{ '/admin/tenants/' ~ tenant.id ~ '/sections/create' if mode == 'create' else '/admin/tenants/' ~ tenant.id ~ '/sections/' ~ section.id ~ '/update' }}">
+    <form
+      method="post"
+      action="{% if mode == 'create' %}/admin/sections/create{% else %}/admin/sections/{{ section.id }}/update{% endif %}"
+    >
+      {% if tenant %}
+        <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
+      {% endif %}
+
       <div class="mb-3">
         <label class="form-label">Nombre de la sección</label>
         <input class="form-control" name="name" value="{{ section.name if section else '' }}" required>
@@ -16,8 +26,13 @@
 
       <div class="mb-3">
         <label class="form-label">Clave interna</label>
-        <input class="form-control" name="key" value="{{ section.key if section else '' }}" required>
-        <div class="form-text">Identificador interno (ej. <code>LandingPages</code>). Debe ser única dentro del proyecto.</div>
+        {% if mode == 'create' %}
+          <input class="form-control" name="key" value="{{ section.key if section else '' }}" required>
+          <div class="form-text">Identificador interno (ej. <code>LandingPages</code>). Debe ser único dentro del proyecto.</div>
+        {% else %}
+          <input class="form-control" name="key" value="{{ section.key if section else '' }}" disabled>
+          <div class="form-text">La clave no puede cambiarse porque podría romper referencias a schemas y entries.</div>
+        {% endif %}
       </div>
 
       <div class="mb-3">
@@ -28,8 +43,8 @@
 
       <div class="d-flex gap-2">
         <button class="btn btn-cta" type="submit">{{ 'Crear sección' if mode == 'create' else 'Guardar cambios' }}</button>
-        <a class="btn btn-owa-outline" href="/admin/tenants/{{ tenant.id }}/sections">Cancelar</a>
-        {% if mode == 'edit' %}
+        <a class="btn btn-owa-outline" href="/admin/sections?tenant_id={{ tenant.id if tenant else '' }}">Cancelar</a>
+        {% if mode == 'edit' and tenant and section %}
           <a class="btn btn-outline-secondary ms-auto"
              href="/admin/entries?tenant_id={{ tenant.id }}&section_id={{ section.id }}">Abrir contenido</a>
         {% endif %}
@@ -44,3 +59,4 @@
 </div>
 
 {% endblock %}
+

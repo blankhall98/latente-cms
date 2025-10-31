@@ -1,20 +1,31 @@
+<!--app/templates/admin/sections_list.html-->
 {% extends "base.html" %}
-{% block title %}Secciones · {{ tenant.name }} · Latente CMS{% endblock %}
+{% block title %}Secciones · {{ current_tenant.name if current_tenant else 'Proyecto' }} · Latente CMS{% endblock %}
 {% block content %}
 
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center">
     <div>
       <a href="/admin/tenants" class="btn btn-link p-0">&larr; Proyectos</a>
-      <h1 class="h4 m-0 mt-1">Secciones de {{ tenant.name }}</h1>
-      <p class="text-muted mb-0">Las secciones son grupos de páginas o bloques que tu cliente va a poder editar (por ejemplo: “Landing”, “Noticias”, “Testimonios”).</p>
+      <h1 class="h4 m-0 mt-1">
+        Secciones de {{ current_tenant.name if current_tenant else '—' }}
+      </h1>
+      <p class="text-muted mb-0">
+        Las secciones son grupos de páginas o bloques que tu cliente va a poder editar
+        (por ejemplo: “Landing”, “Noticias”, “Testimonios”).
+      </p>
     </div>
     <div>
-      <a class="btn btn-cta" href="/admin/tenants/{{ tenant.id }}/sections/new">Nueva sección</a>
+      {% if current_tenant %}
+        <a class="btn btn-cta" href="/admin/sections/new?tenant_id={{ current_tenant.id }}">Nueva sección</a>
+      {% else %}
+        <a class="btn btn-cta disabled" aria-disabled="true" href="#">Nueva sección</a>
+      {% endif %}
     </div>
   </div>
 
   {% if msg %}<div class="alert alert-success mt-3">{{ msg }}</div>{% endif %}
+  {% if err %}<div class="alert alert-danger mt-3">{{ err }}</div>{% endif %}
 
   <div class="card mt-3">
     <table class="table align-middle m-0">
@@ -24,42 +35,48 @@
           <th>Nombre</th>
           <th>Clave</th>
           <th>Descripción</th>
-          <th style="width:250px;" class="text-end">Acciones</th>
+          <th style="width:300px;" class="text-end">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        {% for s in sections %}
-        <tr>
-          <td>{{ s.id }}</td>
-          <td class="fw-semibold">{{ s.name }}</td>
-          <td><code>{{ s.key }}</code></td>
-          <td class="text-muted">{{ s.description or '-' }}</td>
-          <td class="text-end">
-            <a class="btn btn-sm btn-outline-primary"
-               href="/admin/entries?tenant_id={{ tenant.id }}&section_id={{ s.id }}">
-              Abrir contenido
-            </a>
-            <a class="btn btn-sm btn-outline-secondary" href="/admin/tenants/{{ tenant.id }}/sections/{{ s.id }}">
-              Editar
-            </a>
-            <form method="post" action="/admin/tenants/{{ tenant.id }}/sections/{{ s.id }}/delete" class="d-inline"
-                  onsubmit="return confirm('¿Eliminar esta sección? Esta acción no se puede deshacer.');">
-              <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
-            </form>
-          </td>
-        </tr>
+        {% if sections and sections|length > 0 %}
+          {% for s in sections %}
+          <tr>
+            <td>{{ s.id }}</td>
+            <td class="fw-semibold">{{ s.name or s.key }}</td>
+            <td><code>{{ s.key }}</code></td>
+            <td class="text-muted">{{ s.description or '-' }}</td>
+            <td class="text-end">
+              {% if current_tenant %}
+                <a class="btn btn-sm btn-outline-primary"
+                  href="/admin/entries?tenant_id={{ current_tenant.id }}&section_id={{ s.id }}">
+                  Abrir contenido
+                </a>
+              {% endif %}
+              <a class="btn btn-sm btn-outline-secondary" href="/admin/sections/{{ s.id }}/edit">
+                Editar
+              </a>
+              <form method="post" action="/admin/sections/{{ s.id }}/delete" class="d-inline"
+                    onsubmit="return confirm('¿Eliminar esta sección? Esta acción no se puede deshacer.');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
         {% else %}
-        <tr>
-          <td colspan="5" class="text-muted">Aún no hay secciones en este proyecto.</td>
-        </tr>
-        {% endfor %}
+          <tr>
+            <td colspan="5" class="text-muted">Aún no hay secciones en este proyecto.</td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
 
   <div class="alert alert-info mt-3">
-    <strong>Tip:</strong> La <em>clave</em> identifica internamente la sección (ej. <code>LandingPages</code>). El nombre es lo que verá el cliente.
+    <strong>Tip:</strong> La <em>clave</em> identifica internamente la sección (ej. <code>LandingPages</code>).
+    El nombre es lo que verá el cliente.
   </div>
 </div>
 
 {% endblock %}
+

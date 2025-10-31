@@ -1,3 +1,4 @@
+<!--app/templates/admin/dashboard.html-->
 {% extends "base.html" %}
 {% block title %}Dashboard · Latente CMS{% endblock %}
 
@@ -19,13 +20,14 @@
       <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="/admin/entries{% if current_tenant %}?tenant_id={{ current_tenant.id }}{% endif %}">Entrar a Entries</a>
         <a class="btn btn-outline" href="/admin/tenants">Ver Proyectos</a>
-        <a class="btn btn-outline" href="/delivery/v1/entries" target="_blank" rel="noopener">Ver Delivery</a>
+        {% if current_tenant %}
+          <a class="btn btn-outline" href="/admin/sections?tenant_id={{ current_tenant.id }}">Secciones</a>
+        {% endif %}
       </div>
     </div>
 
     <div class="col-lg-4">
       <div class="z2h-kpis">
-        <!-- KPI: Proyectos visibles en contexto (para superadmin = todos) -->
         <div class="z2h-kpi">
           <div class="z2h-kpi-label">Proyectos</div>
           <div class="z2h-kpi-value">
@@ -33,7 +35,6 @@
             <span class="z2h-kpi-suffix">total</span>
           </div>
         </div>
-        <!-- KPI: Secciones del tenant actual -->
         <div class="z2h-kpi">
           <div class="z2h-kpi-label">Secciones</div>
           <div class="z2h-kpi-value">
@@ -41,7 +42,6 @@
             <span class="z2h-kpi-suffix">en tenant</span>
           </div>
         </div>
-        <!-- KPI: Publicados del tenant actual -->
         <div class="z2h-kpi">
           <div class="z2h-kpi-label">Publicados</div>
           <div class="z2h-kpi-value">
@@ -54,10 +54,8 @@
   </div>
 </section>
 
-<!-- Quick actions + Context lists -->
 <div class="row g-4">
-
-  <!-- Tus proyectos (usa tenants_ctx: superadmin ve todos) -->
+  <!-- Tus proyectos -->
   <div class="col-12 col-lg-7">
     <div class="card z2h-card p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
@@ -81,6 +79,9 @@
                 <a class="btn btn-sm btn-outline" href="/delivery/v1/entries?tenant_slug={{ t.slug }}" target="_blank" rel="noopener">
                   Delivery
                 </a>
+                <a class="btn btn-sm btn-outline" href="/admin/sections?tenant_id={{ t.id }}">
+                  Secciones
+                </a>
               </div>
             </div>
           {% endfor %}
@@ -103,7 +104,10 @@
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h2 class="h5 m-0">Secciones del tenant actual</h2>
         {% if current_tenant %}
-          <a href="/admin/entries?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Ver entries</a>
+          <div class="d-flex gap-2">
+            <a href="/admin/entries?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Ver entries</a>
+            <a href="/admin/sections?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Ver secciones</a>
+          </div>
         {% endif %}
       </div>
 
@@ -117,6 +121,7 @@
               </div>
               <div class="d-flex gap-2">
                 <a class="btn btn-sm btn-outline" href="/admin/entries?tenant_id={{ current_tenant.id }}&section_id={{ s.id }}">Abrir</a>
+                <a class="btn btn-sm btn-outline" href="/admin/sections/{{ s.id }}/edit">Editar</a>
               </div>
             </div>
           {% endfor %}
@@ -158,7 +163,7 @@
                   <td><span class="badge z2h-badge">{{ it.status }}</span></td>
                   <td>
                     <div class="d-flex gap-2">
-                      <a class="btn btn-sm btn-outline" href="/admin/entries/{{ it.entry_id }}?tenant_id={{ it.tenant_id }}">Abrir</a>
+                      <a class="btn btn-sm btn-outline" href="/admin/entries/{{ it.entry_id }}/edit">Editar</a>
                       {% if it.slug and it.section_key and it.tenant_slug %}
                         <a class="btn btn-sm btn-outline" href="/delivery/v1/tenants/{{ it.tenant_slug }}/sections/{{ it.section_key }}/entries/{{ it.slug }}" target="_blank" rel="noopener">Delivery</a>
                       {% endif %}
@@ -174,10 +179,11 @@
       {% endif %}
     </div>
   </div>
-
 </div>
 
 {% endblock %}
+
+
 
 
 
