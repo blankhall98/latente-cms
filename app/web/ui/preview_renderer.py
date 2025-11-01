@@ -591,6 +591,108 @@ def build_preview(entry: Dict[str, Any]) -> PreviewPage:
 
 
 
+# === Edit UI: sintetizar ui_hints desde entry.data (v2/v3 con sections) ===
+
+def synthesize_ui_hints_from_data(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Genera ui_hints 'on the fly' a partir de entry.data.
+    - Soporta data['sections'] (v2/v3). Extrae campos simples en cada sección.
+    - Devuelve una lista de hints: {name,label,section,path,type,format?,widget?,enum?}
+    Paths son absolutos desde la raíz de entry.data para que entry_edit.html los resuelva.
+    """
+    hints: List[Dict[str, Any]] = []
+    if not isinstance(data, dict):
+        return hints
+
+    sections = data.get("sections")
+    if not isinstance(sections, list):
+        # Fallback plano: para data sin 'sections', exponer claves simples de primer nivel
+        for k, v in data.items():
+            if isinstance(v, (str, int, float, bool)) or (isinstance(v, list) and all(isinstance(x, str) for x in v)):
+                hints.append({
+                    "name": k,
+                    "label": k.replace("_", " ").title(),
+                    "section": "General",
+                    "path": [k],
+                    "type": "boolean" if isinstance(v, bool) else
+                            "number" if isinstance(v, (int, float)) else
+                            "array" if isinstance(v, list) else
+                            "string",
+                    "format": "textarea" if isinstance(v, str) and len(v) > 120 else None,
+                })
+        return hints
+
+    def _is_simple(x: Any) -> bool:
+        return isinstance(x, (str, int, float, bool)) or (isinstance(x, list) and all(isinstance(i, str) for i in x))
+
+    for idx, sec in enumerate(sections):
+        if not isinstance(sec, dict):
+            continue
+        sec_type = sec.get("type") or f"Section {idx+1}"
+        base_path = ["sections", idx]  # raíz de la sección
+
+        # Campos en el "base" de la sección (v3) que sean simples
+        for k, v in list(sec.items()):
+            if k in ("data", "schema_version", "type"):
+                continue
+            if _is_simple(v):
+                hints.append({
+                    "name": f"{sec_type}:{k}",
+                    "label": k.replace("_", " ").title(),
+                    "section": sec_type,
+                    "path": base_path + [k],
+                    "type": "boolean" if isinstance(v, bool) else
+                            "number" if isinstance(v, (int, float)) else
+                            "array" if isinstance(v, list) else
+                            "string",
+                    "format": "textarea" if isinstance(v, str) and len(v) > 120 else None,
+                })
+
+        d = sec.get("data")
+        if not isinstance(d, dict):
+            continue
+
+        # Campos simples dentro de data
+        for k, v in d.items():
+            # Heurística de imagen
+            is_image_key = str(k).lower() in ("image", "heroimage", "cover", "thumbnail")
+            if isinstance(v, dict) and isinstance(v.get("url"), str):
+                # Dict de media {url, alt, type}
+                hints.append({
+                    "name": f"{sec_type}:{k}",
+                    "label": k.replace("_", " ").title(),
+                    "section": sec_type,
+                    "path": base_path + ["data", k, "url"],
+                    "type": "string",
+                    "widget": "image",
+                })
+                # Alt opcional
+                if isinstance(v.get("alt"), str):
+                    hints.append({
+                        "name": f"{sec_type}:{k}_alt",
+                        "label": f"{k} alt".title(),
+                        "section": sec_type,
+                        "path": base_path + ["data", k, "alt"],
+                        "type": "string",
+                    })
+                continue
+
+            if _is_simple(v):
+                hints.append({
+                    "name": f"{sec_type}:{k}",
+                    "label": k.replace("_", " ").title(),
+                    "section": sec_type,
+                    "path": base_path + ["data", k],
+                    "type": "boolean" if isinstance(v, bool) else
+                            "number" if isinstance(v, (int, float)) else
+                            "array" if isinstance(v, list) else
+                            "string",
+                    "format": "textarea" if isinstance(v, str) and (len(v) > 120 or k in ("description","richText","body","intro","subheading")) else None,
+                    "widget": "image" if (isinstance(v, str) and (is_image_key or v.lower().startswith(("http://","https://")) and (".png" in v or ".jpg" in v or ".jpeg" in v or ".webp" in v))) else None,
+                })
+            # NOTA: arrays/dicts complejos se editan en el "JSON avanzado" de la plantilla
+
+    return hints
 
 
 

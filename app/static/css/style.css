@@ -115,13 +115,13 @@ a:hover{ color: #201C19; }
 }
 
 /* -------------------------
-   Botones
+   Botones (base)
    ------------------------- */
 .btn{
   border-radius: var(--radius);
   padding:.62rem 1rem;
   font-weight:700; letter-spacing:.06em; text-transform: uppercase;
-  transition: filter .18s ease, transform .1s ease, background-color .18s ease, border-color .18s ease;
+  transition: filter .18s ease, transform .1s ease, background-color .18s ease, border-color .18s ease, color .18s ease;
 }
 .btn:active{ transform: translateY(1px); }
 
@@ -132,7 +132,9 @@ a:hover{ color: #201C19; }
   box-shadow: 0 10px 24px rgba(114,56,61,.18);
 }
 .btn-primary:hover{ filter: brightness(1.04); }
+.btn-primary:focus{ outline: none; box-shadow: 0 0 0 .22rem rgba(172,156,141,.25); }
 
+/* Outline neutro */
 .btn-outline{
   background: transparent;
   color: var(--text-1);
@@ -142,6 +144,51 @@ a:hover{ color: #201C19; }
   background: var(--accent-soft);
   border-color: var(--accent-soft);
   color:#0b0b0b;
+}
+.btn-outline:focus{ outline: none; box-shadow: 0 0 0 .22rem rgba(172,156,141,.22); }
+
+/* -------------------------
+   Botones (nuevos)
+   ------------------------- */
+
+/* CTA “marca” (usa gradiente LUXE) */
+.btn-cta{
+  background: var(--grad-1);
+  color: var(--primary-ink);
+  border: 1px solid #5C3B3E;
+  box-shadow: 0 10px 24px rgba(114,56,61,.18);
+}
+.btn-cta:hover{ filter: brightness(1.05); }
+.btn-cta:focus{ outline:none; box-shadow: 0 0 0 .22rem rgba(172,156,141,.28); }
+.btn-cta:disabled,
+.btn-cta[disabled]{ opacity:.6; cursor:not-allowed; }
+
+/* Outline con color de marca */
+.btn-owa-outline{
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-owa-outline:hover{
+  background: rgba(50,45,41,.06);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.btn-owa-outline:focus{ outline:none; box-shadow: 0 0 0 .22rem rgba(50,45,41,.22); }
+.btn-owa-outline:disabled,
+.btn-owa-outline[disabled]{ opacity:.55; cursor:not-allowed; }
+
+/* Badge utilitario usado en varias vistas (estatus, tenant, etc.) */
+.z2h-badge{
+  display:inline-block;
+  background:#EFE9E1;
+  color: var(--text-2);
+  border:1px solid var(--border);
+  border-radius: 999px;
+  padding: .18rem .5rem;
+  font-size: .72rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 
 /* -------------------------
@@ -248,4 +295,5 @@ label.form-label{ font-weight: 600; color: var(--text-1); }
 @media (max-width: 575.98px){
   .z2h-kpis{ grid-template-columns: 1fr 1fr; }
 }
+
 

@@ -12,6 +12,13 @@
       <h1 class="h4 m-0">{{ entry.slug }}</h1>
     </div>
     <div class="d-flex flex-wrap gap-2">
+      <button id="copy-link"
+              class="btn btn-owa-outline"
+              type="button"
+              data-url="{{ delivery_url|default('') }}"
+              title="Copiar link público de Delivery">
+        Copiar link
+      </button>
       <a class="btn btn-outline" href="{{ delivery_url }}" target="_blank" rel="noopener">Ver en Delivery</a>
       <a class="btn btn-primary" href="/admin/entries/{{ entry.id }}/edit">Editar</a>
     </div>
@@ -19,7 +26,7 @@
 
   <div class="text-muted small mt-2">
     Tenant: <strong>{{ tenant.name }}</strong> · Sección: <strong>{{ section.name }}</strong> ·
-    Estado: <span class="badge z2h-badge">{{ entry.status }}</span>
+    Estado: <span class="z2h-badge">{{ entry.status }}</span>
     {% if preview_model.meta.seo %}
       · SEO: <em>{{ preview_model.meta.seo.title or '—' }}</em>
     {% endif %}
@@ -38,7 +45,12 @@
       </ul>
       <div class="z2h-divider my-3"></div>
       <div class="small text-muted mb-2">
-        Replace: {% if preview_model.meta.replace %}<span class="badge bg-success-subtle text-success">Sí</span>{% else %}<span class="badge bg-secondary-subtle text-muted">No</span>{% endif %}
+        Replace:
+        {% if preview_model.meta.replace %}
+          <span class="z2h-badge">Sí</span>
+        {% else %}
+          <span class="z2h-badge">No</span>
+        {% endif %}
       </div>
 
       <!-- Toggle campos técnicos -->
@@ -79,7 +91,7 @@
                             <img src="{{ c.image }}" alt="{{ c.image_alt or c.title or 'image' }}" class="w-100 h-100" style="object-fit:cover;">
                           </div>
                         {% endif %}
-                        {% if c.badges %}<div class="mb-1">{% for bd in c.badges %}<span class="badge z2h-badge me-1">{{ bd }}</span>{% endfor %}</div>{% endif %}
+                        {% if c.badges %}<div class="mb-1">{% for bd in c.badges %}<span class="z2h-badge me-1">{{ bd }}</span>{% endfor %}</div>{% endif %}
                         {% if c.title %}<div class="fw-semibold mb-1">{{ c.title }}</div>{% endif %}
                         {% if c.description %}<div class="text-muted small mb-2">{{ c.description }}</div>{% endif %}
                         {% if c.buttons and c.buttons|length > 0 %}
@@ -170,11 +182,20 @@
 </div>
 
 <script>
-  // Copiar link
-  document.getElementById('copy-link')?.addEventListener('click', function(){
-    const url = this.getAttribute('data-url') || window.location.href;
-    navigator.clipboard.writeText(url).then(()=>{ this.innerText='¡Copiado!'; setTimeout(()=>this.innerText='Copiar link',1200); });
-  });
+  // Copiar link (usa delivery_url o la URL actual)
+  (function(){
+    const btn = document.getElementById('copy-link');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      const url = this.getAttribute('data-url') || window.location.href;
+      if (!url) return;
+      navigator.clipboard.writeText(url).then(()=>{
+        const prev = this.innerText;
+        this.innerText = '¡Copiado!';
+        setTimeout(()=> this.innerText = prev, 1200);
+      });
+    });
+  })();
 
   // Toggle JSON por sección
   document.querySelectorAll('[data-toggle-json]')?.forEach(btn=>{
@@ -208,20 +229,22 @@
   .z2h-toc{ position: sticky; top: 84px; }
   .z2h-toc-link{ text-decoration:none; }
   .z2h-toc-link:hover{ text-decoration:underline; }
+
   .z2h-card-soft{
-    background: var(--surface-2, #fafafa);
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: var(--radius, 10px);
-    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.05));
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
   }
+
   .ratio{ position: relative; width:100%; }
   .ratio:before{ display:block; content:""; }
   .ratio-16x9:before{ padding-top:56.25%; }
   .ratio > img, .ratio > video{ position:absolute; inset:0; }
 
   .z2h-json {
-    background: var(--bs-tertiary-bg);
-    border: 1px dashed var(--bs-border-color);
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
     padding: .75rem;
     border-radius: 10px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;

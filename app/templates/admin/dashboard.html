@@ -1,4 +1,4 @@
-<!--app/templates/admin/dashboard.html-->
+<!-- app/templates/admin/dashboard.html -->
 {% extends "base.html" %}
 {% block title %}Dashboard · Latente CMS{% endblock %}
 
@@ -12,16 +12,16 @@
       </h1>
       <p class="lead mb-3 text-muted">
         {% if current_tenant %}
-          Estás en <strong>{{ current_tenant.name or current_tenant.slug }}</strong>. Administra tu contenido, prévisualiza cambios y publícalos con seguridad.
+          Estás en <strong>{{ current_tenant.name or current_tenant.slug }}</strong>.
         {% else %}
-          Selecciona un proyecto (tenant) para comenzar a editar y publicar contenido.
+          Selecciona un proyecto (tenant) para comenzar.
         {% endif %}
       </p>
       <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-primary" href="/admin/entries{% if current_tenant %}?tenant_id={{ current_tenant.id }}{% endif %}">Entrar a Entries</a>
-        <a class="btn btn-outline" href="/admin/tenants">Ver Proyectos</a>
+        <a class="btn btn-sm btn-primary" href="/admin/tenants">Proyectos</a>
         {% if current_tenant %}
-          <a class="btn btn-outline" href="/admin/sections?tenant_id={{ current_tenant.id }}">Secciones</a>
+          <a class="btn btn-sm btn-outline" href="/admin/entries?tenant_id={{ current_tenant.id }}">Entries</a>
+          <a class="btn btn-sm btn-outline" href="/admin/sections?tenant_id={{ current_tenant.id }}">Secciones</a>
         {% endif %}
       </div>
     </div>
@@ -32,21 +32,18 @@
           <div class="z2h-kpi-label">Proyectos</div>
           <div class="z2h-kpi-value">
             {{ tenants_ctx|length if tenants_ctx else 0 }}
-            <span class="z2h-kpi-suffix">total</span>
           </div>
         </div>
         <div class="z2h-kpi">
           <div class="z2h-kpi-label">Secciones</div>
           <div class="z2h-kpi-value">
             {{ sections|length if sections is defined and sections else 0 }}
-            <span class="z2h-kpi-suffix">en tenant</span>
           </div>
         </div>
         <div class="z2h-kpi">
           <div class="z2h-kpi-label">Publicados</div>
           <div class="z2h-kpi-value">
             {{ published_count if published_count is defined else 0 }}
-            <span class="z2h-kpi-suffix">entries</span>
           </div>
         </div>
       </div>
@@ -55,11 +52,11 @@
 </section>
 
 <div class="row g-4">
-  <!-- Tus proyectos -->
+  <!-- Proyectos -->
   <div class="col-12 col-lg-7">
     <div class="card z2h-card p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h5 m-0">Tus proyectos</h2>
+        <h2 class="h6 m-0">Tus proyectos</h2>
         <a href="/admin/tenants" class="btn btn-sm btn-outline">Ver todos</a>
       </div>
 
@@ -76,12 +73,7 @@
                   <input type="hidden" name="tenant_id" value="{{ t.id }}"/>
                   <button class="btn btn-sm btn-outline" type="submit">Entrar</button>
                 </form>
-                <a class="btn btn-sm btn-outline" href="/delivery/v1/entries?tenant_slug={{ t.slug }}" target="_blank" rel="noopener">
-                  Delivery
-                </a>
-                <a class="btn btn-sm btn-outline" href="/admin/sections?tenant_id={{ t.id }}">
-                  Secciones
-                </a>
+                <a class="btn btn-sm btn-outline" href="/admin/sections?tenant_id={{ t.id }}">Secciones</a>
               </div>
             </div>
           {% endfor %}
@@ -102,11 +94,11 @@
   <div class="col-12 col-lg-5">
     <div class="card z2h-card p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h5 m-0">Secciones del tenant actual</h2>
+        <h2 class="h6 m-0">Secciones del proyecto</h2>
         {% if current_tenant %}
           <div class="d-flex gap-2">
-            <a href="/admin/entries?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Ver entries</a>
-            <a href="/admin/sections?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Ver secciones</a>
+            <a href="/admin/entries?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Entries</a>
+            <a href="/admin/sections?tenant_id={{ current_tenant.id }}" class="btn btn-sm btn-outline">Secciones</a>
           </div>
         {% endif %}
       </div>
@@ -138,7 +130,7 @@
   <div class="col-12">
     <div class="card z2h-card p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h5 m-0">Últimos cambios</h2>
+        <h2 class="h6 m-0">Últimos cambios</h2>
         <a href="/admin/entries{% if current_tenant %}?tenant_id={{ current_tenant.id }}{% endif %}" class="btn btn-sm btn-outline">Ir a entries</a>
       </div>
 
@@ -182,6 +174,8 @@
 </div>
 
 {% endblock %}
+
+
 
 
 

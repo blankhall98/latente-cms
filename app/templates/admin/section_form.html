@@ -1,62 +1,153 @@
-<!--app/templates/admin/section_form.html-->
+<!-- app/templates/admin/section_form.html -->
 {% extends "base.html" %}
 {% block title %}{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }} · {{ tenant.name if tenant else '' }}{% endblock %}
-{% block content %}
 
+{% block content %}
 <div class="container py-4" style="max-width:760px;">
   <a href="/admin/sections?tenant_id={{ tenant.id if tenant else '' }}" class="btn btn-link">&larr; Volver a secciones</a>
-  <h1 class="h5 mt-2">{{ 'Nueva sección' if mode == 'create' else 'Editar sección' }}</h1>
+
+  <div class="d-flex align-items-start justify-content-between mt-2">
+    <div>
+      <div class="z2h-brand--badge mb-1">{{ 'Sección nueva' if mode == 'create' else 'Editar sección' }}</div>
+      <h1 class="h5 m-0">
+        {{ tenant.name if tenant else 'Proyecto' }}
+      </h1>
+      <p class="text-muted mb-0">Define el grupo de contenido (p. ej. “Landing”, “Noticias”, “Testimonios”).</p>
+    </div>
+    {% if mode == 'edit' and tenant and section %}
+      <a class="btn btn-outline-secondary" href="/admin/entries?tenant_id={{ tenant.id }}&section_id={{ section.id }}">
+        Abrir contenido
+      </a>
+    {% endif %}
+  </div>
 
   {% if err %}<div class="alert alert-danger mt-3">{{ err }}</div>{% endif %}
 
-  <div class="card p-3 mt-3">
+  <div class="card z2h-card p-3 mt-3">
     <form
       method="post"
       action="{% if mode == 'create' %}/admin/sections/create{% else %}/admin/sections/{{ section.id }}/update{% endif %}"
+      id="sectionForm"
     >
       {% if tenant %}
         <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
       {% endif %}
 
+      <!-- Nombre -->
       <div class="mb-3">
-        <label class="form-label">Nombre de la sección</label>
-        <input class="form-control" name="name" value="{{ section.name if section else '' }}" required>
-        <div class="form-text">Ejemplos: “Landing”, “Noticias”, “Testimonios”. Esto es lo que verá tu cliente.</div>
+        <label class="form-label" for="nameInput">Nombre de la sección</label>
+        <input
+          id="nameInput"
+          class="form-control"
+          name="name"
+          value="{{ section.name if section else '' }}"
+          required
+          minlength="2"
+          maxlength="80"
+          placeholder="Ej. Landing"
+        >
+        <div class="form-text">
+          Lo verá tu cliente en el panel. Manténlo corto y claro (p. ej. <em>Landing</em>, <em>Noticias</em>).
+        </div>
       </div>
 
+      <!-- Clave -->
       <div class="mb-3">
-        <label class="form-label">Clave interna</label>
+        <label class="form-label" for="keyInput">Clave interna</label>
         {% if mode == 'create' %}
-          <input class="form-control" name="key" value="{{ section.key if section else '' }}" required>
-          <div class="form-text">Identificador interno (ej. <code>LandingPages</code>). Debe ser único dentro del proyecto.</div>
+          <input
+            id="keyInput"
+            class="form-control"
+            name="key"
+            value="{{ section.key if section else '' }}"
+            required
+            pattern="^[A-Za-z][A-Za-z0-9_]*$"
+            maxlength="80"
+            placeholder="Ej. LandingPages"
+          >
+          <div class="form-text">
+            Identificador interno único dentro del proyecto (CamelCase o alfanumérico con <code>_</code>). Ejemplo: <code>LandingPages</code>.
+          </div>
         {% else %}
-          <input class="form-control" name="key" value="{{ section.key if section else '' }}" disabled>
-          <div class="form-text">La clave no puede cambiarse porque podría romper referencias a schemas y entries.</div>
+          <input id="keyInput" class="form-control" name="key" value="{{ section.key if section else '' }}" disabled>
+          <div class="form-text">
+            La clave no puede cambiarse para evitar romper referencias a schemas y entries.
+          </div>
         {% endif %}
       </div>
 
+      <!-- Descripción -->
       <div class="mb-3">
-        <label class="form-label">Descripción (opcional)</label>
-        <textarea class="form-control" name="description" rows="3">{{ section.description if section and section.description else '' }}</textarea>
-        <div class="form-text">Una breve nota para recordar qué tipo de contenido tendrá esta sección.</div>
+        <label class="form-label" for="descInput">Descripción (opcional)</label>
+        <textarea id="descInput" class="form-control" name="description" rows="3"
+          placeholder="Breve nota sobre el tipo de contenido...">{{ section.description if section and section.description else '' }}</textarea>
+        <div class="form-text">Ayuda a otros a entender el propósito de esta sección.</div>
       </div>
 
       <div class="d-flex gap-2">
-        <button class="btn btn-cta" type="submit">{{ 'Crear sección' if mode == 'create' else 'Guardar cambios' }}</button>
+        <button class="btn btn-cta" type="submit">
+          {{ 'Crear sección' if mode == 'create' else 'Guardar cambios' }}
+        </button>
         <a class="btn btn-owa-outline" href="/admin/sections?tenant_id={{ tenant.id if tenant else '' }}">Cancelar</a>
-        {% if mode == 'edit' and tenant and section %}
-          <a class="btn btn-outline-secondary ms-auto"
-             href="/admin/entries?tenant_id={{ tenant.id }}&section_id={{ section.id }}">Abrir contenido</a>
-        {% endif %}
       </div>
     </form>
   </div>
 
   <div class="alert alert-info mt-3">
-    <strong>¿Qué sigue?</strong> Una vez creada la sección, podrás entrar a <em>Abrir contenido</em> para gestionar las páginas/bloques
-    que el cliente editará. No necesitas explicar formatos técnicos: la interfaz guiará al usuario paso a paso.
+    <strong>¿Qué sigue?</strong> Tras guardar, abre <em>Contenido</em> para crear y editar páginas/bloques asociados a esta sección.
   </div>
 </div>
 
 {% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  const mode = "{{ mode }}";
+  const nameInput = document.getElementById('nameInput');
+  const keyInput  = document.getElementById('keyInput');
+
+  // Autogenerar clave (solo en create y si el usuario no ha escrito manualmente una)
+  if (mode === 'create' && nameInput && keyInput) {
+    let userTouchedKey = false;
+
+    keyInput.addEventListener('input', () => { userTouchedKey = keyInput.value.trim().length > 0; });
+
+    const toCamelLike = (txt) => {
+      // Limpia, separa por no-alfa, capitaliza y une (Camel/Pascal-like). Permite "_".
+      const parts = (txt || '')
+        .normalize('NFKD').replace(/[\u0300-\u036f]/g,'') // sin tildes
+        .replace(/[^A-Za-z0-9_ ]+/g,' ')                  // fuera símbolos raros
+        .trim().split(/\s+|_/g).filter(Boolean);
+
+      if (!parts.length) return '';
+      return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+    };
+
+    const maybeFillKey = () => {
+      if (!userTouchedKey) {
+        keyInput.value = toCamelLike(nameInput.value);
+      }
+    };
+
+    nameInput.addEventListener('input', maybeFillKey);
+    // Primer autollenado si viene vacío
+    if (!keyInput.value) maybeFillKey();
+  }
+
+  // Validación ligera del patrón de clave (cuando aplica)
+  if (keyInput && !keyInput.disabled) {
+    keyInput.addEventListener('invalid', function(){
+      if (keyInput.validity.patternMismatch) {
+        keyInput.setCustomValidity('Usa CamelCase/alfanumérico, iniciando con letra. Se permiten guiones bajos "_".');
+      } else {
+        keyInput.setCustomValidity('');
+      }
+    });
+    keyInput.addEventListener('input', function(){ keyInput.setCustomValidity(''); });
+  }
+})();
+</script>
+{% endblock %}
+
 
