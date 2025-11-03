@@ -1,66 +1,89 @@
 # app/api/v1/endpoints/schemas.py
 from __future__ import annotations
 
-from typing import Any, Dict
-
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.api.deps.auth import require_permission, get_current_user_id
-from app.services.ui_schema_service import build_ui_contract
+from app.models.content import SectionSchema
+from app.api.v1.endpoints.content import rs_get_active_schema  # reusar helper existente
+from app.deps.auth import require_permission  # <- ruta nueva y correcta
 
-router = APIRouter(prefix="/schemas", tags=["schemas"])
+router = APIRouter()
 
-@router.get("/{section_id}/active/ui")
-def get_active_ui_schema(
+@router.get(
+    "/schemas/{section_id}/active/raw",
+    dependencies=[Depends(require_permission("content:read"))],  # tenant_id por query
+)
+def get_active_schema_raw(
     section_id: int,
-    tenant_id: int = Query(..., ge=1, description="Tenant ID al que pertenece la sección"),
+    tenant_id: int = Query(...),
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id),
-    _: None = Depends(require_permission("cms.schemas.read")),
-) -> Dict[str, Any]:
-    """
-    Devuelve el **contrato de UI** para la sección indicada, basado en el **JSON Schema activo**
-    (por tenant + section). Este contrato ya viene aplanado/listo para autogenerar formularios
-    en el Admin (autoform), e incluye metadatos útiles (version, title, ui_hints, etc.).
-
-    Params:
-      - tenant_id (query): ID del tenant (requerido)
-      - section_id (path): ID de la sección (requerido)
-
-    Seguridad:
-      - Requiere permiso RBAC: `cms.schemas.read`
-      - Usa el usuario autenticado `get_current_user_id` para el contexto
-
-    Respuesta (ejemplo):
-    {
-      "tenant_id": 4,
-      "section_id": 2,
-      "version": 2,
-      "title": "OWA Landing v2",
-      "schema": { ... JSON Schema ... },
-      "ui_hints": [
-        {"kind":"scalar","name":"hero__title","type":"text","label":"Title","help":""},
-        {"kind":"enum","name":"layout","label":"Layout","choices":["A","B","C"]},
-        {"kind":"csv","name":"tags","label":"Tags"},
-        ...
-      ]
+):
+    ss = rs_get_active_schema(db, tenant_id=tenant_id, section_id=section_id)
+    if not ss:
+        return {"active": None, "message": "No active schema for this section."}
+    return {
+        "active": {
+            "version": ss.version,
+            "title": ss.title,
+            "is_active": getattr(ss, "is_active", False),
+            "schema": ss.schema,
+            "created_at": ss.created_at,
+        }
     }
+
+@router.get(
+    "/schemas/{section_id}/versions",
+    dependencies=[Depends(require_permission("content:read"))],  # tenant_id por query
+)
+def list_schema_versions(
+    section_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    rows = db.execute(
+        select(SectionSchema)
+        .where(
+            SectionSchema.tenant_id == tenant_id,
+            SectionSchema.section_id == section_id,
+        )
+        .order_by(SectionSchema.version.asc())
+    ).scalars().all()
+    return [
+        {
+            "version": r.version,
+            "title": r.title,
+            "is_active": getattr(r, "is_active", False),
+            "created_at": r.created_at,
+        }
+        for r in rows
+    ]
+
+@router.get(
+    "/schemas/{section_id}/active/ui",
+    dependencies=[Depends(require_permission("content:read"))],  # tenant_id por query
+)
+def get_active_schema_ui_contract(
+    section_id: int,
+    tenant_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
     """
-    try:
-        contract = build_ui_contract(db, tenant_id=tenant_id, section_id=section_id)
-        if not isinstance(contract, dict):
-            # Defensa por contrato: siempre debe ser un dict serializable
-            raise HTTPException(status_code=500, detail="UI contract inválido (tipo inesperado).")
-        # (Opcional) podrías añadir aquí headers de cache si el contrato es estable.
-        return contract
-    except LookupError as e:
-        # Lanzada por build_ui_contract cuando no hay schema activo o no existe sección/tenant
-        raise HTTPException(status_code=404, detail=str(e))
-    except HTTPException:
-        # Re-propaga HTTPException tal cual
-        raise
-    except Exception as e:
-        # Falla inesperada (log recomendado en middleware)
-        raise HTTPException(status_code=500, detail="No se pudo construir el UI contract.") from e
+    Contrato UI mínimo para autogenerar formularios (Paso 21).
+    De momento entregamos el JSON Schema “as-is” + metadatos básicos.
+    """
+    ss = rs_get_active_schema(db, tenant_id=tenant_id, section_id=section_id)
+    if not ss:
+        raise HTTPException(status_code=404, detail="No active schema for this section.")
+    return {
+        "section_id": section_id,
+        "tenant_id": tenant_id,
+        "active_version": ss.version,
+        "title": ss.title,
+        "schema": ss.schema,           # el JSON Schema completo
+        "widgets": {},                 # reservados para mapeo UI futuro
+        "hints": {},                   # reservados para ayudas/contexto
+    }
+

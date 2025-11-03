@@ -5,19 +5,39 @@ from app.api.v1.router import api_router
 from app.core.settings import settings
 
 from app.api.delivery.router import router as delivery_router
-from app.web.admin.router import admin_router
-from app.web.auth.router import auth_router
 from app.api.delivery.preview import router as delivery_preview_router
 
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.openapi.utils import get_openapi
 
 app = create_app()
 configure_logging()
 
-# Cookies de sesión para el mini-login
-# Usa una SECRET_KEY segura en prod
+def _inject_bearer_security(app):
+    def custom_openapi():
+        if app.openapi_schema:
+            return app.openapi_schema
+        openapi_schema = get_openapi(
+            title="Latente CMS Core",
+            version="1.0.0",
+            description="API del CMS",
+            routes=app.routes,
+        )
+        openapi_schema.setdefault("components", {}).setdefault("securitySchemes", {})["bearerAuth"] = {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+        # Requerimiento global: Swagger enviará Authorization en todos los endpoints
+        openapi_schema["security"] = [{"bearerAuth": []}]
+        app.openapi_schema = openapi_schema
+        return app.openapi_schema
+    app.openapi = custom_openapi
+
+_inject_bearer_security(app)
+
 app.add_middleware(SessionMiddleware, secret_key=(settings.JWT_SECRET_KEY or "dev-secret"))
 
 if settings.RATELIMIT_ENABLED:
@@ -33,11 +53,10 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # Delivery pública
 app.include_router(delivery_router)
 app.include_router(delivery_preview_router)
-# Admin (Jinja) + Auth
-app.include_router(auth_router)          # /login, /logout
-app.include_router(admin_router)         # /admin/*
 
 # Static (CSS, imágenes)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
 
 

@@ -6,7 +6,7 @@
   },
   "sections": [
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "NavBar",
       "eyebrow": "OWA",
       "heading": "Navigation",
@@ -19,17 +19,14 @@
         "linksRight": [
           { "label": "SERVICES", "href": "/services" },
           { "label": "SCIENCE", "href": "/science" },
-          { "label": "THERAPIES", "href": "/therapies", "external": true }
+          { "label": "THERAPIES", "href": "/therapies" }
         ]
-      },
-      "layout": { "maxWidth": "xl", "padY": 0, "gap": 16, "align": "left" },
-      "theme": { "tone": "default", "surface": "soft" }
+      }
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "Hero",
-      "variant": "twoUp",
       "eyebrow": "ONE WITH",
       "heading": "MIND",
       "subheading": "Sauna, cold plunge, comunidad y hospitalidad en CDMX.",
@@ -38,34 +35,29 @@
         { "type": "image", "url": "https://example.com/owa-hero-right.jpg", "alt": "Mujer en sauna" }
       ],
       "data": {
-        "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"],
-        "scrimOpacity": 0.35
+        "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"]
       },
       "actions": [
-        { "label": "BOOK A SESSION", "href": "/book", "style": "outline" },
-        { "label": "BECOME A MEMBER", "href": "/membership", "style": "primary" }
-      ],
-      "layout": { "maxWidth": "xl", "padY": 48, "gap": 24, "ratio": "auto", "stackBreakpoint": "md", "align": "center" },
-      "theme": { "tone": "brand", "surface": "default" }
+        { "label": "BOOK A SESSION", "href": "/book" },
+        { "label": "BECOME A MEMBER", "href": "/membership" }
+      ]
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "Intro",
       "eyebrow": "ABOUT OWA",
       "heading": "EXPERIENCE THE ART OF BEING WELL",
       "richText": "OWA es el primer wellness club de su tipo en CDMX: integra terapias de contraste, nutrición, suplementación, conexión social y hospitalidad en un ecosistema pensado para la vitalidad.",
       "actions": [
-        { "label": "BOOK A SESSION", "href": "/book", "style": "outline" },
-        { "label": "BECOME A MEMBER", "href": "/membership", "style": "primary" },
-        { "label": "STAY AT OWA", "href": "/stay", "style": "outline" }
-      ],
-      "layout": { "maxWidth": "lg", "padY": 40, "gap": 16, "align": "center" },
-      "theme": { "tone": "default", "surface": "soft" }
+        { "label": "BOOK A SESSION", "href": "/book" },
+        { "label": "BECOME A MEMBER", "href": "/membership" },
+        { "label": "STAY AT OWA", "href": "/stay" }
+      ]
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "Grid",
       "heading": "DISCOVER OWA",
       "subheading": "Club de bienestar, café, residencias y colaboraciones.",
@@ -76,37 +68,35 @@
             "description": "Saunas privadas, cold plunges e interiores serenos para recuperación consciente.",
             "image": "https://example.com/discover-wellness-club.jpg",
             "imageAlt": "Rostro con gotas de agua",
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book", "style": "outline" }]
+            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
           },
           {
             "title": "SESEN ROOM X OWA",
             "description": "Suplementos premium y oferta gastronómica restaurativa en Roma Norte.",
             "image": "https://example.com/discover-sesen-room.jpg",
             "imageAlt": "Taza de matcha",
-            "actions": [{ "label": "LEARN MORE", "href": "/sesen-room", "style": "outline" }]
+            "actions": [{ "label": "LEARN MORE", "href": "/sesen-room" }]
           },
           {
             "title": "CASA OWA",
             "description": "Nueve residencias con concierge y acceso total al Wellness Club.",
             "image": "https://example.com/discover-casa-owa.jpg",
             "imageAlt": "Habitación tranquila",
-            "actions": [{ "label": "RESERVE YOUR STAY", "href": "/stay", "style": "outline" }]
+            "actions": [{ "label": "RESERVE YOUR STAY", "href": "/stay" }]
           },
           {
             "title": "COLLABORATIONS",
             "description": "Sesiones, encuentros culturales y eventos íntimos que conectan y celebran el bienestar.",
             "image": "https://example.com/discover-collaborations.jpg",
             "imageAlt": "Vapor y hielo",
-            "actions": [{ "label": "CONTACT US TO GET STARTED", "href": "/collaborate", "style": "outline" }]
+            "actions": [{ "label": "CONTACT US TO GET STARTED", "href": "/collaborate" }]
           }
         ]
-      },
-      "layout": { "maxWidth": "xl", "padY": 40, "gap": 24, "columns": 4, "align": "left" },
-      "theme": { "tone": "default", "surface": "default" }
+      }
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "Accordion",
       "heading": "THERAPIES",
       "richText": "Rituales modernos de recuperación para balancear cuerpo y mente.",
@@ -117,34 +107,32 @@
             "title": "SAUNA",
             "description": "Calor profundo para liberar tensión, restaurar y recargar.",
             "bullets": ["Promueve detox", "Reduce estrés", "Mejora salud cardiovascular", "Potencia la piel", "Recuperación muscular"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book", "style": "outline" }]
+            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
           },
           {
             "title": "COLD PLUNGE",
             "description": "Inmersión fría para claridad mental y menor inflamación.",
             "bullets": ["Mejora circulación", "Menos dolor muscular", "Fortalece inmunidad", "Mayor enfoque", "Mejor estado de ánimo"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book", "style": "outline" }]
+            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
           },
           {
             "title": "HYPERBARIC CHAMBER",
             "description": "Oxigenación avanzada para acelerar regeneración y vitalidad.",
             "bullets": ["Recuperación acelerada", "Más oxígeno tisular", "Mejor función cognitiva", "Apoya inmunidad", "Longevidad"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book", "style": "outline" }]
+            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
           },
           {
             "title": "ZERO GRAVITY CHAIR",
             "description": "Relajación sin peso para aliviar presión y mejorar flujo.",
             "bullets": ["Menos presión espinal", "Mejor circulación", "Relaja articulaciones", "Calma profunda", "Sueño reparador"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book", "style": "outline" }]
+            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
           }
         ]
-      },
-      "layout": { "maxWidth": "xl", "padY": 40, "gap": 24, "align": "left" },
-      "theme": { "tone": "muted", "surface": "soft" }
+      }
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "Plans",
       "heading": "MEMBERSHIPS",
       "subheading": "Opciones para tu ritmo y estilo de vida.",
@@ -156,7 +144,7 @@
             "description": "Acceso ilimitado al club: haz del bienestar tu hábito.",
             "image": "https://example.com/membership-full-access.jpg",
             "imageAlt": "Espalda con agua",
-            "actions": [{ "label": "GET STARTED", "href": "/join/full", "style": "outline" }]
+            "actions": [{ "label": "GET STARTED", "href": "/join/full" }]
           },
           {
             "badge": "02",
@@ -164,7 +152,7 @@
             "description": "Hasta 10 visitas/mes, sin caducidad.",
             "image": "https://example.com/membership-travel-pass.jpg",
             "imageAlt": "Luz teal en movimiento",
-            "actions": [{ "label": "GET STARTED", "href": "/join/travel", "style": "outline" }]
+            "actions": [{ "label": "GET STARTED", "href": "/join/travel" }]
           },
           {
             "badge": "03",
@@ -172,32 +160,26 @@
             "description": "Un día de restauración y reseteo.",
             "image": "https://example.com/membership-day-pass.jpg",
             "imageAlt": "Hielo",
-            "actions": [{ "label": "GET STARTED", "href": "/join/day", "style": "outline" }]
+            "actions": [{ "label": "GET STARTED", "href": "/join/day" }]
           }
         ]
-      },
-      "layout": { "maxWidth": "xl", "padY": 40, "gap": 24, "columns": 3, "align": "left" },
-      "theme": { "tone": "default", "surface": "default" }
+      }
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "HeroOverlay",
-      "variant": "oneUp",
       "heading": "ONE WITH MIND",
       "media": [
         { "type": "image", "url": "https://example.com/owa-mid-hero.jpg", "alt": "Hombros en hielo" }
       ],
       "data": {
-        "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"],
-        "scrimOpacity": 0.25
-      },
-      "layout": { "maxWidth": "xl", "padY": 40, "gap": 16, "align": "center" },
-      "theme": { "tone": "brand", "surface": "soft" }
+        "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"]
+      }
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "SocialGallery",
       "heading": "FOLLOW US",
       "data": {
@@ -211,13 +193,11 @@
           { "type": "image", "url": "https://example.com/ig3.jpg", "alt": "Luz y burbujas" },
           { "type": "image", "url": "https://example.com/ig4.jpg", "alt": "Espalda y hombro" }
         ]
-      },
-      "layout": { "maxWidth": "xl", "padY": 32, "gap": 16, "columns": 4, "align": "left" },
-      "theme": { "tone": "default", "surface": "default" }
+      }
     },
 
     {
-      "schema_version": 3,
+      "schema_version": 1,
       "type": "Footer",
       "heading": "CONTACT",
       "data": {
@@ -243,8 +223,8 @@
           {
             "heading": "CONNECT",
             "links": [
-              { "label": "Instagram", "href": "https://instagram.com/owa.wellness", "external": true },
-              { "label": "Spotify", "href": "https://spotify.com", "external": true },
+              { "label": "Instagram", "href": "https://instagram.com/owa.wellness" },
+              { "label": "Spotify", "href": "https://spotify.com" },
               { "label": "Careers", "href": "/careers" }
             ]
           },
@@ -275,10 +255,9 @@
           ],
           "copyright": "© All rights reserved 2025"
         }
-      },
-      "layout": { "maxWidth": "xl", "padY": 32, "gap": 16, "align": "left" },
-      "theme": { "tone": "contrast", "surface": "inverted" }
+      }
     }
   ]
 }
+
 

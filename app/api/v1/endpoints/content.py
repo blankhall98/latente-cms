@@ -36,15 +36,19 @@ from app.services.registry_service import (
 from app.services.publish_service import (
     transition_entry_status, apply_cache_headers,
 )
-from app.api.deps.auth import (
-    require_permission,              # usar solo cuando tenant_id llega por query
+
+# 🚩 FIX: usamos deps JWT desde app.deps.auth (no desde app.api.deps)
+from app.deps.auth import (
     get_current_user_id,
     get_current_user_id_optional,
 )
+
 from app.security.preview_tokens import (
     create_preview_token, verify_preview_token, PreviewTokenError,
 )
-from app.core.config import settings
+
+# 🚩 FIX: settings ahora vive en app.core.settings
+from app.core.settings import settings
 
 # --- Auditoría (Paso 16) ---
 from app.services.audit_service import audit_entry_action, compute_changed_keys
@@ -178,6 +182,29 @@ def _trigger_webhook(db: Session, tenant_id: int, event: str, payload: Dict[str,
         asyncio.run(emit_event_async(db, tenant_id, event, payload))
 
 
+# ---------------------------------------------------------------------------
+# 🚩 FIX: Factory local require_permission(perm_key)
+#     Úsalo cuando tenant_id venga por query (?tenant_id=)
+# ---------------------------------------------------------------------------
+def require_permission(perm_key: str):
+    """
+    Crea una dependencia FastAPI que:
+      - lee tenant_id de la query,
+      - valida JWT (get_current_user_id),
+      - verifica el permiso vía auth_deps.user_has_permission(...).
+    """
+    def _dep(
+        tenant_id: int = Query(...),
+        db: Session = Depends(get_db),
+        user_id: int = Depends(get_current_user_id),
+    ):
+        from app.api.deps import auth as auth_deps
+        if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key=perm_key):
+            raise HTTPException(status_code=403, detail=f"Missing permission: {perm_key}")
+        return True
+    return _dep
+
+
 # ============================================================================ #
 # Sections
 # ============================================================================ #
@@ -243,7 +270,7 @@ def add_schema_version_endpoint(
 @router.patch(
     "/section-schemas/{tenant_id}/{section_id}/{version}",
     response_model=SectionSchemaOut,
-    dependencies=[Depends(require_permission("content:write"))],
+    # OJO: Quitamos el dependencies=[Depends(require_permission("content:write"))]
 )
 def update_schema_endpoint(
     tenant_id: int,
@@ -251,7 +278,13 @@ def update_schema_endpoint(
     version: int,
     patch: SectionSchemaUpdate,
     db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),  # validamos JWT aquí
 ):
+    # Permiso inline porque tenant_id viene en PATH, no por query
+    from app.deps import auth as auth_deps
+    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:write"):
+        raise HTTPException(status_code=403, detail="Missing permission: content:write")
+
     # Activación de versión (respetando reglas del registry)
     if patch.is_active is True:
         ok, errs = can_activate_version(db, tenant_id=tenant_id, section_id=section_id, target_version=version)
