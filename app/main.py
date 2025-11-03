@@ -7,10 +7,15 @@ from app.core.settings import settings
 from app.api.delivery.router import router as delivery_router
 from app.api.delivery.preview import router as delivery_preview_router
 
+from app.web.auth.router import router as auth_web_router
+from app.web.admin.router import router as admin_router
+
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.openapi.utils import get_openapi
+
+from fastapi import Request
 
 app = create_app()
 configure_logging()
@@ -45,14 +50,19 @@ if settings.RATELIMIT_ENABLED:
     app.add_middleware(RateLimitMiddleware)
 
 @app.get("/", include_in_schema=False)
-def root_to_login():
-    return RedirectResponse(url="/login", status_code=302)
+def root_smart(request: Request):
+    user = (request.session or {}).get("user")
+    return RedirectResponse(url="/admin" if user else "/login", status_code=302)
 
 # API
 app.include_router(api_router, prefix=settings.API_V1_STR)
 # Delivery pública
 app.include_router(delivery_router)
 app.include_router(delivery_preview_router)
+
+app.include_router(auth_web_router)
+app.include_router(admin_router)
+
 
 # Static (CSS, imágenes)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Latente CMS{% endblock %}
+
+{% block content %}
+  <!-- HERO -->
+  <section class="z2h-dash-hero p-4 p-md-5 mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+      <div>
+        <div class="z2h-brand--badge mb-2">Dashboard</div>
+        <h1 class="z2h-hero-title h4 m-0">Welcome{{ user and (", " ~ (user.email or "")) }}</h1>
+        <p class="lead mt-1 mb-0">
+          Manage <strong>Projects</strong>, organize <strong>Pages</strong>, and edit <strong>Sections</strong> with preview and controlled publishing.
+        </p>
+      </div>
+      <div class="ms-md-auto d-flex gap-2">
+        <a class="btn btn-cta" href="/admin/entries?tenant_id={{ current_tenant and current_tenant.id }}">Open Pages</a>
+        <a class="btn btn-outline" href="/admin/projects">Switch Project</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPIs -->
+  <section class="z2h-kpis mb-4">
+    {% for k in kpis %}
+      <div class="z2h-kpi">
+        <div class="z2h-kpi-label">{{ k.label }}</div>
+        <div class="z2h-kpi-value">
+          <span>{{ k.value }}</span>
+          <span class="z2h-kpi-suffix">{{ k.suffix }}</span>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+
+  <!-- Rails -->
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4 z2h-card">
+        <h2 class="h6 text-uppercase fw-bold mb-3">Recent pages</h2>
+        <div class="z2h-card-list">
+          {% for it in recent_entries %}
+          <div class="z2h-list-item">
+            <div>
+              <div class="z2h-list-title">{{ it.title }}</div>
+              <div class="z2h-list-sub">{{ it.sub }}</div>
+            </div>
+            <div>
+              <a href="/admin/entries?tenant_id={{ current_tenant and current_tenant.id }}" class="btn btn-outline btn-sm">Open</a>
+            </div>
+          </div>
+          {% else %}
+          <div class="z2h-empty">No recent pages yet. Create or edit a page from your current project.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-3 p-md-4 z2h-card mb-3">
+        <h2 class="h6 text-uppercase fw-bold mb-3">Shortcuts</h2>
+        <div class="z2h-card-list">
+          {% set _links = quick_links or [
+            {"title": "Browse Projects", "sub": "Switch between projects you have access to", "href": "/admin/projects"},
+            {"title": "All Pages", "sub": "View and edit pages in this project", "href": "/admin/entries?tenant_id=" ~ (current_tenant and current_tenant.id)},
+            {"title": "Create Page", "sub": "Start a new page and add sections", "href": "/admin/entries/new?tenant_id=" ~ (current_tenant and current_tenant.id)}
+          ] %}
+          {% for l in _links %}
+          <div class="z2h-list-item">
+            <div>
+              <a class="z2h-list-title" href="{{ l.href }}">{{ l.title }}</a>
+              <div class="z2h-list-sub">{{ l.sub }}</div>
+            </div>
+            <div><a class="btn btn-outline btn-sm" href="{{ l.href }}">Go</a></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card p-3 p-md-4 z2h-card">
+        <h2 class="h6 text-uppercase fw-bold mb-2">Active project</h2>
+        <div class="d-flex align-items-center gap-2">
+          <span class="z2h-badge">{{ (current_tenant and current_tenant.name) or "—" }}</span>
+          {% if current_tenant %}
+            <code class="small">/{{ current_tenant.slug }}</code>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Projects · Latente CMS{% endblock %}
+
+{% block content %}
+<section class="container my-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <div class="z2h-brand--badge mb-2">Projects</div>
+      <h1 class="h4 m-0">Choose a project</h1>
+      <p class="text-muted mt-1 mb-0">Switch your active project to manage its pages and sections.</p>
+    </div>
+    <div>
+      <a class="btn btn-outline" href="/admin">Back to Dashboard</a>
+    </div>
+  </div>
+
+  {% if active_tenant %}
+    <div class="alert alert-light border d-flex align-items-center gap-2" role="alert">
+      <span class="z2h-badge">Active</span>
+      <strong>{{ active_tenant.name }}</strong>
+      <code class="small">/{{ active_tenant.slug }}</code>
+    </div>
+  {% endif %}
+
+  <div class="card p-3 p-md-4 z2h-card">
+    {% if projects and projects|length > 0 %}
+      <div class="z2h-card-list">
+        {% for p in projects %}
+          <div class="z2h-list-item">
+            <div>
+              <div class="z2h-list-title">{{ p.name }}</div>
+              <div class="z2h-list-sub">
+                <span class="z2h-badge">/{{ p.slug }}</span>
+                <span class="ms-2 text-muted">Role: {{ p.role_label }}</span>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <form method="post" action="/admin/projects/{{ p.id }}/set-active">
+                <button class="btn btn-cta btn-sm" type="submit">Set Active</button>
+              </form>
+              <a class="btn btn-outline btn-sm" href="/admin/entries?tenant_id={{ p.id }}">Open Pages</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-muted">No projects available for your account.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
