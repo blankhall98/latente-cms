@@ -89,8 +89,8 @@
               {% if it.updated_at %}{{ it.updated_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
             </td>
             <td class="text-end">
-              <!-- Open page detail (sections editor shell) -->
-              <a class="btn btn-outline btn-sm" href="/admin/pages/{{ it.id }}">Edit</a>
+              <!-- Open the MVP editor -->
+              <a class="btn btn-outline btn-sm" href="/admin/pages/{{ it.id }}/edit">Edit</a>
             </td>
           </tr>
           {% else %}
@@ -122,5 +122,6 @@
 
 </section>
 {% endblock %}
+
 
 

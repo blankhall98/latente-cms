@@ -13,9 +13,10 @@
         </p>
       </div>
       <div class="ms-md-auto d-flex gap-2">
-        <!-- Open Pages now points to /admin/pages -->
+        <!-- Open Pages points to /admin/pages -->
         <a class="btn btn-cta" href="/admin/pages">Open Pages</a>
-        <a class="btn btn-outline" href="/projects">Switch Project</a>
+        <!-- Switch Project points to /admin/projects -->
+        <a class="btn btn-outline" href="/admin/projects">Switch Project</a>
       </div>
     </div>
   </section>
@@ -46,7 +47,11 @@
               <div class="z2h-list-sub">{{ it.sub }}</div>
             </div>
             <div>
-              <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
+              {% if it.id %}
+                <a href="/admin/pages/{{ it.id }}/edit" class="btn btn-outline btn-sm">Open</a>
+              {% else %}
+                <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
+              {% endif %}
             </div>
           </div>
           {% else %}
@@ -61,7 +66,7 @@
         <h2 class="h6 text-uppercase fw-bold mb-3">Shortcuts</h2>
         <div class="z2h-card-list">
           {% set _links = quick_links or [
-            {"title": "Browse Projects", "sub": "Switch between projects you have access to", "href": "/projects"},
+            {"title": "Browse Projects", "sub": "Switch between projects you have access to", "href": "/admin/projects"},
             {"title": "All Pages", "sub": "View and edit pages in this project", "href": "/admin/pages"},
             {"title": "Create Page", "sub": "Start a new page and add sections", "href": "/admin/entries/new" }
           ] %}
@@ -89,6 +94,7 @@
     </div>
   </div>
 {% endblock %}
+
 
 
 

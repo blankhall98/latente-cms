@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Edit Page · {{ page.title }} · Latente CMS{% endblock %}
+
+{% block content %}
+<section class="container my-4">
+
+  <!-- Breadcrumb -->
+  <nav class="mb-3" aria-label="breadcrumb">
+    <ol class="breadcrumb m-0">
+      <li class="breadcrumb-item"><a href="/admin/projects">Projects</a></li>
+      <li class="breadcrumb-item"><a href="/admin/pages">Pages</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Edit</li>
+    </ol>
+  </nav>
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+    <div>
+      <div class="z2h-brand--badge mb-2">Edit Page</div>
+      <h1 class="h4 m-0">{{ page.title }}</h1>
+      <div class="text-muted small mt-1">
+        <code>/{{ page.slug }}</code> · Section: <strong>{{ page.section_name }}</strong> ·
+        {% set s=(page.status or '').lower() %}
+        <span class="z2h-badge"
+          style="background: {{ 'rgba(16,185,129,.12)' if s=='published' else 'rgba(250,204,21,.18)' if s=='draft' else 'rgba(148,163,184,.18)' }};
+                 border-color: {{ '#10b98133' if s=='published' else '#f59e0b33' if s=='draft' else '#94a3b833' }};
+                 color: {{ '#065f46' if s=='published' else '#78350f' if s=='draft' else '#334155' }};">
+          {{ s }}
+        </span>
+        <span class="ms-2">Schema v{{ page.schema_version }}</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-1">
+      <a class="btn btn-outline" href="/admin/pages">Cancel</a>
+      <button class="btn btn-outline" disabled title="Preview coming next">Preview</button>
+      <button class="btn btn-outline" disabled title="Publish flow coming next">Publish</button>
+      <button form="z2h-edit-form" class="btn btn-cta" type="submit">Save</button>
+    </div>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  {% endif %}
+  {% if ok_message %}
+    <div class="alert alert-success" role="alert">{{ ok_message }}</div>
+  {% endif %}
+
+  <form id="z2h-edit-form" class="card p-3 p-md-4 z2h-card" method="post" action="">
+    <label class="form-label">Content (JSON)</label>
+    <textarea name="content_json" class="form-control" rows="18" spellcheck="false">{{ initial_json }}</textarea>
+    <div class="text-muted small mt-2">
+      Tip: keep the root as an object. This editor will become a schema-driven form in the next step.
+    </div>
+  </form>
+
+</section>
+{% endblock %}
+

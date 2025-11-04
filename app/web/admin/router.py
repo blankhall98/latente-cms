@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from datetime import datetime, timezone
+import json
 
 from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query
 from fastapi.responses import RedirectResponse
@@ -31,8 +33,10 @@ def _status_value(enum_cls: Any, *candidates: str) -> Any:
             return getattr(val, "value", val)
     return candidates[-1]
 
+
 def _active_status_value() -> Any:
     return _status_value(UserTenantStatus, "ACTIVE", "Active", "active")
+
 
 def _require_web_user(request: Request) -> dict:
     user = (request.session or {}).get(SESSION_USER_KEY)
@@ -40,8 +44,10 @@ def _require_web_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Login required")
     return user
 
+
 def _get_active_tenant(request: Request) -> dict | None:
     return (request.session or {}).get(SESSION_ACTIVE_TENANT_KEY)
+
 
 def _set_active_tenant(request: Request, tenant_id: int, tenant_slug: str, tenant_name: str) -> None:
     request.session[SESSION_ACTIVE_TENANT_KEY] = {
@@ -50,11 +56,37 @@ def _set_active_tenant(request: Request, tenant_id: int, tenant_slug: str, tenan
         "name": tenant_name,
     }
 
+
 def _parse_int(v: Optional[str], default: int) -> int:
     try:
         return int(v) if v is not None else default
     except Exception:
         return default
+
+
+def _load_entry_or_404(db: Session, entry_id: int, tenant_id: int):
+    row = db.execute(
+        select(Entry, Section)
+        .join(Section, Section.id == Entry.section_id)
+        .where(and_(Entry.id == entry_id, Entry.tenant_id == tenant_id))
+    ).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Page not found in this project")
+    return row  # (Entry, Section)
+
+
+def _json_is_object(payload: object) -> bool:
+    # For MVP we only allow a JSON object at the root (maps to form fields later)
+    return isinstance(payload, dict)
+
+
+def _validate_json_against_active_schema(entry: Entry, section: Section, data_obj: dict) -> list[str]:
+    """
+    Placeholder for Step 8E: run JSON Schema (Draft 2020-12) against the section's active schema.
+    Return a list of human-readable error strings; empty list means valid.
+    """
+    # TODO(step 8E): use registry/SectionSchema active version + jsonschema validator
+    return []
 
 
 # ---------------------------
@@ -65,6 +97,7 @@ def login_get(request: Request):
     if (request.session or {}).get(SESSION_USER_KEY):
         return RedirectResponse(url="/admin", status_code=302)
     return templates.TemplateResponse("auth/login.html", {"request": request})
+
 
 @router.post("/login")
 def login_post(
@@ -103,6 +136,7 @@ def login_post(
         _set_active_tenant(request, t.id, t.slug, t.name)
 
     return RedirectResponse(url="/admin", status_code=302)
+
 
 @router.post("/logout")
 def logout(request: Request):
@@ -202,8 +236,8 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 
     quick_links = [
         {"href": "/admin/projects", "title": "Browse Projects", "sub": "Switch between your projects"},
-        {"href": f"/admin/entries?tenant_id={tenant_id}", "title": "All Pages", "sub": "View and edit pages"},
-        {"href": f"/admin/entries/new?tenant_id={tenant_id}", "title": "Create Page", "sub": "Start a new page and add sections"},
+        {"href": "/admin/pages", "title": "All Pages", "sub": "View and edit pages"},
+        # MVP: no create link
     ]
 
     return templates.TemplateResponse(
@@ -273,6 +307,7 @@ def projects_list(request: Request, db: Session = Depends(get_db)):
             "active_tenant": current,
         },
     )
+
 
 @router.post("/admin/projects/{tenant_id}/set-active")
 def set_active_project(tenant_id: int, request: Request, db: Session = Depends(get_db)):
@@ -441,20 +476,13 @@ def page_detail(
     if not tid:
         return RedirectResponse(url="/admin/projects", status_code=302)
 
-    row = db.execute(
-        select(Entry, Section)
-        .join(Section, Section.id == Entry.section_id)
-        .where(and_(Entry.id == entry_id, Entry.tenant_id == tid))
-    ).first()
-    if not row:
-        raise HTTPException(status_code=404, detail="Page not found in this project")
-
-    entry, section = row
+    entry, section = _load_entry_or_404(db, entry_id, tid)
 
     data = entry.data or {}
     keys = list(data.keys())
 
     preferred_first = ["hero", "header", "intro", "title", "content", "body"]
+
     def _priority(k: str) -> tuple[int, str]:
         return (preferred_first.index(k) if k in preferred_first else 999, k)
 
@@ -485,6 +513,159 @@ def page_detail(
         },
     )
 
+
+# --------------------------- Page Editor (8D MVP) ---------------------------
+@router.get("/admin/pages/{entry_id}/edit")
+def page_edit_get(
+    entry_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    user = _require_web_user(request)
+    active = _get_active_tenant(request)
+    tid = int((active or {}).get("id") or 0)
+    if not tid:
+        return RedirectResponse(url="/admin/projects", status_code=302)
+
+    entry, section = _load_entry_or_404(db, entry_id, tid)
+
+    initial_json = json.dumps(entry.data or {}, ensure_ascii=False, indent=2)
+    return templates.TemplateResponse(
+        "admin/page_edit.html",
+        {
+            "request": request,
+            "user": user,
+            "active_tenant": active,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": (entry.data or {}).get("title") or entry.slug,
+                "status": entry.status,
+                "section_name": section.name,
+                "schema_version": entry.schema_version,
+            },
+            "initial_json": initial_json,
+            "error": None,
+            "ok_message": None,
+        },
+    )
+
+
+@router.post("/admin/pages/{entry_id}/edit")
+def page_edit_post(
+    entry_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    content_json: str = Form(...),
+):
+    user = _require_web_user(request)
+    active = _get_active_tenant(request)
+    tid = int((active or {}).get("id") or 0)
+    if not tid:
+        return RedirectResponse(url="/admin/projects", status_code=302)
+
+    entry, section = _load_entry_or_404(db, entry_id, tid)
+
+    # Parse JSON
+    try:
+        parsed = json.loads(content_json)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            "admin/page_edit.html",
+            {
+                "request": request,
+                "user": user,
+                "active_tenant": active,
+                "page": {
+                    "id": entry.id,
+                    "slug": entry.slug,
+                    "title": (entry.data or {}).get("title") or entry.slug,
+                    "status": entry.status,
+                    "section_name": section.name,
+                    "schema_version": entry.schema_version,
+                },
+                "initial_json": content_json,  # keep user input
+                "error": f"Invalid JSON: {str(e)}",
+                "ok_message": None,
+            },
+            status_code=400,
+        )
+
+    # Root must be an object for our schema-driven UI
+    if not _json_is_object(parsed):
+        return templates.TemplateResponse(
+            "admin/page_edit.html",
+            {
+                "request": request,
+                "user": user,
+                "active_tenant": active,
+                "page": {
+                    "id": entry.id,
+                    "slug": entry.slug,
+                    "title": (entry.data or {}).get("title") or entry.slug,
+                    "status": entry.status,
+                    "section_name": section.name,
+                    "schema_version": entry.schema_version,
+                },
+                "initial_json": content_json,
+                "error": "Root must be a JSON object (e.g., { \"title\": \"...\" }).",
+                "ok_message": None,
+            },
+            status_code=400,
+        )
+
+    # (8E) Schema validation hook
+    schema_errors = _validate_json_against_active_schema(entry, section, parsed)
+    if schema_errors:
+        first_issues = "; ".join(schema_errors[:5])
+        return templates.TemplateResponse(
+            "admin/page_edit.html",
+            {
+                "request": request,
+                "user": user,
+                "active_tenant": active,
+                "page": {
+                    "id": entry.id,
+                    "slug": entry.slug,
+                    "title": (entry.data or {}).get("title") or entry.slug,
+                    "status": entry.status,
+                    "section_name": section.name,
+                    "schema_version": entry.schema_version,
+                },
+                "initial_json": content_json,
+                "error": f"Schema validation failed: {first_issues}",
+                "ok_message": None,
+            },
+            status_code=422,
+        )
+
+    # Save
+    entry.data = parsed
+    entry.updated_at = datetime.now(timezone.utc)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+
+    ok_msg = "Changes saved successfully."
+    return templates.TemplateResponse(
+        "admin/page_edit.html",
+        {
+            "request": request,
+            "user": user,
+            "active_tenant": active,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": (entry.data or {}).get("title") or entry.slug,
+                "status": entry.status,
+                "section_name": section.name,
+                "schema_version": entry.schema_version,
+            },
+            "initial_json": json.dumps(entry.data or {}, ensure_ascii=False, indent=2),
+            "error": None,
+            "ok_message": ok_msg,
+        },
+    )
 
 
 
