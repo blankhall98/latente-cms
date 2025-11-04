@@ -13,8 +13,9 @@
         </p>
       </div>
       <div class="ms-md-auto d-flex gap-2">
-        <a class="btn btn-cta" href="/admin/entries?tenant_id={{ current_tenant and current_tenant.id }}">Open Pages</a>
-        <a class="btn btn-outline" href="/admin/projects">Switch Project</a>
+        <!-- Open Pages now points to /admin/pages -->
+        <a class="btn btn-cta" href="/admin/pages">Open Pages</a>
+        <a class="btn btn-outline" href="/projects">Switch Project</a>
       </div>
     </div>
   </section>
@@ -45,7 +46,7 @@
               <div class="z2h-list-sub">{{ it.sub }}</div>
             </div>
             <div>
-              <a href="/admin/entries?tenant_id={{ current_tenant and current_tenant.id }}" class="btn btn-outline btn-sm">Open</a>
+              <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
             </div>
           </div>
           {% else %}
@@ -60,9 +61,9 @@
         <h2 class="h6 text-uppercase fw-bold mb-3">Shortcuts</h2>
         <div class="z2h-card-list">
           {% set _links = quick_links or [
-            {"title": "Browse Projects", "sub": "Switch between projects you have access to", "href": "/admin/projects"},
-            {"title": "All Pages", "sub": "View and edit pages in this project", "href": "/admin/entries?tenant_id=" ~ (current_tenant and current_tenant.id)},
-            {"title": "Create Page", "sub": "Start a new page and add sections", "href": "/admin/entries/new?tenant_id=" ~ (current_tenant and current_tenant.id)}
+            {"title": "Browse Projects", "sub": "Switch between projects you have access to", "href": "/projects"},
+            {"title": "All Pages", "sub": "View and edit pages in this project", "href": "/admin/pages"},
+            {"title": "Create Page", "sub": "Start a new page and add sections", "href": "/admin/entries/new" }
           ] %}
           {% for l in _links %}
           <div class="z2h-list-item">
@@ -80,7 +81,7 @@
         <h2 class="h6 text-uppercase fw-bold mb-2">Active project</h2>
         <div class="d-flex align-items-center gap-2">
           <span class="z2h-badge">{{ (current_tenant and current_tenant.name) or "—" }}</span>
-          {% if current_tenant %}
+          {% if current_tenant and current_tenant.slug %}
             <code class="small">/{{ current_tenant.slug }}</code>
           {% endif %}
         </div>
@@ -88,5 +89,6 @@
     </div>
   </div>
 {% endblock %}
+
 
 

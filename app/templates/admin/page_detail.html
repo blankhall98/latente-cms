@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Edit Page · {{ page.title }} · Latente CMS{% endblock %}
+
+{% block content %}
+<section class="container my-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+    <div>
+      <a href="/admin/pages?tenant_id={{ (active_tenant and active_tenant.id) or '' }}" class="btn btn-link p-0">&larr; Pages</a>
+      <div class="z2h-brand--badge mt-2 mb-1">Edit Page</div>
+      <h1 class="h4 m-0">{{ page.title }}</h1>
+      <div class="text-muted small mt-1">
+        <code>/{{ page.slug }}</code> · Section: <strong>{{ page.section_name }}</strong> ·
+        Status:
+        {% set s=(page.status or "").lower() %}
+        <span class="z2h-badge"
+          style="background: {{ 'rgba(16,185,129,.12)' if s=='published' else 'rgba(250,204,21,.18)' if s=='draft' else 'rgba(148,163,184,.18)' }};
+                 border-color: {{ '#10b98133' if s=='published' else '#f59e0b33' if s=='draft' else '#94a3b833' }};
+                 color: {{ '#065f46' if s=='published' else '#78350f' if s=='draft' else '#334155' }};">
+          {{ s }}
+        </span>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-1">
+      <button class="btn btn-outline" disabled title="Preview coming in Step 8D">Preview</button>
+      <button class="btn btn-outline" disabled title="Publish flow in Step 8D">Publish</button>
+      <button class="btn btn-cta" disabled title="Save wired in Step 8D">Save</button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Left rail: Sections -->
+    <div class="col-lg-3">
+      <div class="card p-3 z2h-card">
+        <div class="h6 text-uppercase fw-bold mb-2">Sections</div>
+        <div class="list-group">
+          {% for s in sections_nav %}
+            <a class="list-group-item list-group-item-action {{ 'active' if s.key == current_tab else '' }}"
+               href="?tenant_id={{ (active_tenant and active_tenant.id) or '' }}&section_tab={{ s.key }}">
+              {{ s.label }}
+            </a>
+          {% else %}
+            <div class="text-muted small">No sections detected for this page.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor pane -->
+    <div class="col-lg-9">
+      <div class="card p-3 p-md-4 z2h-card">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 text-uppercase fw-bold m-0">{{ current_tab.replace("_"," ").title() }}</h2>
+          <span class="text-muted small">Schema v{{ page.schema_version }}</span>
+        </div>
+        <div class="z2h-divider mb-3"></div>
+
+        <!-- For MVP we just show a generic JSON area; Step 8E will render proper fields per JSON Schema -->
+        <label class="form-label">Content (JSON)</label>
+        <textarea class="form-control" rows="14" disabled
+          title="Editable form coming next (Step 8E)">{{ current_payload | tojson(indent=2) }}</textarea>
+
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button class="btn btn-outline" disabled>Preview</button>
+          <button class="btn btn-outline" disabled>Publish</button>
+          <button class="btn btn-cta" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+{% endblock %}

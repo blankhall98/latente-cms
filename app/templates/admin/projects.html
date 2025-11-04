@@ -38,7 +38,7 @@
               <form method="post" action="/admin/projects/{{ p.id }}/set-active">
                 <button class="btn btn-cta btn-sm" type="submit">Set Active</button>
               </form>
-              <a class="btn btn-outline btn-sm" href="/admin/entries?tenant_id={{ p.id }}">Open Pages</a>
+              <a class="btn btn-outline btn-sm" href="/admin/pages?tenant_id={{ p.id }}">Open Pages</a>
             </div>
           </div>
         {% endfor %}
@@ -49,3 +49,4 @@
   </div>
 </section>
 {% endblock %}
+

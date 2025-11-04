@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Pages · {{ active_tenant and active_tenant.name or "Project" }} · Latente CMS{% endblock %}
+
+{% block content %}
+<section class="container">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+    <div>
+      <a href="/admin/projects" class="btn btn-outline px-2 py-1" style="border-radius:999px;">
+        &larr; Projects
+      </a>
+      <div class="z2h-brand--badge mt-2 mb-1">Pages</div>
+      <h1 class="h4 m-0">
+        {{ active_tenant and active_tenant.name or "—" }}
+      </h1>
+      <div class="text-muted small mt-1">
+        Pages are created via deployment scripts in this MVP; edit and manage content here.
+      </div>
+    </div>
+    <!-- No create button in MVP -->
+    <div class="d-flex gap-2"></div>
+  </div>
+
+  <!-- Filters -->
+  <form class="card p-3 p-md-4 z2h-card mb-3" method="get" action="/admin/pages">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Search</label>
+        <input type="text" name="q" class="form-control" value="{{ filters.q }}" placeholder="Find by title or slug">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-control z2h-select">
+          {% set _status = (filters.status or "") %}
+          <option value="">Any</option>
+          <option value="published" {{ "selected" if _status == "published" else "" }}>Published</option>
+          <option value="draft" {{ "selected" if _status == "draft" else "" }}>Draft</option>
+          <option value="archived" {{ "selected" if _status == "archived" else "" }}>Archived</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Section</label>
+        <select name="section" class="form-control z2h-select">
+          {% set _sid = (filters.section or "") %}
+          <option value="">Any</option>
+          {% for s in sections %}
+            <option value="{{ s.id }}" {{ "selected" if _sid|string == s.id|string else "" }}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline w-100" type="submit">Apply</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- List -->
+  <div class="card p-0 z2h-card">
+    <div class="table-responsive">
+      <table class="table align-middle m-0">
+        <thead>
+          <tr>
+            <th style="width:40%;">Title</th>
+            <th>Section</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th style="width:1%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ it.title }}</div>
+              <div class="text-muted small">{{ it.slug }}</div>
+            </td>
+            <td>{{ it.section_name }}</td>
+            <td>
+              {% set s = (it.status or "").lower() %}
+              <span class="z2h-badge"
+                    style="background: {{ 'rgba(16,185,129,.12)' if s=='published' else 'rgba(250,204,21,.18)' if s=='draft' else 'rgba(148,163,184,.18)' }};
+                           border-color: {{ '#10b98133' if s=='published' else '#f59e0b33' if s=='draft' else '#94a3b833' }};
+                           color: {{ '#065f46' if s=='published' else '#78350f' if s=='draft' else '#334155' }};">
+                {{ s }}
+              </span>
+            </td>
+            <td class="text-nowrap">
+              {% if it.updated_at %}{{ it.updated_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end">
+              <!-- Open page detail (sections editor shell) -->
+              <a class="btn btn-outline btn-sm" href="/admin/pages/{{ it.id }}">Edit</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-4">No pages found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pager -->
+    <div class="d-flex justify-content-between align-items-center p-3">
+      <div class="small text-muted">Page {{ page }}</div>
+      <div class="d-flex gap-2">
+        {% if prev_page %}
+          <a class="btn btn-outline btn-sm"
+             href="?q={{ filters.q }}&status={{ filters.status }}&section={{ filters.section }}&page={{ prev_page }}&per_page={{ per_page }}">Prev</a>
+        {% else %}
+          <button class="btn btn-outline btn-sm" disabled>Prev</button>
+        {% endif %}
+        {% if next_page %}
+          <a class="btn btn-outline btn-sm"
+             href="?q={{ filters.q }}&status={{ filters.status }}&section={{ filters.section }}&page={{ next_page }}&per_page={{ per_page }}">Next</a>
+        {% else %}
+          <button class="btn btn-outline btn-sm" disabled>Next</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</section>
+{% endblock %}
+
+
