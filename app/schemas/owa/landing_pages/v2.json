@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Landing v2 (editor-friendly)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "replace": { "type": "boolean", "x-ui:group": "Global", "x-ui:order": 99, "x-ui:description": "Internal flag. Usually leave as true.", "x-ui:hidden": true },
+    "seo": {
+      "type": "object",
+      "title": "SEO",
+      "x-ui:group": "Global",
+      "x-ui:order": 1,
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "maxLength": 70, "title": "SEO Title", "x-ui:widget": "text" },
+        "description": { "type": "string", "maxLength": 160, "title": "SEO Description", "x-ui:widget": "textarea" }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "title": "Sections",
+      "x-ui:widget": "repeat",
+      "x-ui:titleKey": "heading",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/section" }
+    }
+  },
+  "required": ["sections"],
+  "$defs": {
+    "button": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-ui:titleKey": "label",
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 40, "title": "Text" },
+        "href": { "type": "string", "format": "uri-reference", "title": "Link" }
+      },
+      "required": ["label","href"]
+    },
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-ui:titleKey": "url",
+      "properties": {
+        "type": { "type": "string", "enum": ["image","video"], "title": "Kind", "x-ui:widget": "select", "x-ui:enumNames": ["Image","Video"] },
+        "url": { "type": "string", "format": "uri-reference", "title": "URL", "x-ui:widget": "media" },
+        "alt": { "type": "string", "title": "Alt text" }
+      },
+      "required": ["type","url"]
+    },
+    "sectionBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": { "const": 1, "x-ui:hidden": true },
+        "type": { "type": "string", "x-ui:hidden": true },
+        "eyebrow": { "type": "string", "maxLength": 80, "x-ui:group": "Header", "x-ui:order": 1, "title": "Eyebrow" },
+        "heading": { "type": "string", "maxLength": 140, "x-ui:group": "Header", "x-ui:order": 2, "title": "Heading" },
+        "subheading": { "type": "string", "maxLength": 240, "x-ui:group": "Header", "x-ui:order": 3, "title": "Subheading", "x-ui:widget": "textarea" },
+        "richText": { "type": "string", "maxLength": 4000, "x-ui:group": "Body", "x-ui:order": 1, "x-ui:widget": "textarea", "title": "Body copy" },
+        "media": { "type": "array", "x-ui:group": "Media", "x-ui:order": 1, "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/media" } },
+        "actions": { "type": "array", "x-ui:group": "Actions", "x-ui:order": 1, "x-ui:widget": "repeat", "maxItems": 4, "items": { "$ref": "#/$defs/button" } },
+        "data": { "type": "object", "title": "Advanced", "x-ui:group": "Advanced", "x-ui:order": 99, "x-ui:description": "Fine-tuning for this section type." }
+      },
+      "required": ["schema_version","type"]
+    },
+    "section": {
+      "allOf": [
+        { "$ref": "#/$defs/sectionBase" },
+        {
+          "oneOf": [
+            { "$ref": "#/$defs/section.NavBar" },
+            { "$ref": "#/$defs/section.Hero" },
+            { "$ref": "#/$defs/section.Intro" },
+            { "$ref": "#/$defs/section.Grid" },
+            { "$ref": "#/$defs/section.FeatureList" },
+            { "$ref": "#/$defs/section.Accordion" },
+            { "$ref": "#/$defs/section.Plans" },
+            { "$ref": "#/$defs/section.HeroOverlay" },
+            { "$ref": "#/$defs/section.SocialGallery" },
+            { "$ref": "#/$defs/section.Footer" }
+          ]
+        }
+      ]
+    },
+
+    "section.NavBar": {
+      "properties": {
+        "type": { "const": "NavBar" },
+        "eyebrow": { "x-ui:hidden": true },
+        "heading": { "title": "Internal name" },
+        "data": {
+          "type": "object",
+          "title": "Navigation",
+          "additionalProperties": false,
+          "properties": {
+            "brand": {
+              "type": "object",
+              "title": "Brand",
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string", "minLength": 1, "maxLength": 40, "title": "Brand Text" },
+                "href": { "type": "string", "format": "uri-reference", "title": "Brand Link" }
+              },
+              "required": ["text","href"]
+            },
+            "linksLeft": { "type": "array", "title": "Left links", "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/button" } },
+            "linksRight": { "type": "array", "title": "Right links", "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/button" } }
+          }
+        }
+      }
+    },
+
+    "section.Hero": {
+      "properties": {
+        "type": { "const": "Hero" },
+        "media": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/media" }, "x-ui:group": "Media", "x-ui:order": 1 },
+        "data": {
+          "type": "object",
+          "title": "Hero Options",
+          "additionalProperties": false,
+          "properties": {
+            "rotatingWords": { "type": "array", "maxItems": 8, "title": "Rotating Words", "x-ui:widget": "repeat", "items": { "type": "string", "maxLength": 24 } }
+          }
+        }
+      },
+      "required": ["media"]
+    },
+
+    "section.Intro": {
+      "properties": {
+        "type": { "const": "Intro" }
+      }
+    },
+
+    "section.Grid": {
+      "properties": {
+        "type": { "const": "Grid" },
+        "data": {
+          "type": "object",
+          "title": "Cards Grid",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "title": "Cards",
+              "x-ui:widget": "repeat",
+              "items": {
+                "type": "object",
+                "x-ui:titleKey": "title",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string", "maxLength": 60, "title": "Title" },
+                  "description": { "type": "string", "maxLength": 600, "title": "Description", "x-ui:widget": "textarea" },
+                  "image": { "type": "string", "format": "uri-reference", "title": "Image URL", "x-ui:widget": "media" },
+                  "imageAlt": { "type": "string", "title": "Alt text" },
+                  "media": { "type": "array", "title": "Additional media", "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/media" } },
+                  "badge": { "type": "string", "maxLength": 10, "title": "Badge" },
+                  "actions": { "type": "array", "title": "Buttons", "x-ui:widget": "repeat", "maxItems": 2, "items": { "$ref": "#/$defs/button" } }
+                },
+                "required": ["title"]
+              }
+            }
+          },
+          "required": ["items"]
+        }
+      }
+    },
+
+    "section.FeatureList": {
+      "properties": {
+        "type": { "const": "FeatureList" },
+        "data": {
+          "type": "object",
+          "title": "Feature Bullets",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "title": "Items",
+              "x-ui:widget": "repeat",
+              "items": {
+                "type": "object",
+                "x-ui:titleKey": "title",
+                "additionalProperties": false,
+                "properties": {
+                  "icon": { "type": "string", "title": "Icon name" },
+                  "title": { "type": "string", "title": "Title" },
+                  "body": { "type": "string", "title": "Description", "x-ui:widget": "textarea" }
+                },
+                "required": ["title","body"]
+              }
+            }
+          },
+          "required": ["items"]
+        }
+      }
+    },
+
+    "section.Accordion": {
+      "properties": {
+        "type": { "const": "Accordion" },
+        "data": {
+          "type": "object",
+          "title": "Accordion",
+          "additionalProperties": false,
+          "properties": {
+            "sideImage": { "$ref": "#/$defs/media", "title": "Side image" },
+            "items": {
+              "type": "array",
+              "title": "Panels",
+              "x-ui:widget": "repeat",
+              "items": {
+                "type": "object",
+                "x-ui:titleKey": "title",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string", "title": "Title" },
+                  "description": { "type": "string", "title": "Description", "x-ui:widget": "textarea" },
+                  "bullets": { "type": "array", "title": "Bullets", "x-ui:widget": "repeat", "items": { "type": "string" } },
+                  "actions": { "type": "array", "title": "Buttons", "x-ui:widget": "repeat", "maxItems": 1, "items": { "$ref": "#/$defs/button" } }
+                },
+                "required": ["title","description"]
+              }
+            }
+          },
+          "required": ["items"]
+        }
+      }
+    },
+
+    "section.Plans": {
+      "properties": {
+        "type": { "const": "Plans" },
+        "data": {
+          "type": "object",
+          "title": "Membership Plans",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "title": "Plans",
+              "x-ui:widget": "repeat",
+              "items": {
+                "type": "object",
+                "x-ui:titleKey": "title",
+                "additionalProperties": false,
+                "properties": {
+                  "badge": { "type": "string", "maxLength": 10, "title": "Badge (e.g., 01)" },
+                  "title": { "type": "string", "title": "Plan Name" },
+                  "description": { "type": "string", "title": "Description", "x-ui:widget": "textarea" },
+                  "image": { "type": "string", "format": "uri-reference", "title": "Image URL", "x-ui:widget": "media" },
+                  "imageAlt": { "type": "string", "title": "Alt text" },
+                  "actions": { "type": "array", "title": "Buttons", "x-ui:widget": "repeat", "maxItems": 1, "items": { "$ref": "#/$defs/button" } }
+                },
+                "required": ["title","description"]
+              }
+            }
+          },
+          "required": ["items"]
+        }
+      }
+    },
+
+    "section.HeroOverlay": {
+      "properties": {
+        "type": { "const": "HeroOverlay" },
+        "media": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/media" }, "x-ui:group": "Media", "x-ui:order": 1 },
+        "data": {
+          "type": "object",
+          "title": "Overlay Options",
+          "additionalProperties": false,
+          "properties": {
+            "rotatingWords": { "type": "array", "maxItems": 8, "title": "Rotating Words", "x-ui:widget": "repeat", "items": { "type": "string", "maxLength": 24 } }
+          }
+        }
+      },
+      "required": ["media"]
+    },
+
+    "section.SocialGallery": {
+      "properties": {
+        "type": { "const": "SocialGallery" },
+        "data": {
+          "type": "object",
+          "title": "Social Gallery",
+          "additionalProperties": false,
+          "properties": {
+            "heading": { "type": "string", "title": "Heading" },
+            "handle": { "type": "string", "title": "Handle" },
+            "profileUrl": { "type": "string", "format": "uri-reference", "title": "Profile URL" },
+            "source": { "type": "string", "enum": ["manual","instagram","cms"], "title": "Source", "x-ui:widget": "select", "x-ui:enumNames": ["Manual","Instagram","CMS"] },
+            "images": { "type": "array", "title": "Images", "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/media" } }
+          }
+        }
+      }
+    },
+
+    "section.Footer": {
+      "properties": {
+        "type": { "const": "Footer" },
+        "data": {
+          "type": "object",
+          "title": "Footer",
+          "additionalProperties": false,
+          "properties": {
+            "title": { "type": "string", "title": "Title" },
+            "contact": {
+              "type": "object",
+              "title": "Contact",
+              "additionalProperties": false,
+              "properties": {
+                "heading": { "type": "string", "title": "Heading" },
+                "addressLines": { "type": "array", "title": "Address Lines", "x-ui:widget": "repeat", "items": { "type": "string" } },
+                "email": { "type": "string", "title": "Email" },
+                "emailHref": { "type": "string", "format": "uri-reference", "title": "Email Link" },
+                "phone": { "type": "string", "title": "Phone" },
+                "phoneHref": { "type": "string", "format": "uri-reference", "title": "Phone Link" }
+              }
+            },
+            "groups": {
+              "type": "array",
+              "title": "Link Groups",
+              "x-ui:widget": "repeat",
+              "items": {
+                "type": "object",
+                "x-ui:titleKey": "heading",
+                "additionalProperties": false,
+                "properties": {
+                  "heading": { "type": "string", "title": "Group title" },
+                  "links": { "type": "array", "title": "Links", "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/button" } }
+                }
+              }
+            },
+            "newsletter": {
+              "type": "object",
+              "title": "Newsletter",
+              "additionalProperties": false,
+              "properties": {
+                "heading": { "type": "string", "title": "Heading" },
+                "subtext": { "type": "string", "title": "Subtext" },
+                "action": { "type": "string", "title": "Button text" },
+                "placeholder": { "type": "string", "title": "Input placeholder" },
+                "submitHref": { "type": "string", "format": "uri-reference", "title": "Submit URL" }
+              }
+            },
+            "bottomBar": {
+              "type": "object",
+              "title": "Bottom Bar",
+              "additionalProperties": false,
+              "properties": {
+                "leftNote": { "type": "string", "title": "Left note" },
+                "legalLinks": { "type": "array", "title": "Legal Links", "x-ui:widget": "repeat", "items": { "$ref": "#/$defs/button" } },
+                "copyright": { "type": "string", "maxLength": 160, "title": "Copyright" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

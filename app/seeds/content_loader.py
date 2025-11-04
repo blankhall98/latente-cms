@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 
 from app.models.auth import Tenant  # Paso 7
-from app.services.content_service import create_section, add_schema_version
+from app.services.content_service import create_section, add_schema_version, set_active_schema
 
 @dataclass
 class SectionFile:
@@ -57,7 +57,7 @@ def load_section_schema_from_file(
 
     schema = json.loads(p.read_text(encoding="utf-8"))
 
-    # 3) registra versión idempotente y activa si corresponde
+    # 3) registra versión idempotente SIEMPRE como INACTIVA
     add_schema_version(
         db,
         tenant_id=tenant_id,
@@ -65,8 +65,13 @@ def load_section_schema_from_file(
         version=version,
         schema=schema,
         title=f"{section_key}@{version}",
-        is_active=make_active,
+        is_active=False,  # ← clave: insert inactive siempre
     )
+
+    # 4) si se marcó como activa, flip atómico (desactiva la previa y activa esta)
+    if make_active:
+        set_active_schema(db, tenant_id=tenant_id, section_id=section.id, version=version)
+
     db.commit()
 
 def bulk_load_tenant_schemas(

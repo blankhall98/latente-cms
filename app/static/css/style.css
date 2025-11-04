@@ -298,4 +298,13 @@ label.form-label{ font-weight: 600; color: var(--text-1); }
 }
 
 
+/* ====== Latente CMS · Editor UX Pro (add-on) ====== */
+:root{
+  --ok: #16a34a;
+  --warn: #f59e0b;
+}
+.vr{ width:1px; height:14px; background: var(--border,#e6ddd2); display:inline-block; }
+kbd{ background:#eef2ff; border:1px solid #dbe4ff; border-bottom-color:#c7d2fe; padding:.05rem .35rem; border-radius:6px; font-size:.82rem; }
+.list-group-item:focus { outline: none; box-shadow: inset 0 0 0 2px rgba(169,199,255,.5); }
+.is-invalid{ border-color:#ef4444 !important; box-shadow: 0 0 0 .18rem rgba(239,68,68,.16) !important; }
 

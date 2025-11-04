@@ -45,6 +45,11 @@ def add_schema_version(
     title: Optional[str] = None,
     is_active: bool = False,
 ) -> SectionSchema:
+    """
+    Crea (o devuelve) una versión de SectionSchema. SIEMPRE inserta como inactiva
+    y si is_active=True, activa la versión en un segundo paso atómico (set_active_schema).
+    Esto evita violar el índice único parcial "solo 1 activo por sección".
+    """
     exists = db.scalar(
         select(SectionSchema).where(
             and_(
@@ -58,22 +63,24 @@ def add_schema_version(
         # Idempotente; opcionalmente actualiza título y activa
         if title is not None:
             exists.title = title
+        db.flush()
         if is_active and not exists.is_active:
             set_active_schema(db, tenant_id=tenant_id, section_id=section_id, version=version)
-        db.flush()
         return exists
 
+    # Fuerza inserción como INACTIVA para no chocar con el unique parcial
     ss = SectionSchema(
         tenant_id=tenant_id,
         section_id=section_id,
         version=version,
         schema=schema,
         title=title,
-        is_active=is_active,
+        is_active=False,  # ← clave
     )
     db.add(ss)
     db.flush()
 
+    # Activación segura (dos pasos)
     if is_active:
         set_active_schema(db, tenant_id=tenant_id, section_id=section_id, version=version)
 
@@ -88,7 +95,13 @@ def set_active_schema(db: Session, *, tenant_id: int, section_id: int, version: 
     # Desactivar las activas previas
     db.execute(
         update(SectionSchema)
-        .where(and_(SectionSchema.tenant_id == tenant_id, SectionSchema.section_id == section_id, SectionSchema.is_active == True))
+        .where(
+            and_(
+                SectionSchema.tenant_id == tenant_id,
+                SectionSchema.section_id == section_id,
+                SectionSchema.is_active == True,  # noqa: E712
+            )
+        )
         .values(is_active=False)
     )
     db.flush()
@@ -116,7 +129,13 @@ def get_effective_schema(db: Session, *, tenant_id: int, section_id: int) -> Sec
     """
     active = db.scalar(
         select(SectionSchema)
-        .where(and_(SectionSchema.tenant_id == tenant_id, SectionSchema.section_id == section_id, SectionSchema.is_active == True))
+        .where(
+            and_(
+                SectionSchema.tenant_id == tenant_id,
+                SectionSchema.section_id == section_id,
+                SectionSchema.is_active == True,  # noqa: E712
+            )
+        )
         .limit(1)
     )
     if active:
@@ -233,3 +252,4 @@ def list_entries(
 
     stmt = stmt.order_by(Entry.created_at.desc()).limit(limit).offset(offset)
     return db.scalars(stmt).all()
+

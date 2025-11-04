@@ -1,7 +1,7 @@
 # app/web/admin/router.py
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, Dict, Tuple
 from datetime import datetime, timezone
 import json
 
@@ -13,8 +13,11 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.auth import Tenant, User, UserTenant, UserTenantStatus, Role
-from app.models.content import Section, Entry
+from app.models.content import Section, Entry, SectionSchema
 from app.services.passwords import verify_password
+
+# If you want server-side validation, you can switch this on and add jsonschema validator.
+ENABLE_SERVER_VALIDATION = False
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(include_in_schema=False)
@@ -64,7 +67,7 @@ def _parse_int(v: Optional[str], default: int) -> int:
         return default
 
 
-def _load_entry_or_404(db: Session, entry_id: int, tenant_id: int):
+def _load_entry_or_404(db: Session, entry_id: int, tenant_id: int) -> tuple[Entry, Section]:
     row = db.execute(
         select(Entry, Section)
         .join(Section, Section.id == Entry.section_id)
@@ -75,22 +78,123 @@ def _load_entry_or_404(db: Session, entry_id: int, tenant_id: int):
     return row  # (Entry, Section)
 
 
-def _json_is_object(payload: object) -> bool:
-    # For MVP we only allow a JSON object at the root (maps to form fields later)
-    return isinstance(payload, dict)
+# ---------------------------
+# JSON Schema helpers
+# ---------------------------
+def _get_active_schema(db: Session, section_id: int) -> Optional[SectionSchema]:
+    return db.execute(
+        select(SectionSchema)
+        .where(and_(SectionSchema.section_id == section_id, SectionSchema.is_active == True))  # noqa: E712
+        .order_by(SectionSchema.version.desc())
+    ).scalars().first()
 
 
-def _validate_json_against_active_schema(entry: Entry, section: Section, data_obj: dict) -> list[str]:
+def _extract_schema_dict(ss: SectionSchema | None) -> dict:
+    """Get JSON Schema dict from flexible column naming."""
+    if not ss:
+        return {}
+    for attr in ("json_schema", "schema", "schema_json", "data"):
+        if hasattr(ss, attr):
+            val = getattr(ss, attr)
+            if val is None:
+                continue
+            if isinstance(val, dict):
+                return val
+            if isinstance(val, str):
+                try:
+                    return json.loads(val)
+                except Exception:
+                    pass
+    return {}
+
+
+def _deep_merge(base: Any, override: Any) -> Any:
+    """Recursive deep merge: dict + dict, list replacement, value override."""
+    if isinstance(base, dict) and isinstance(override, dict):
+        out = dict(base)
+        for k, v in override.items():
+            out[k] = _deep_merge(base.get(k), v)
+        return out
+    # For arrays, we don't try to merge per item (schemas usually define items[] shape)
+    return override if override is not None else base
+
+
+def _defaults_from_schema(schema: dict) -> Any:
     """
-    Placeholder for Step 8E: run JSON Schema (Draft 2020-12) against the section's active schema.
-    Return a list of human-readable error strings; empty list means valid.
+    Recursively produce a default object for the JSON Schema.
+    - Use 'default' when present.
+    - For object: build dict from properties (using defaults).
+    - For array: default to [] or schema['default'] if present.
+    - For primitives: default if present, else sensible empty value.
     """
-    # TODO(step 8E): use registry/SectionSchema active version + jsonschema validator
+    if not isinstance(schema, dict):
+        return None
+
+    if "default" in schema:
+        return schema["default"]
+
+    t = schema.get("type")
+
+    # Handle 'oneOf'/'anyOf' quickly: pick first schema to extract defaults
+    for union_key in ("oneOf", "anyOf", "allOf"):
+        if union_key in schema and isinstance(schema[union_key], list) and schema[union_key]:
+            # naive pick the first as default model
+            return _defaults_from_schema(schema[union_key][0])
+
+    if t == "object":
+        props = schema.get("properties", {}) or {}
+        out: Dict[str, Any] = {}
+        for k, sub in props.items():
+            out[k] = _defaults_from_schema(sub)
+        return out
+
+    if t == "array":
+        # Prefer explicit default, otherwise empty array
+        if "default" in schema:
+            return schema["default"]
+        return []
+
+    # primitive fallback
+    if t == "string":
+        return ""
+    if t in ("number", "integer"):
+        return 0
+    if t == "boolean":
+        return False
+
+    # if type is missing, try to infer by presence of 'properties' or 'items'
+    if "properties" in schema:
+        return _defaults_from_schema({"type": "object", "properties": schema["properties"]})
+    if "items" in schema:
+        return _defaults_from_schema({"type": "array", **({"default": []} if "default" not in schema else {})})
+
+    return None
+
+
+def _build_form_model_from_active_schema(json_schema: dict, entry_data: dict) -> Tuple[dict, int]:
+    """
+    Build the form model we will edit:
+      1) compute default model from active schema
+      2) deep-merge current entry data on top
+    Returns (model, inferred_version) where version is best-effort from schema metadata.
+    """
+    defaults = _defaults_from_schema(json_schema) or {}
+    merged = _deep_merge(defaults, entry_data or {})
+    # try to detect version (not strictly required; we will get it from SectionSchema)
+    schema_version = json_schema.get("$version") or json_schema.get("version") or 1
+    return merged, int(schema_version)
+
+
+# Minimal validation stub (set ENABLE_SERVER_VALIDATION=True and add jsonschema if desired)
+def _validate_against_schema(json_schema: dict, data_obj: dict) -> list[str]:
+    if not ENABLE_SERVER_VALIDATION:
+        return []
+    # Hook up Draft202012Validator here if you want strict validation.
     return []
 
 
 # ---------------------------
-# Web Login (email/password)
+# Web Login
 # ---------------------------
 @router.get("/login")
 def login_get(request: Request):
@@ -145,7 +249,7 @@ def logout(request: Request):
 
 
 # ---------------------------
-# Dashboard (LIVE data — 8B)
+# Dashboard
 # ---------------------------
 @router.get("/admin")
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
@@ -227,7 +331,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         status_text = getattr(e.status, "value", e.status)
         section_key = getattr(s, "key", getattr(s, "name", "Section"))
         tenant_slug = active.get("slug", "")
-        title = (e.data or {}).get("title") or e.slug or f"Page {getattr(e, 'id', '')}"
+        title = (e.data or {}).get("title") or e.slug or f"Page {getattr(e, "id", "")}"
         recent_entries.append({
             "title": title,
             "sub": f"{section_key} / {tenant_slug} · {status_text}",
@@ -237,7 +341,6 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     quick_links = [
         {"href": "/admin/projects", "title": "Browse Projects", "sub": "Switch between your projects"},
         {"href": "/admin/pages", "title": "All Pages", "sub": "View and edit pages"},
-        # MVP: no create link
     ]
 
     return templates.TemplateResponse(
@@ -343,7 +446,7 @@ def set_active_project(tenant_id: int, request: Request, db: Session = Depends(g
 
 
 # ---------------------------
-# Pages list (live) — 8B
+# Pages list
 # ---------------------------
 @router.get("/admin/pages")
 def pages_list(
@@ -351,7 +454,6 @@ def pages_list(
     db: Session = Depends(get_db),
     tenant_id: Optional[int] = Query(default=None),
 ):
-    """List pages inside the active project with search/filters/pagination."""
     user = (request.session or {}).get(SESSION_USER_KEY)
     if not user:
         return RedirectResponse(url="/login", status_code=302)
@@ -361,9 +463,8 @@ def pages_list(
     if not tid:
         return RedirectResponse(url="/admin/projects", status_code=302)
 
-    # Query params
     q: Optional[str] = request.query_params.get("q")
-    status_param: Optional[str] = request.query_params.get("status")  # "published", "draft", "archived"
+    status_param: Optional[str] = request.query_params.get("status")
     section_id_param: Optional[str] = request.query_params.get("section")
     page = _parse_int(request.query_params.get("page"), 1)
     per_page = _parse_int(request.query_params.get("per_page"), 10)
@@ -371,21 +472,18 @@ def pages_list(
     per_page = max(min(per_page, 50), 5)
     offset = (page - 1) * per_page
 
-    # Base query
     base = (
         select(Entry, Section)
         .join(Section, Section.id == Entry.section_id)
         .where(Entry.tenant_id == tid)
     )
 
-    # Filter by status
     VALID_STATUS = {"published", "draft", "archived"}
     if status_param:
         s = status_param.strip().lower()
         if s in VALID_STATUS:
             base = base.where(Entry.status == s)
 
-    # Filter by section
     if section_id_param:
         try:
             sid = int(section_id_param)
@@ -393,35 +491,30 @@ def pages_list(
         except Exception:
             pass
 
-    # Search by slug or title (JSONB)
     if q:
         ilike_term = f"%{q.strip()}%"
         try:
             base = base.where(
                 or_(
                     Entry.slug.ilike(ilike_term),
-                    Entry.data["title"].astext.ilike(ilike_term),  # Postgres JSONB
+                    Entry.data["title"].astext.ilike(ilike_term),
                 )
             )
         except Exception:
             base = base.where(Entry.slug.ilike(ilike_term))
 
-    # Count (exact)
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
 
-    # Order + page slice
     try:
         order_cols = [Entry.updated_at.desc().nullslast(), Entry.id.desc()]
     except Exception:
         order_cols = [Entry.id.desc()]
     rows = db.execute(base.order_by(*order_cols).limit(per_page).offset(offset)).all()
 
-    # Sections dropdown
     sects = db.execute(
         select(Section.id, Section.name).where(Section.tenant_id == tid).order_by(Section.name.asc())
     ).all()
 
-    # Build UI items
     items = []
     for e, s in rows:
         title = (e.data or {}).get("title") or e.slug
@@ -430,11 +523,10 @@ def pages_list(
             "title": title,
             "slug": e.slug,
             "section_name": s.name,
-            "status": e.status,  # "published"/"draft"/"archived"
+            "status": e.status,
             "updated_at": e.updated_at,
         })
 
-    # Pager flags
     next_page = page + 1 if (offset + len(items)) < total else None
     prev_page = page - 1 if page > 1 else None
 
@@ -459,9 +551,7 @@ def pages_list(
     )
 
 
-# ---------------------------
-# Page detail (Sections shell) — 8C
-# ---------------------------
+# --------------------------- Page detail (shell) ---------------------------
 @router.get("/admin/pages/{entry_id}")
 def page_detail(
     entry_id: int,
@@ -492,6 +582,9 @@ def page_detail(
     sections_nav = [{"key": k, "label": k.replace("_", " ").title()} for k in keys_sorted]
     current_payload = data.get(current_tab, data if current_tab == "content" else "")
 
+    # IMPORTANT: display the active schema version for clarity (no upgrade UI)
+    ss_active = _get_active_schema(db, section.id)
+
     return templates.TemplateResponse(
         "admin/page_detail.html",
         {
@@ -505,7 +598,7 @@ def page_detail(
                 "status": entry.status,
                 "section_name": section.name,
                 "updated_at": entry.updated_at,
-                "schema_version": entry.schema_version,
+                "schema_version": (ss_active.version if ss_active else entry.schema_version),
             },
             "sections_nav": sections_nav,
             "current_tab": current_tab,
@@ -514,7 +607,7 @@ def page_detail(
     )
 
 
-# --------------------------- Page Editor (8D MVP) ---------------------------
+# --------------------------- Page Editor (Active Schema–driven) ---------------------------
 @router.get("/admin/pages/{entry_id}/edit")
 def page_edit_get(
     entry_id: int,
@@ -529,7 +622,31 @@ def page_edit_get(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
-    initial_json = json.dumps(entry.data or {}, ensure_ascii=False, indent=2)
+    # 1) Load ACTIVE schema for this section
+    ss = _get_active_schema(db, section.id)
+    json_schema = _extract_schema_dict(ss)
+
+    # 2) Build form model from active schema + deep-merge current entry data
+    form_model, _ = _build_form_model_from_active_schema(json_schema, entry.data or {})
+
+    # 3) Extract General + Sections for the template
+    replace_val = bool((form_model.get("replace") or False))
+    seo = form_model.get("seo") or {}
+    seo_title = seo.get("title") or ""
+    seo_desc = seo.get("description") or ""
+
+    raw_sections = form_model.get("sections") or []
+    sections_ui = []
+    for i, sec in enumerate(raw_sections):
+        t = (sec or {}).get("type") or "Block"
+        heading = (sec or {}).get("heading") or ""
+        label = f"{i+1:02d} · {t}" + (f" — {heading}" if heading else "")
+        sections_ui.append({
+            "index": i,
+            "label": label,
+            "sec": sec,
+        })
+
     return templates.TemplateResponse(
         "admin/page_edit.html",
         {
@@ -539,12 +656,16 @@ def page_edit_get(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (entry.data or {}).get("title") or entry.slug,
+                "title": (form_model.get("title") or form_model.get("name") or entry.slug),
                 "status": entry.status,
                 "section_name": section.name,
-                "schema_version": entry.schema_version,
+                # show ACTIVE schema version here (what the form reflects)
+                "schema_version": (ss.version if ss else entry.schema_version),
             },
-            "initial_json": initial_json,
+            "replace_val": replace_val,
+            "seo_title": seo_title,
+            "seo_desc": seo_desc,
+            "sections_ui": sections_ui,
             "error": None,
             "ok_message": None,
         },
@@ -556,7 +677,7 @@ def page_edit_post(
     entry_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    content_json: str = Form(...),
+    content_json: str = Form(...),  # built by the serializer (full object)
 ):
     user = _require_web_user(request)
     active = _get_active_tenant(request)
@@ -566,10 +687,26 @@ def page_edit_post(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
-    # Parse JSON
+    # Load ACTIVE schema for validation + version pin
+    ss = _get_active_schema(db, section.id)
+    json_schema = _extract_schema_dict(ss)
+    active_version = ss.version if ss else entry.schema_version
+
+    # Parse payload
     try:
         parsed = json.loads(content_json)
-    except json.JSONDecodeError as e:
+        if not isinstance(parsed, dict):
+            raise ValueError("Submitted payload must be a JSON object.")
+    except Exception as e:
+        # Rebuild minimal sections UI from existing entry (to show the error gracefully)
+        data = entry.data or {}
+        sections = data.get("sections") or []
+        sections_ui = [{
+            "index": i,
+            "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+            "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+        } for i, blk in enumerate(sections)]
+
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
@@ -579,45 +716,32 @@ def page_edit_post(
                 "page": {
                     "id": entry.id,
                     "slug": entry.slug,
-                    "title": (entry.data or {}).get("title") or entry.slug,
+                    "title": (data.get("title") or data.get("name") or entry.slug),
                     "status": entry.status,
                     "section_name": section.name,
-                    "schema_version": entry.schema_version,
+                    "schema_version": active_version,
                 },
-                "initial_json": content_json,  # keep user input
-                "error": f"Invalid JSON: {str(e)}",
+                "initial_json": content_json,
+                "replace_val": bool(data.get("replace", False)),
+                "seo_title": (data.get("seo") or {}).get("title", ""),
+                "seo_desc": (data.get("seo") or {}).get("description", ""),
+                "sections_ui": sections_ui,
+                "error": f"Invalid JSON: {e}",
                 "ok_message": None,
             },
             status_code=400,
         )
 
-    # Root must be an object for our schema-driven UI
-    if not _json_is_object(parsed):
-        return templates.TemplateResponse(
-            "admin/page_edit.html",
-            {
-                "request": request,
-                "user": user,
-                "active_tenant": active,
-                "page": {
-                    "id": entry.id,
-                    "slug": entry.slug,
-                    "title": (entry.data or {}).get("title") or entry.slug,
-                    "status": entry.status,
-                    "section_name": section.name,
-                    "schema_version": entry.schema_version,
-                },
-                "initial_json": content_json,
-                "error": "Root must be a JSON object (e.g., { \"title\": \"...\" }).",
-                "ok_message": None,
-            },
-            status_code=400,
-        )
+    # Optional: validate against ACTIVE schema
+    errors = _validate_against_schema(json_schema, parsed)
+    if errors:
+        sections = parsed.get("sections") or []
+        sections_ui = [{
+            "index": i,
+            "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+            "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+        } for i, blk in enumerate(sections)]
 
-    # (8E) Schema validation hook
-    schema_errors = _validate_json_against_active_schema(entry, section, parsed)
-    if schema_errors:
-        first_issues = "; ".join(schema_errors[:5])
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
@@ -627,26 +751,37 @@ def page_edit_post(
                 "page": {
                     "id": entry.id,
                     "slug": entry.slug,
-                    "title": (entry.data or {}).get("title") or entry.slug,
+                    "title": (parsed.get("title") or (entry.data or {}).get("title") or entry.slug),
                     "status": entry.status,
                     "section_name": section.name,
-                    "schema_version": entry.schema_version,
+                    "schema_version": active_version,
                 },
-                "initial_json": content_json,
-                "error": f"Schema validation failed: {first_issues}",
+                "initial_json": json.dumps(parsed, ensure_ascii=False, indent=2),
+                "replace_val": bool(parsed.get("replace", False)),
+                "seo_title": (parsed.get("seo") or {}).get("title", ""),
+                "seo_desc": (parsed.get("seo") or {}).get("description", ""),
+                "sections_ui": sections_ui,
+                "error": "Schema validation failed: " + "; ".join(errors[:5]),
                 "ok_message": None,
             },
             status_code=422,
         )
 
-    # Save
+    # Persist: save data and pin entry to ACTIVE schema version (no visible "upgrade")
     entry.data = parsed
+    entry.schema_version = active_version
     entry.updated_at = datetime.now(timezone.utc)
     db.add(entry)
     db.commit()
     db.refresh(entry)
 
-    ok_msg = "Changes saved successfully."
+    sections = entry.data.get("sections") or []
+    sections_ui = [{
+        "index": i,
+        "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+        "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+    } for i, blk in enumerate(sections)]
+
     return templates.TemplateResponse(
         "admin/page_edit.html",
         {
@@ -659,14 +794,15 @@ def page_edit_post(
                 "title": (entry.data or {}).get("title") or entry.slug,
                 "status": entry.status,
                 "section_name": section.name,
-                "schema_version": entry.schema_version,
+                "schema_version": active_version,
             },
             "initial_json": json.dumps(entry.data or {}, ensure_ascii=False, indent=2),
+            "replace_val": bool(entry.data.get("replace", False)),
+            "seo_title": (entry.data.get("seo") or {}).get("title", ""),
+            "seo_desc": (entry.data.get("seo") or {}).get("description", ""),
+            "sections_ui": sections_ui,
             "error": None,
-            "ok_message": ok_msg,
+            "ok_message": "Changes saved.",
         },
     )
-
-
-
 
