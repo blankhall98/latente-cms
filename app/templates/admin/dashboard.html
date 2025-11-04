@@ -1,99 +1,239 @@
 {% extends "base.html" %}
 {% block title %}Dashboard · Latente CMS{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ---------------------------
+     Dashboard — calm, pastel, no-code look (CLEANED)
+     --------------------------- */
+
+  /* Hero: more space, active project highly visible */
+  .z2h-hero{
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background:
+      radial-gradient(1000px 460px at 14% -10%, rgba(110,158,230,.08), transparent 60%),
+      radial-gradient(780px 400px at 86% -6%, rgba(137,194,217,.07), transparent 55%),
+      linear-gradient(180deg, #ffffff 0%, #f7f5f0 100%);
+    box-shadow: 0 18px 40px rgba(0,0,0,.06);
+    padding: clamp(24px, 4vw, 44px);
+  }
+  .z2h-hero-title{
+    letter-spacing:.12em;
+    text-transform: uppercase;
+    margin: .25rem 0 0 0;
+  }
+  .z2h-hero-meta{
+    margin-top:.5rem; color: rgba(0,0,0,.66);
+  }
+
+  /* Prominent active project pill */
+  .z2h-project-pill{
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.35rem .75rem;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:#fff;
+    font-size:.9rem;
+    color:var(--text-1);
+    box-shadow: 0 8px 22px rgba(0,0,0,.05);
+  }
+  .z2h-project-pill .dot{
+    width:10px; height:10px; border-radius:50%;
+    background: var(--primary);
+    box-shadow: 0 0 0 6px rgba(110,158,230,.12);
+  }
+
+  /* Cards — NO jump/shadow pop on hover */
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);                 /* steady shadow */
+    transition: background-color .28s ease, border-color .28s ease;
+  }
+  .card:hover{ box-shadow: var(--shadow-sm); }    /* lock hover */
+
+  /* Section headers */
+  .z2h-section-head{
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+  }
+
+  /* Pages list — no blue paint, no bg fill, very subtle hover */
+  .z2h-card-list{ display:flex; flex-direction:column; gap:.5rem; }
+  .z2h-list-item{
+    position: relative;
+    display:grid; grid-template-columns:1fr auto; align-items:center; gap:1rem;
+    padding:.8rem .5rem .8rem 0;
+    border-top:1px dashed var(--border);
+    background: transparent;
+    transition: background-color .28s ease, color .28s ease, border-color .28s ease;
+  }
+  .z2h-list-item:first-child{ border-top:0; }
+
+  /* Subtle left guide line (no fill color on the row) */
+  .z2h-list-item::before{
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, rgba(110,158,230,.25), rgba(137,194,217,.15));
+    opacity: 0;
+    transform: translateX(-2px);
+    transition: opacity .35s ease, transform .35s ease;
+  }
+  .z2h-list-item:hover::before{
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* Keep text colors steady; only micro opacity cue */
+  .z2h-list-title{ font-weight:800; color:var(--text-1); transition: opacity .28s ease; }
+  .z2h-list-sub{ font-size:.92rem; color:var(--text-2); transition: opacity .28s ease; }
+  .z2h-list-item:hover .z2h-list-title{ opacity: .96; }
+  .z2h-list-item:hover .z2h-list-sub{ opacity: .9; }
+
+  /* Links inside list should NOT paint blue on hover */
+  .z2h-card-list .z2h-list-item a{
+    color: var(--text-1) !important;
+    text-decoration: none;
+    transition: color .28s ease, opacity .28s ease;
+  }
+  .z2h-card-list .z2h-list-item a:hover{
+    color: var(--text-1) !important;
+    opacity: .9;
+  }
+
+  /* Outline buttons inside list: keep neutral on hover */
+  .z2h-card-list .btn-outline{
+    background: #fff !important;
+    border-color: var(--border) !important;
+    color: var(--text-1) !important;
+    transition: border-color .28s ease, color .28s ease;
+    box-shadow: none !important;
+  }
+  .z2h-card-list .btn-outline:hover{
+    background: #fff !important;
+    border-color: #e9e1d7 !important;
+    color: var(--text-1) !important;
+    box-shadow: none !important;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <!-- HERO -->
-  <section class="z2h-dash-hero p-4 p-md-5 mb-4">
-    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-      <div>
-        <div class="z2h-brand--badge mb-2">Dashboard</div>
-        <h1 class="z2h-hero-title h4 m-0">Welcome{{ user and (", " ~ (user.email or "")) }}</h1>
-        <p class="lead mt-1 mb-0">
+  <!-- HERO (spacious, clean, active project emphasized) -->
+  <section class="z2h-hero mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3 w-100">
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="z2h-brand--badge">Dashboard</div>
+          {% if current_tenant %}
+            <span class="z2h-project-pill" title="Active project">
+              <span class="dot" aria-hidden="true"></span>
+              <strong>{{ current_tenant.name }}</strong>
+              {% if current_tenant.slug %}
+                <code class="ms-1">/{{ current_tenant.slug }}</code>
+              {% endif %}
+            </span>
+          {% else %}
+            <div class="text-muted small">no project</div>
+          {% endif %}
+        </div>
+
+        <h1 class="z2h-hero-title h4 m-0">
+          {% if user and (user.email or "") %}Welcome, {{ user.email }}{% else %}Welcome{% endif %}
+        </h1>
+
+        <p class="z2h-hero-meta mb-0">
           Manage <strong>Projects</strong>, organize <strong>Pages</strong>, and edit <strong>Sections</strong> with preview and controlled publishing.
         </p>
       </div>
-      <div class="ms-md-auto d-flex gap-2">
-        <!-- Open Pages points to /admin/pages -->
-        <a class="btn btn-cta" href="/admin/pages">Open Pages</a>
-        <!-- Switch Project points to /admin/projects -->
-        <a class="btn btn-outline" href="/admin/projects">Switch Project</a>
-      </div>
+      {# No header buttons (already present in the navbar). #}
     </div>
   </section>
 
-  <!-- KPIs -->
-  <section class="z2h-kpis mb-4">
-    {% for k in kpis %}
-      <div class="z2h-kpi">
-        <div class="z2h-kpi-label">{{ k.label }}</div>
-        <div class="z2h-kpi-value">
-          <span>{{ k.value }}</span>
-          <span class="z2h-kpi-suffix">{{ k.suffix }}</span>
-        </div>
-      </div>
-    {% endfor %}
-  </section>
-
-  <!-- Rails -->
+  <!-- GRID -->
   <div class="row g-3">
-    <div class="col-lg-7">
+    <!-- Project pages (scoped to active project) -->
+    <div class="col-lg-8">
       <div class="card p-3 p-md-4 z2h-card">
-        <h2 class="h6 text-uppercase fw-bold mb-3">Recent pages</h2>
-        <div class="z2h-card-list">
-          {% for it in recent_entries %}
-          <div class="z2h-list-item">
-            <div>
-              <div class="z2h-list-title">{{ it.title }}</div>
-              <div class="z2h-list-sub">{{ it.sub }}</div>
+        <div class="z2h-section-head">
+          <h2 class="h6 text-uppercase fw-bold mb-0">Project pages</h2>
+        </div>
+
+        <div class="mt-3">
+          {% if not current_tenant %}
+            <div class="z2h-empty">
+              No active project selected. Choose a project to see its pages.
+              <div class="mt-2">
+                <a class="btn btn-outline btn-sm" href="/admin/projects">Browse projects</a>
+              </div>
             </div>
-            <div>
-              {% if it.id %}
-                <a href="/admin/pages/{{ it.id }}/edit" class="btn btn-outline btn-sm">Open</a>
-              {% else %}
-                <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
-              {% endif %}
-            </div>
-          </div>
           {% else %}
-          <div class="z2h-empty">No recent pages yet. Create or edit a page from your current project.</div>
-          {% endfor %}
+            <div class="z2h-card-list">
+              {% for it in recent_entries %}
+                <div class="z2h-list-item">
+                  <div>
+                    <div class="z2h-list-title">{{ it.title }}</div>
+                    <div class="z2h-list-sub">{{ it.sub }}</div>
+                  </div>
+                  <div>
+                    {% if it.id %}
+                      <a href="/admin/pages/{{ it.id }}/edit" class="btn btn-outline btn-sm">Open</a>
+                    {% else %}
+                      <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
+                    {% endif %}
+                  </div>
+                </div>
+              {% else %}
+                <div class="z2h-empty">
+                  No pages yet for <strong>{{ current_tenant.name }}</strong>.
+                  <div class="mt-2">
+                    <a class="btn btn-outline btn-sm" href="/admin/pages">Go to Pages</a>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
 
-    <div class="col-lg-5">
-      <div class="card p-3 p-md-4 z2h-card mb-3">
-        <h2 class="h6 text-uppercase fw-bold mb-3">Shortcuts</h2>
-        <div class="z2h-card-list">
-          {% set _links = quick_links or [
-            {"title": "Browse Projects", "sub": "Switch between projects you have access to", "href": "/admin/projects"},
-            {"title": "All Pages", "sub": "View and edit pages in this project", "href": "/admin/pages"},
-            {"title": "Create Page", "sub": "Start a new page and add sections", "href": "/admin/entries/new" }
-          ] %}
-          {% for l in _links %}
-          <div class="z2h-list-item">
-            <div>
-              <a class="z2h-list-title" href="{{ l.href }}">{{ l.title }}</a>
-              <div class="z2h-list-sub">{{ l.sub }}</div>
-            </div>
-            <div><a class="btn btn-outline btn-sm" href="{{ l.href }}">Go</a></div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
+    <!-- Active project summary (with switch button) -->
+    <div class="col-lg-4">
       <div class="card p-3 p-md-4 z2h-card">
-        <h2 class="h6 text-uppercase fw-bold mb-2">Active project</h2>
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 text-uppercase fw-bold mb-0">Active project</h2>
+          {% if current_tenant %}
+            <a class="btn btn-outline btn-sm" href="/admin/projects" title="Switch to another project">Switch project</a>
+          {% endif %}
+        </div>
+
         <div class="d-flex align-items-center gap-2">
           <span class="z2h-badge">{{ (current_tenant and current_tenant.name) or "—" }}</span>
           {% if current_tenant and current_tenant.slug %}
             <code class="small">/{{ current_tenant.slug }}</code>
           {% endif %}
         </div>
+
+        {% if current_tenant %}
+          <div class="mt-3 small text-muted">
+            You can switch projects here or via the top navigation at any time.
+          </div>
+        {% else %}
+          <div class="mt-2">
+            <a class="btn btn-outline btn-sm" href="/admin/projects">Select a project</a>
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
 {% endblock %}
+
+
+
+
 
 
 

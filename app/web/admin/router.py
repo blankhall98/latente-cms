@@ -1,4 +1,3 @@
-# app/web/admin/router.py
 from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
@@ -6,7 +5,7 @@ from datetime import datetime, timezone
 import json
 
 from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, and_, func, or_
 from sqlalchemy.orm import Session
@@ -16,7 +15,6 @@ from app.models.auth import Tenant, User, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
 from app.services.passwords import verify_password
 
-# If you want server-side validation, you can switch this on and add jsonschema validator.
 ENABLE_SERVER_VALIDATION = False
 
 templates = Jinja2Templates(directory="app/templates")
@@ -26,9 +24,7 @@ SESSION_USER_KEY = "user"
 SESSION_ACTIVE_TENANT_KEY = "active_tenant"
 
 
-# ---------------------------
-# Helpers (enums & session)
-# ---------------------------
+# --------------------------- Helpers ---------------------------
 def _status_value(enum_cls: Any, *candidates: str) -> Any:
     for name in candidates:
         if hasattr(enum_cls, name):
@@ -78,9 +74,7 @@ def _load_entry_or_404(db: Session, entry_id: int, tenant_id: int) -> tuple[Entr
     return row  # (Entry, Section)
 
 
-# ---------------------------
-# JSON Schema helpers
-# ---------------------------
+# --------------------------- JSON Schema helpers ---------------------------
 def _get_active_schema(db: Session, section_id: int) -> Optional[SectionSchema]:
     return db.execute(
         select(SectionSchema)
@@ -90,7 +84,6 @@ def _get_active_schema(db: Session, section_id: int) -> Optional[SectionSchema]:
 
 
 def _extract_schema_dict(ss: SectionSchema | None) -> dict:
-    """Get JSON Schema dict from flexible column naming."""
     if not ss:
         return {}
     for attr in ("json_schema", "schema", "schema_json", "data"):
@@ -109,24 +102,31 @@ def _extract_schema_dict(ss: SectionSchema | None) -> dict:
 
 
 def _deep_merge(base: Any, override: Any) -> Any:
-    """Recursive deep merge: dict + dict, list replacement, value override."""
+    # dict ← dict
     if isinstance(base, dict) and isinstance(override, dict):
         out = dict(base)
         for k, v in override.items():
             out[k] = _deep_merge(base.get(k), v)
         return out
-    # For arrays, we don't try to merge per item (schemas usually define items[] shape)
+
+    # list ← list (merge por índice; mantiene sobrantes del base)
+    if isinstance(base, list) and isinstance(override, list):
+        merged: list[Any] = []
+        m = max(len(base), len(override))
+        for i in range(m):
+            if i < len(override) and i < len(base):
+                merged.append(_deep_merge(base[i], override[i]))
+            elif i < len(override):
+                merged.append(override[i])
+            else:
+                merged.append(base[i])
+        return merged
+
+    # override “gana” solo si no es None; si es None conserva base
     return override if override is not None else base
 
 
 def _defaults_from_schema(schema: dict) -> Any:
-    """
-    Recursively produce a default object for the JSON Schema.
-    - Use 'default' when present.
-    - For object: build dict from properties (using defaults).
-    - For array: default to [] or schema['default'] if present.
-    - For primitives: default if present, else sensible empty value.
-    """
     if not isinstance(schema, dict):
         return None
 
@@ -135,10 +135,8 @@ def _defaults_from_schema(schema: dict) -> Any:
 
     t = schema.get("type")
 
-    # Handle 'oneOf'/'anyOf' quickly: pick first schema to extract defaults
     for union_key in ("oneOf", "anyOf", "allOf"):
         if union_key in schema and isinstance(schema[union_key], list) and schema[union_key]:
-            # naive pick the first as default model
             return _defaults_from_schema(schema[union_key][0])
 
     if t == "object":
@@ -149,12 +147,10 @@ def _defaults_from_schema(schema: dict) -> Any:
         return out
 
     if t == "array":
-        # Prefer explicit default, otherwise empty array
         if "default" in schema:
             return schema["default"]
         return []
 
-    # primitive fallback
     if t == "string":
         return ""
     if t in ("number", "integer"):
@@ -162,7 +158,6 @@ def _defaults_from_schema(schema: dict) -> Any:
     if t == "boolean":
         return False
 
-    # if type is missing, try to infer by presence of 'properties' or 'items'
     if "properties" in schema:
         return _defaults_from_schema({"type": "object", "properties": schema["properties"]})
     if "items" in schema:
@@ -172,30 +167,19 @@ def _defaults_from_schema(schema: dict) -> Any:
 
 
 def _build_form_model_from_active_schema(json_schema: dict, entry_data: dict) -> Tuple[dict, int]:
-    """
-    Build the form model we will edit:
-      1) compute default model from active schema
-      2) deep-merge current entry data on top
-    Returns (model, inferred_version) where version is best-effort from schema metadata.
-    """
     defaults = _defaults_from_schema(json_schema) or {}
     merged = _deep_merge(defaults, entry_data or {})
-    # try to detect version (not strictly required; we will get it from SectionSchema)
     schema_version = json_schema.get("$version") or json_schema.get("version") or 1
     return merged, int(schema_version)
 
 
-# Minimal validation stub (set ENABLE_SERVER_VALIDATION=True and add jsonschema if desired)
 def _validate_against_schema(json_schema: dict, data_obj: dict) -> list[str]:
     if not ENABLE_SERVER_VALIDATION:
         return []
-    # Hook up Draft202012Validator here if you want strict validation.
     return []
 
 
-# ---------------------------
-# Web Login
-# ---------------------------
+# --------------------------- Web Login ---------------------------
 @router.get("/login")
 def login_get(request: Request):
     if (request.session or {}).get(SESSION_USER_KEY):
@@ -248,9 +232,7 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=302)
 
 
-# ---------------------------
-# Dashboard
-# ---------------------------
+# --------------------------- Dashboard ---------------------------
 @router.get("/admin")
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     try:
@@ -284,7 +266,6 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 
     tenant_id = int(active["id"])
 
-    # Projects KPI
     if is_superadmin:
         projects_count = db.scalar(select(func.count(Tenant.id)))
     else:
@@ -293,12 +274,10 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             .where(and_(UserTenant.user_id == user_id, UserTenant.status == _active_status_value()))
         ) or 0
 
-    # Sections KPI
     sections_count = db.scalar(
         select(func.count(Section.id)).where(Section.tenant_id == tenant_id)
     ) or 0
 
-    # Pages (published) KPI
     PUBLISHED = "published"
     pages_published = db.scalar(
         select(func.count(Entry.id)).where(
@@ -312,7 +291,6 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         {"label": "Projects", "value": str(projects_count), "suffix": "available"},
     ]
 
-    # Recent pages
     try:
         order_cols = [Entry.updated_at.desc().nullslast(), Entry.id.desc()]
     except Exception:
@@ -331,7 +309,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         status_text = getattr(e.status, "value", e.status)
         section_key = getattr(s, "key", getattr(s, "name", "Section"))
         tenant_slug = active.get("slug", "")
-        title = (e.data or {}).get("title") or e.slug or f"Page {getattr(e, "id", "")}"
+        title = (e.data or {}).get("title") or e.slug or f"Page {getattr(e, 'id', '')}"
         recent_entries.append({
             "title": title,
             "sub": f"{section_key} / {tenant_slug} · {status_text}",
@@ -356,9 +334,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     )
 
 
-# ---------------------------
-# Projects list & set-active
-# ---------------------------
+# --------------------------- Projects ---------------------------
 @router.get("/admin/projects")
 def projects_list(request: Request, db: Session = Depends(get_db)):
     user = _require_web_user(request)
@@ -445,9 +421,7 @@ def set_active_project(tenant_id: int, request: Request, db: Session = Depends(g
     return RedirectResponse(url="/admin", status_code=303)
 
 
-# ---------------------------
-# Pages list
-# ---------------------------
+# --------------------------- Pages list ---------------------------
 @router.get("/admin/pages")
 def pages_list(
     request: Request,
@@ -551,7 +525,7 @@ def pages_list(
     )
 
 
-# --------------------------- Page detail (shell) ---------------------------
+# --------------------------- Page detail (read-only shell) ---------------------------
 @router.get("/admin/pages/{entry_id}")
 def page_detail(
     entry_id: int,
@@ -582,7 +556,6 @@ def page_detail(
     sections_nav = [{"key": k, "label": k.replace("_", " ").title()} for k in keys_sorted]
     current_payload = data.get(current_tab, data if current_tab == "content" else "")
 
-    # IMPORTANT: display the active schema version for clarity (no upgrade UI)
     ss_active = _get_active_schema(db, section.id)
 
     return templates.TemplateResponse(
@@ -622,14 +595,11 @@ def page_edit_get(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
-    # 1) Load ACTIVE schema for this section
     ss = _get_active_schema(db, section.id)
     json_schema = _extract_schema_dict(ss)
 
-    # 2) Build form model from active schema + deep-merge current entry data
     form_model, _ = _build_form_model_from_active_schema(json_schema, entry.data or {})
 
-    # 3) Extract General + Sections for the template
     replace_val = bool((form_model.get("replace") or False))
     seo = form_model.get("seo") or {}
     seo_title = seo.get("title") or ""
@@ -651,15 +621,15 @@ def page_edit_get(
         "admin/page_edit.html",
         {
             "request": request,
-            "user": user,
-            "active_tenant": active,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
                 "title": (form_model.get("title") or form_model.get("name") or entry.slug),
                 "status": entry.status,
                 "section_name": section.name,
-                # show ACTIVE schema version here (what the form reflects)
+                "section_key": getattr(section, "key", getattr(section, "name", "Section")),  # clave para Delivery
                 "schema_version": (ss.version if ss else entry.schema_version),
             },
             "replace_val": replace_val,
@@ -677,7 +647,7 @@ def page_edit_post(
     entry_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    content_json: str = Form(...),  # built by the serializer (full object)
+    content_json: str = Form(...),
 ):
     user = _require_web_user(request)
     active = _get_active_tenant(request)
@@ -687,18 +657,16 @@ def page_edit_post(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
-    # Load ACTIVE schema for validation + version pin
     ss = _get_active_schema(db, section.id)
     json_schema = _extract_schema_dict(ss)
     active_version = ss.version if ss else entry.schema_version
 
-    # Parse payload
+    # --- Parseo seguro
     try:
         parsed = json.loads(content_json)
         if not isinstance(parsed, dict):
             raise ValueError("Submitted payload must be a JSON object.")
     except Exception as e:
-        # Rebuild minimal sections UI from existing entry (to show the error gracefully)
         data = entry.data or {}
         sections = data.get("sections") or []
         sections_ui = [{
@@ -711,14 +679,15 @@ def page_edit_post(
             "admin/page_edit.html",
             {
                 "request": request,
-                "user": user,
-                "active_tenant": active,
+                "user": {"id": int(user["id"]), "email": user.get("email")},
+                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
                 "page": {
                     "id": entry.id,
                     "slug": entry.slug,
                     "title": (data.get("title") or data.get("name") or entry.slug),
                     "status": entry.status,
                     "section_name": section.name,
+                    "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                     "schema_version": active_version,
                 },
                 "initial_json": content_json,
@@ -732,7 +701,7 @@ def page_edit_post(
             status_code=400,
         )
 
-    # Optional: validate against ACTIVE schema
+    # --- Validación mínima (opcionalmente ampliable)
     errors = _validate_against_schema(json_schema, parsed)
     if errors:
         sections = parsed.get("sections") or []
@@ -746,14 +715,15 @@ def page_edit_post(
             "admin/page_edit.html",
             {
                 "request": request,
-                "user": user,
-                "active_tenant": active,
+                "user": {"id": int(user["id"]), "email": user.get("email")},
+                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
                 "page": {
                     "id": entry.id,
                     "slug": entry.slug,
                     "title": (parsed.get("title") or (entry.data or {}).get("title") or entry.slug),
                     "status": entry.status,
                     "section_name": section.name,
+                    "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                     "schema_version": active_version,
                 },
                 "initial_json": json.dumps(parsed, ensure_ascii=False, indent=2),
@@ -767,8 +737,58 @@ def page_edit_post(
             status_code=422,
         )
 
-    # Persist: save data and pin entry to ACTIVE schema version (no visible "upgrade")
-    entry.data = parsed
+    # -----------------------------
+    # REGLAS ANTI-BORRADO ACCIDENTAL
+    # -----------------------------
+    base_data = entry.data or {}
+    payload = parsed or {}
+
+    # 1) Si NO viene "sections" en el payload, NO tocar las secciones actuales
+    incoming_has_sections_key = "sections" in payload
+    incoming_sections = payload.get("sections", None)
+
+    # 2) Si viene "sections" vacío y NO hay replace=true → rechazar
+    replace_flag = bool(payload.get("replace", False))
+    if incoming_has_sections_key and isinstance(incoming_sections, list) and len(incoming_sections) == 0 and not replace_flag:
+        return templates.TemplateResponse(
+            "admin/page_edit.html",
+            {
+                "request": request,
+                "user": {"id": int(user["id"]), "email": user.get("email")},
+                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+                "page": {
+                    "id": entry.id,
+                    "slug": entry.slug,
+                    "title": (base_data.get("title") or entry.slug),
+                    "status": entry.status,
+                    "section_name": section.name,
+                    "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                    "schema_version": active_version,
+                },
+                "initial_json": json.dumps(payload, ensure_ascii=False, indent=2),
+                "replace_val": replace_flag,
+                "seo_title": (payload.get("seo") or {}).get("title", (base_data.get("seo") or {}).get("title", "")),
+                "seo_desc": (payload.get("seo") or {}).get("description", (base_data.get("seo") or {}).get("description", "")),
+                "sections_ui": [{
+                    "index": i,
+                    "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+                    "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+                } for i, blk in enumerate(base_data.get("sections") or [])],
+                "error": "Cannot clear sections without replace=true.",
+                "ok_message": None,
+            },
+            status_code=400,
+        )
+
+    # 3) Merge NO destructivo (conserva valores actuales por defecto)
+    merged = _deep_merge(base_data, payload)
+
+    # 4) Si el payload NO traía "sections", aseguramos que se queden las actuales
+    if not incoming_has_sections_key and "sections" in base_data:
+        merged["sections"] = base_data["sections"]
+
+    # Persistir
+    entry.data = merged
     entry.schema_version = active_version
     entry.updated_at = datetime.now(timezone.utc)
     db.add(entry)
@@ -786,14 +806,15 @@ def page_edit_post(
         "admin/page_edit.html",
         {
             "request": request,
-            "user": user,
-            "active_tenant": active,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
                 "title": (entry.data or {}).get("title") or entry.slug,
                 "status": entry.status,
                 "section_name": section.name,
+                "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                 "schema_version": active_version,
             },
             "initial_json": json.dumps(entry.data or {}, ensure_ascii=False, indent=2),
@@ -805,4 +826,43 @@ def page_edit_post(
             "ok_message": "Changes saved.",
         },
     )
+
+
+# --------------------------- Admin Publish proxy (session-based) ---------------------------
+@router.post("/admin/pages/{entry_id}/publish")
+def admin_publish_page(
+    entry_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Publica una página desde el Admin usando la sesión (sin JWT).
+    Esto garantiza que Delivery la exponga (status='published').
+    """
+    _require_web_user(request)
+    active = _get_active_tenant(request)
+    tid = int((active or {}).get("id") or 0)
+    if not tid:
+        raise HTTPException(status_code=400, detail="No active project.")
+
+    entry, _section = _load_entry_or_404(db, entry_id, tid)
+
+    # No publicar páginas vacías (sin sections)
+    data_now = entry.data or {}
+    if not (isinstance(data_now, dict) and isinstance(data_now.get("sections"), list) and len(data_now["sections"]) > 0):
+        raise HTTPException(status_code=409, detail="Cannot publish an empty page (no sections). Save content first.")
+
+    now = datetime.now(timezone.utc)
+    entry.status = "published"
+    try:
+        setattr(entry, "published_at", now)
+    except Exception:
+        pass
+    entry.updated_at = now
+
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+
+    return JSONResponse({"ok": True, "status": "published", "entry_id": int(entry.id)})
 

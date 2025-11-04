@@ -2,10 +2,17 @@
 {% block title %}Edit Page · {{ page.title }} · Latente CMS{% endblock %}
 
 {% block content %}
-<section class="container my-4">
+<section class="container my-4"
+         id="z2h-edit-root"
+         data-tenant="{{ active_tenant.slug if active_tenant else '' }}"
+         data-tenant-id="{{ active_tenant.id if active_tenant else '' }}"
+         data-user-id="{{ user.id if user else '' }}"
+         data-section-key="{{ page.section_key if page.section_key else '' }}"
+         data-entry-id="{{ page.id }}"
+         data-entry-slug="{{ page.slug }}">
 
   <!-- Breadcrumb -->
-  <nav class="mb-3" aria-label="breadcrumb">
+  <nav class="mb-4" aria-label="breadcrumb" id="z2h-breadcrumb">
     <ol class="breadcrumb m-0">
       <li class="breadcrumb-item"><a href="/admin/projects">Projects</a></li>
       <li class="breadcrumb-item"><a href="/admin/pages">Pages</a></li>
@@ -13,8 +20,8 @@
     </ol>
   </nav>
 
-  <!-- Header (más sutil) -->
-  <header class="z2h-header-slim mb-3">
+  <!-- Toolbar sticky -->
+  <header id="z2h-toolbar" class="z2h-toolbar mb-3">
     <div>
       <h1 class="h4 m-0 text-capitalize">{{ page.title }}</h1>
       <div class="z2h-meta row gx-2 gy-1 mt-1">
@@ -22,18 +29,17 @@
         <div class="col-auto"><span class="z2h-chip">Section: <strong>{{ page.section_name }}</strong></span></div>
         {% set s=(page.status or '').lower() %}
         <div class="col-auto">
-          <span class="z2h-chip z2h-chip-status {{ s }}">
-            {{ s }}
-          </span>
+          <span id="z2h-status-chip" class="z2h-chip z2h-chip-status {{ s }}">{{ s }}</span>
         </div>
         <div class="col-auto"><span class="z2h-chip">Schema v{{ page.schema_version }}</span></div>
         <div class="col-auto d-none d-sm-inline"><span class="z2h-dot"></span><span class="z2h-save-txt">Saved</span></div>
-        <div class="col-auto"><span class="z2h-chip">JSON <span id="z2h-json-bytes">0</span> KB</span></div>
       </div>
     </div>
 
     <div class="d-flex gap-2">
-      <a class="btn btn-outline" href="/admin/pages/{{ page.id }}">Cancel</a>
+      <a class="btn btn-outline d-none d-md-inline" id="z2h-delivery-btn" target="_blank" rel="noopener">Delivery JSON</a>
+      <button type="button" class="btn btn-outline d-none d-md-inline" id="z2h-publish-btn" disabled title="Save changes first">Publish</button>
+      <a class="btn btn-outline" href="/admin/pages">Cancel</a>
       <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
     </div>
   </header>
@@ -41,31 +47,28 @@
   {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
   {% if ok_message %}<div class="alert alert-success" role="alert">{{ ok_message }}</div>{% endif %}
 
-  <!-- Layout: Sidebar / Form -->
+  <!-- Layout -->
   <form id="z2h-edit-form" class="z2h-editor-grid-simple" method="post" action="">
     <!-- Sidebar -->
     <aside class="z2h-editor-sidebar">
-      <div class="card p-3 mb-3">
-        <div class="text-uppercase small fw-bold text-muted mb-2">Page</div>
-        <div class="fw-semibold">{{ page.title }}</div>
-        <div class="small text-muted">{{ page.section_name }}</div>
-      </div>
 
       <div class="card p-3 mb-2">
         <label class="form-label small mb-1">Find section</label>
         <input type="search" id="z2h-section-search" class="form-control form-control-sm" placeholder="Type to filter…">
       </div>
 
+      <!-- Lista tipo “tabla” sin scroll interno -->
       <nav class="card p-2 z2h-side-list" id="z2h-side-nav" aria-label="Section navigator">
         <button type="button" class="z2h-side-item active" data-panel-id="panel-general">
-          <span>General</span><span class="chip">SEO</span>
+          <span class="z2h-side-label">General</span><span class="chip chip-type">SEO</span>
         </button>
 
         {% if sections_ui and sections_ui|length > 0 %}
           {% for it in sections_ui %}
             {% set _type = (it.get('sec') or {}).get('type', 'Block') %}
             <button type="button" class="z2h-side-item" data-panel-id="panel-section-{{ it.index }}">
-              <span>{{ it.label }}</span><span class="chip">{{ _type }}</span>
+              <span class="z2h-side-label">{{ it.label }}</span>
+              <span class="chip chip-type">{{ _type }}</span>
             </button>
           {% endfor %}
         {% else %}
@@ -73,12 +76,12 @@
         {% endif %}
       </nav>
 
-      <div class="small text-muted px-2 mt-2">
-        Tip: <kbd>F</kbd> search · <kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> save
+      <div class="small text-muted px-2 mt-2 z2h-tips">
+        Tips: <kbd>F</kbd> search · <kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> save
       </div>
     </aside>
 
-    <!-- Main editor -->
+    <!-- Main -->
     <main class="z2h-editor-main">
       <div id="z2h-panels" class="z2h-panels">
 
@@ -114,13 +117,11 @@
           </div>
         </section>
 
-        <!-- Sections -->
+        <!-- Secciones agnósticas -->
         {% for it in sections_ui %}
         {% set S = it.get('sec') or {} %}
-        {% set T = (S.type or '') %}
         <section id="panel-section-{{ it.index }}"
                  class="z2h-panel d-none"
-                 data-section-type="{{ T }}"
                  data-section-index="{{ it.index }}"
                  tabindex="-1">
 
@@ -154,7 +155,7 @@
               </div>
               <div class="col-12">
                 <label class="form-label">Rich Text</label>
-                <textarea rows="5" class="form-control z2h-dirty" data-k="richText" placeholder="Markdown/HTML supported later">{{ S.richText or '' }}</textarea>
+                <textarea rows="5" class="form-control z2h-dirty" data-k="richText" placeholder="Markdown/HTML later">{{ S.richText or '' }}</textarea>
               </div>
             </div>
           </div>
@@ -217,146 +218,15 @@
             </div>
           </div>
 
-          <!-- Data (type-specific) -->
+          <!-- Advanced Data (JSON) -->
           <div class="card p-3 mb-1">
-            <h3 class="h6 text-uppercase fw-bold mb-2">Data</h3>
-
-            {% if T in ['Hero','HeroOverlay'] %}
-              <div class="mb-3">
-                <label class="form-label">Rotating words (comma-separated)</label>
-                <input type="text" class="form-control z2h-dirty" data-data="rotatingWords"
-                       value="{% if S.data and S.data.rotatingWords %}{{ S.data.rotatingWords | join(', ') }}{% endif %}">
-              </div>
-            {% endif %}
-
-            {% if T == 'NavBar' %}
-              <div class="card p-2 mb-2">
-                <div class="fw-semibold small mb-2">Brand</div>
-                <div class="row g-2">
-                  <div class="col-md-5">
-                    <label class="form-label small">Text</label>
-                    <input type="text" class="form-control z2h-dirty" data-data="brand.text" value="{{ (S.data.brand.text if S.data and S.data.brand else '') }}">
-                  </div>
-                  <div class="col-md-7">
-                    <label class="form-label small">Href</label>
-                    <input type="text" class="form-control z2h-dirty" data-data="brand.href" value="{{ (S.data.brand.href if S.data and S.data.brand else '') }}">
-                  </div>
-                </div>
-              </div>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <div class="fw-semibold small">Links Left</div>
-                    <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="data.linksLeft">Add</button>
-                  </div>
-                  <div class="z2h-repeater mt-2" data-repeater="data.linksLeft">
-                    {% for l in (S.data.linksLeft if S.data and S.data.linksLeft else []) %}
-                    <div class="z2h-rep-item card p-2 mb-2">
-                      <div class="row g-2">
-                        <div class="col-5"><input type="text" class="form-control z2h-dirty" data-k="label" placeholder="Label" value="{{ l.label or '' }}"></div>
-                        <div class="col-7"><input type="text" class="form-control z2h-dirty" data-k="href"  placeholder="Href"  value="{{ l.href or '' }}"></div>
-                      </div>
-                      <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
-                    </div>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <div class="fw-semibold small">Links Right</div>
-                    <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="data.linksRight">Add</button>
-                  </div>
-                  <div class="z2h-repeater mt-2" data-repeater="data.linksRight">
-                    {% for l in (S.data.linksRight if S.data and S.data.linksRight else []) %}
-                    <div class="z2h-rep-item card p-2 mb-2">
-                      <div class="row g-2">
-                        <div class="col-5"><input type="text" class="form-control z2h-dirty" data-k="label" placeholder="Label" value="{{ l.label or '' }}"></div>
-                        <div class="col-7"><input type="text" class="form-control z2h-dirty" data-k="href"  placeholder="Href"  value="{{ l.href or '' }}"></div>
-                      </div>
-                      <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
-                    </div>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
-            {% endif %}
-
-            {% if T in ['Grid','Plans','Accordion'] %}
-              <div class="d-flex align-items-center justify-content-between mt-2">
-                <div class="fw-semibold small">Items</div>
-                <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="data.items">Add item</button>
-              </div>
-              <div class="z2h-repeater mt-2" data-repeater="data.items">
-                {% set _items = (S.data['items'] if S.data and 'items' in S.data else []) %}
-                {% for itx in _items %}
-                <div class="z2h-rep-item card p-2 mb-2">
-                  <div class="row g-2">
-                    {% if T in ['Grid','Plans'] %}
-                      {% if T == 'Grid' %}
-                        <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-k="title"       placeholder="Title" value="{{ itx.title or '' }}"></div>
-                        <div class="col-md-8"><input type="text" class="form-control z2h-dirty" data-k="description" placeholder="Description" value="{{ itx.description or '' }}"></div>
-                        <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-k="image"       placeholder="Image URL" value="{{ itx.image or '' }}"></div>
-                        <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-k="imageAlt"    placeholder="Image alt" value="{{ itx.imageAlt or '' }}"></div>
-                      {% else %}
-                        <div class="col-md-2"><input type="text" class="form-control z2h-dirty" data-k="badge"       placeholder="Badge" value="{{ itx.badge or '' }}"></div>
-                        <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-k="title"       placeholder="Plan Name" value="{{ itx.title or '' }}"></div>
-                        <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-k="description" placeholder="Description" value="{{ itx.description or '' }}"></div>
-                        <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-k="image"       placeholder="Image URL" value="{{ itx.image or '' }}"></div>
-                        <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-k="imageAlt"    placeholder="Image alt" value="{{ itx.imageAlt or '' }}"></div>
-                      {% endif %}
-                    {% elif T == 'Accordion' %}
-                      <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-k="title"       placeholder="Title" value="{{ itx.title or '' }}"></div>
-                      <div class="col-md-8"><input type="text" class="form-control z2h-dirty" data-k="description" placeholder="Description" value="{{ itx.description or '' }}"></div>
-                      <div class="col-12"><input type="text" class="form-control z2h-dirty" data-k="bullets"      placeholder="Bullets (comma-separated)" value="{% if itx.bullets %}{{ itx.bullets | join(', ') }}{% endif %}"></div>
-                    {% endif %}
-                  </div>
-                  <div class="row g-2 mt-1">
-                    <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-k="actions[0].label" placeholder="Action label" value="{{ (itx.actions[0].label if itx.actions and itx.actions[0] else '') }}"></div>
-                    <div class="col-md-8"><input type="text" class="form-control z2h-dirty" data-k="actions[0].href"  placeholder="Action href"  value="{{ (itx.actions[0].href  if itx.actions and itx.actions[0] else '') }}"></div>
-                  </div>
-                  <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
-                </div>
-                {% endfor %}
-              </div>
-
-              {% if T == 'Accordion' %}
-              <div class="mt-3">
-                <label class="form-label small">Side Image URL</label>
-                <input type="text" class="form-control z2h-dirty" data-data="sideImage.url" value="{{ (S.data.sideImage.url if S.data and S.data.sideImage else '') }}">
-                <div class="row g-2 mt-1">
-                  <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-data="sideImage.type" value="{{ (S.data.sideImage.type if S.data and S.data.sideImage else '') }}" placeholder="image/video"></div>
-                  <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-data="sideImage.alt"  value="{{ (S.data.sideImage.alt  if S.data and S.data.sideImage else '') }}" placeholder="Alt"></div>
-                </div>
-              </div>
-              {% endif %}
-            {% endif %}
-
-            {% if T == 'SocialGallery' %}
-              <div class="row g-2">
-                <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-data="heading"     placeholder="Heading"     value="{{ S.data.heading if S.data else '' }}"></div>
-                <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-data="handle"      placeholder="Handle"      value="{{ S.data.handle if S.data else '' }}"></div>
-                <div class="col-md-4"><input type="text" class="form-control z2h-dirty" data-data="profileUrl"  placeholder="Profile URL" value="{{ S.data.profileUrl if S.data else '' }}"></div>
-              </div>
-              <div class="row g-2 mt-1">
-                <div class="col-md-6"><input type="text" class="form-control z2h-dirty" data-data="source" placeholder="manual/instagram/cms" value="{{ S.data.source if S.data else '' }}"></div>
-              </div>
-              <div class="d-flex align-items-center justify-content-between mt-3">
-                <div class="fw-semibold small">Images</div>
-                <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="data.images">Add</button>
-              </div>
-              <div class="z2h-repeater mt-2" data-repeater="data.images">
-                {% for im in (S.data.images if S.data and S.data.images else []) %}
-                <div class="z2h-rep-item card p-2 mb-2">
-                  <div class="row g-2 align-items-end">
-                    <div class="col-3"><input type="text" class="form-control z2h-dirty" data-k="type" value="{{ im.type or 'image' }}" placeholder="image/video"></div>
-                    <div class="col-7"><input type="text" class="form-control z2h-dirty" data-k="url"  value="{{ im.url  or '' }}" placeholder="URL"></div>
-                    <div class="col-2"><input type="text" class="form-control z2h-dirty" data-k="alt"  value="{{ im.alt  or '' }}" placeholder="Alt"></div>
-                  </div>
-                  <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
-                </div>
-                {% endfor %}
-              </div>
-            {% endif %}
+            <div class="d-flex align-items-center justify-content-between">
+              <h3 class="h6 m-0">Advanced Data (JSON)</h3>
+              <small class="text-muted">Edits <code>section.data</code></small>
+            </div>
+            <textarea class="form-control z2h-dirty z2h-json-editor" rows="8"
+                      data-data-json="true">{{ (S.data | tojson(indent=2)) if S.data else "{}" }}</textarea>
+            <div class="form-hint">Debe ser JSON válido.</div>
           </div>
         </section>
         {% endfor %}
@@ -364,9 +234,9 @@
         <!-- Hidden JSON -->
         <textarea name="content_json" id="z2h-content-json" class="d-none"></textarea>
 
-        <!-- Bottom actions (mobile) -->
-        <div class="border-top p-3 bg-body d-flex justify-content-end gap-2 d-md-none">
-          <button class="btn btn-outline me-auto" type="button" onclick="history.back()">Cancel</button>
+        <!-- Botonera inferior (solo mobile) -->
+        <div class="z2h-bottom-actions d-md-none">
+          <a class="btn btn-outline me-auto" href="/admin/pages">Cancel</a>
           <button class="btn btn-cta" type="submit">Save</button>
         </div>
       </div>
@@ -374,92 +244,169 @@
   </form>
 </section>
 
-<!-- Inline styles (más sobrio) -->
+<!-- Modal Publish -->
+<div class="modal fade" id="z2hPublishModal" tabindex="-1" aria-labelledby="z2hPublishLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="z2hPublishLabel">Publish this page?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        The page will be published to the public Delivery API. Continue?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-cta" id="z2h-confirm-publish">Publish</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
-  /* Header más tenue */
-  .z2h-header-slim{
-    display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+  :root{ --nav-h: 56px; }
+
+  /* Toolbar (sticky + transición más suave al full-bleed) */
+  .z2h-toolbar{
+    position: sticky;
+    top: var(--nav-h);
+    z-index: 1040;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
     padding:.75rem 1rem; border:1px solid var(--border); border-radius:12px;
-    background: #fff; box-shadow: var(--shadow-sm);
+    background:#fff; box-shadow: var(--shadow-sm);
+    transition:
+      margin .55s ease-in-out,
+      padding .55s ease-in-out,
+      border-radius .45s ease-in-out,
+      box-shadow .45s ease-in-out;
   }
-  .z2h-meta .z2h-chip{ margin-right:.25rem; }
-  .z2h-chip{
-    display:inline-flex; align-items:center; gap:.25rem;
-    padding:.18rem .5rem; border-radius:999px;
-    background:#faf8f5; border:1px solid var(--border); color:var(--text-2); font-size:.78rem;
+  .z2h-toolbar.is-stuck{
+    border-radius:0;
+    padding:.85rem 0;
+    border-left:0; border-right:0;
+    box-shadow: 0 6px 22px rgba(16,24,40,.12);
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding-left: calc((100vw - 100%) / 2);
+    padding-right: calc((100vw - 100%) / 2);
   }
-  .z2h-chip.code{ background:#f6f8ff; border-color:#e3e8ff; color:#445; }
-  .z2h-chip-status{ text-transform: uppercase; letter-spacing:.08em; font-weight:700; }
+
+  .z2h-chip{ display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .5rem; border-radius:999px;
+             background:#faf8f5; border:1px solid var(--border); color:var(--text-2); font-size:.78rem; }
+  .z2h-chip.code{ background:#f6f8ff; border-color:#e3e8ff; color:#334; }
+  .z2h-chip-status{ text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
   .z2h-chip-status.published{ background:#eefaf3; border-color:#d6f4e2; color:#175e37; }
   .z2h-chip-status.draft{ background:#fff8ea; border-color:#ffe5b3; color:#7a520c; }
   .z2h-chip-status.archived{ background:#f4f6f8; border-color:#e5e7eb; color:#3b4450; }
   .z2h-dot{ width:.55rem; height:.55rem; border-radius:999px; background:#16a34a; display:inline-block; margin-right:.25rem; }
 
-  /* Layout simple */
-  .z2h-editor-grid-simple{
-    display:grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 16px;
-  }
+  .z2h-editor-grid-simple{ display:grid; grid-template-columns: 300px minmax(0,1fr); gap:16px; }
   @media (max-width: 991.98px){ .z2h-editor-grid-simple{ grid-template-columns: 1fr; } }
-  .z2h-editor-sidebar{ position: sticky; top: 76px; align-self: start; }
+  .z2h-editor-sidebar{ position:sticky; top: calc(var(--nav-h) + 16px); align-self:start; }
 
-  /* Sidebar nav */
   .z2h-side-list{ border:1px solid var(--border); }
   .z2h-side-item{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:.58rem .7rem; border:0; width:100%; background:transparent;
-    text-align:left; border-radius:8px; margin:.12rem 0; cursor:pointer;
-    color: var(--text-2);
+    display:grid; grid-template-columns: 1fr auto; align-items:center;
+    gap:.5rem; padding:.58rem .7rem; border:0; width:100%; background:transparent;
+    text-align:left; border-radius:8px; margin:.12rem 0; cursor:pointer; color:var(--text-2);
   }
-  .z2h-side-item.active{ background: var(--surface-2); color: var(--text-1); font-weight:700; }
-  .z2h-side-item:hover{ background:#f8f7f4; color: var(--text-1); }
-  .z2h-side-empty{ padding:.6rem; color: var(--text-2); }
-  .chip{ font-size:.72rem; border-radius:999px; padding:.05rem .45rem; border:1px solid var(--border); background:#fff; color:#4f79b8; }
+  .z2h-side-item.active{ background:var(--surface-2); color:var(--text-1); font-weight:700; }
+  .z2h-side-item:hover{ background:#f8f7f4; color:var(--text-1); }
+  .chip{ font-size:.72rem; border-radius:999px; padding:.05rem .55rem; border:1px solid var(--border); background:#fff; color:#2f5fa8; }
+  .chip-type{ min-width:88px; text-align:center; }
+  .z2h-tips{ color:#344256; }
 
-  /* Panels & forms */
-  .z2h-panel{ animation: z2hFade .12s ease-in; outline:none; }
+  .z2h-panel{ animation:z2hFade .12s ease-in; outline:none; }
   .z2h-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
   .z2h-panel-title{ font-size:.95rem; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0; }
-  .z2h-panel-sub{ color: var(--text-2); font-size:.85rem; }
-  @keyframes z2hFade { from { opacity:.6; transform: translateY(2px); } to { opacity:1; transform:none; } }
+  .z2h-panel-sub{ color:var(--text-2); font-size:.85rem; }
+  @keyframes z2hFade { from{opacity:.6; transform:translateY(2px);} to{opacity:1; transform:none;} }
   .form-control{ border-radius:10px; }
-  .form-hint{ font-size:.78rem; color: var(--text-2); margin-top:.2rem; }
+  .form-hint{ font-size:.78rem; color:var(--text-2); margin-top:.2rem; }
 
   .z2h-rep-item{ border:1px dashed var(--border); }
-  .is-invalid{ border-color:#ef4444 !important; box-shadow: 0 0 0 .18rem rgba(239,68,68,.16) !important; }
+
+  .z2h-bottom-actions{
+    position:sticky; bottom:0; padding:.75rem; display:flex; gap:.5rem; justify-content:end;
+    background:transparent; border:0;
+  }
+
+  .is-invalid{ border-color:#ef4444 !important; box-shadow:0 0 0 .18rem rgba(239,68,68,.16) !important; }
 </style>
 
-<!-- Behavior (sin preview) -->
 <script>
 (function(){
-  const nav = document.getElementById('z2h-side-nav');
-  const panels = document.querySelectorAll('.z2h-panel');
-  const jsonBytesEl = document.getElementById('z2h-json-bytes');
-  const form = document.getElementById('z2h-edit-form');
-  const contentJson = document.getElementById('z2h-content-json');
-  const saverTxt = document.querySelector('.z2h-save-txt');
-  const finder = document.getElementById('z2h-section-search');
-
-  function showPanel(id) {
-    panels.forEach(p => p.classList.add('d-none'));
-    const el = document.getElementById(id);
-    if (el) { el.classList.remove('d-none'); el.focus(); }
-    nav.querySelectorAll('.z2h-side-item').forEach(it => {
-      it.classList.toggle('active', it.getAttribute('data-panel-id') === id);
-    });
+  // --- Calcular offset real de navbar y aplicarlo a --nav-h
+  function updateOffsets(){
+    const nav = document.querySelector('.navbar, header nav, .z2h-navbar');
+    const h = nav ? nav.offsetHeight : 56;
+    document.documentElement.style.setProperty('--nav-h', `${h}px`);
   }
+  updateOffsets();
+  window.addEventListener('resize', updateOffsets);
+
+  // --- Sticky: toggle clase para activar el full-bleed
+  const toolbar = document.getElementById('z2h-toolbar');
+  if (toolbar){
+    let stuck=false;
+    const onScroll=()=>{ const add = window.scrollY>12; if(add!==stuck){ toolbar.classList.toggle('is-stuck', add); stuck=add; } };
+    onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
+  }
+
+  const root   = document.getElementById('z2h-edit-root');
+  const nav    = document.getElementById('z2h-side-nav');
+  const panels = document.querySelectorAll('.z2h-panel');
+  const form   = document.getElementById('z2h-edit-form');
+  const contentJson = document.getElementById('z2h-content-json');
+  const entryId = root?.dataset?.entryId;
+
+  // --- Dirty state & helper UI
+  let isDirty = false;
+  const statusDot = document.querySelector('.z2h-dot');
+  const saverTxt = document.querySelector('.z2h-save-txt');
+  const publishBtn = document.getElementById('z2h-publish-btn');
+
+  function setDirty(v){
+    isDirty = !!v;
+    if (statusDot) statusDot.style.background = v ? '#f59e0b' : '#16a34a';
+    if (saverTxt) saverTxt.textContent = v ? 'Unsaved' : 'Saved';
+    if (publishBtn){
+      publishBtn.disabled = v;
+      publishBtn.title = v ? 'Save changes first' : 'Publish';
+    }
+  }
+
+  function showPanel(id){
+    panels.forEach(p=>p.classList.add('d-none'));
+    const el = document.getElementById(id);
+    if (el){ el.classList.remove('d-none'); el.focus(); }
+    nav.querySelectorAll('.z2h-side-item').forEach(it=>{
+      it.classList.toggle('active', it.getAttribute('data-panel-id')===id);
+    });
+
+    // Scroll (breadcrumb + respiro)
+    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56;
+    const tbH  = toolbar ? toolbar.offsetHeight : 0;
+    const bcH  = document.getElementById('z2h-breadcrumb')?.offsetHeight || 0;
+    const y = form.getBoundingClientRect().top + window.scrollY - navH - tbH - bcH - 8;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+
+  // Panel inicial
   showPanel('panel-general');
-  nav.addEventListener('click', (e) => {
-    const btn = e.target.closest('.z2h-side-item'); if (!btn) return;
-    const pid = btn.getAttribute('data-panel-id'); if (pid) showPanel(pid);
+
+  // Click en side-menu
+  nav.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.z2h-side-item'); if(!btn) return;
+    const pid = btn.getAttribute('data-panel-id'); if(pid) showPanel(pid);
   });
 
-  // Finder
+  // Busca en side-menu
+  const finder  = document.getElementById('z2h-section-search');
   function filterNav(){
-    const q = (finder.value || '').toLowerCase();
+    const q=(finder.value||'').toLowerCase();
     nav.querySelectorAll('.z2h-side-item').forEach(it=>{
-      if(it.dataset.panelId === 'panel-general'){ it.classList.remove('d-none'); return; }
+      if(it.dataset.panelId==='panel-general'){ it.classList.remove('d-none'); return; }
       const txt = it.textContent.toLowerCase();
       it.classList.toggle('d-none', !txt.includes(q));
     });
@@ -467,153 +414,224 @@
   finder.addEventListener('input', filterNav);
   window.addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='f'){ finder.focus(); e.preventDefault(); } });
 
-  // Repeaters
-  function mkRepItem(repeater) {
-    const last = repeater.querySelector('.z2h-rep-item:last-of-type');
-    let node;
-    if (last) {
-      node = last.cloneNode(true);
-      node.querySelectorAll('input,textarea').forEach(el => el.value = '');
-    } else {
-      node = document.createElement('div');
-      node.className = 'z2h-rep-item card p-2 mb-2';
-      node.innerHTML = `
-        <div class="row g-2">
-          <div class="col"><input type="text" class="form-control z2h-dirty" data-k="label" placeholder="Label"></div>
-          <div class="col"><input type="text" class="form-control z2h-dirty" data-k="href"  placeholder="Href"></div>
-        </div>
-        <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>`;
-    }
-    node.querySelectorAll('input,textarea,select').forEach(x=>x.classList.add('z2h-dirty'));
-    return node;
-  }
-  document.addEventListener('click', (e) => {
-    const addBtn = e.target.closest('.z2h-add');
-    if (addBtn) {
-      const name = addBtn.getAttribute('data-repeater');
-      const host = addBtn.closest('section').querySelector(`.z2h-repeater[data-repeater="${name}"]`);
-      if (host) { host.appendChild(mkRepItem(host)); markDirty(); }
-    }
-    const rmBtn = e.target.closest('.z2h-remove');
-    if (rmBtn) { const item = rmBtn.closest('.z2h-rep-item'); if (item) { item.remove(); markDirty(); } }
-  });
-
-  // Counters
-  document.querySelectorAll('.z2h-count').forEach(inp=>{
-    const max = Number(inp.dataset.max||"0"); const meter = document.querySelector(`[data-for="${inp.id}"]`);
-    function upd(){ const n=(inp.value||'').trim().length; if(meter) meter.textContent=n; inp.classList.toggle('is-invalid', max && n>max); }
-    inp.addEventListener('input', upd); upd();
-  });
-
-  // Serializer
-  function setDeep(obj, path, value) {
+  // Repeaters helpers
+  function setDeep(obj, path, value){
     const parts = path.replace(/\]/g,'').split('.');
-    let cur = obj;
-    for (let i=0;i<parts.length;i++){
-      const p = parts[i];
-      if (p.includes('[')) {
-        const name = p.split('[')[0];
-        const idx = (p.match(/\[(\d+)\]$/) || [])[1];
-        if (!cur[name]) cur[name] = [];
-        if (idx !== undefined) {
-          const n = parseInt(idx,10);
-          if (!cur[name][n]) cur[name][n] = {};
-          if (i === parts.length-1) cur[name][n] = value; else cur = cur[name][n];
-        } else {
-          if (i === parts.length-1) cur[name].push(value); else cur = cur[name];
+    let cur=obj;
+    for(let i=0;i<parts.length;i++){
+      const p=parts[i];
+      if(p.includes('[')){
+        const name=p.split('[')[0];
+        const idx=(p.match(/\[(\d+)\]$/)||[])[1];
+        if(!cur[name]) cur[name]=[];
+        if(idx!==undefined){
+          const n=parseInt(idx,10); if(!cur[name][n]) cur[name][n]={};
+          if(i===parts.length-1) cur[name][n]=value; else cur=cur[name][n];
+        }else{
+          if(i===parts.length-1) cur[name].push(value); else cur=cur[name];
         }
-      } else {
-        if (i === parts.length-1) { cur[p] = value; }
-        else { if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}; cur = cur[p]; }
+      }else{
+        if(i===parts.length-1){ cur[p]=value; }
+        else{ if(!cur[p]||typeof cur[p]!=='object') cur[p]={}; cur=cur[p]; }
       }
     }
   }
   function getRepItemObject(repItem){
-    const obj = {};
-    repItem.querySelectorAll('[data-k]').forEach(el => {
-      const k = el.getAttribute('data-k');
-      let v = el.value;
-      if (k && k.endsWith(']')) { setDeep(obj, k, v); }
-      else if (k) { obj[k] = v; }
+    const obj={};
+    repItem.querySelectorAll('[data-k]').forEach(el=>{
+      const k=el.getAttribute('data-k'); let v=el.value;
+      if(k && k.endsWith(']')) setDeep(obj,k,v); else if(k) obj[k]=v;
     });
     return obj;
   }
-  function parseCSV(val){ if (!val || !val.trim()) return []; return val.split(',').map(s => s.trim()).filter(Boolean); }
+  function mkRepItem(repeater){
+    const last = repeater.querySelector('.z2h-rep-item:last-of-type'); let node;
+    if(last){ node = last.cloneNode(true); node.querySelectorAll('input,textarea,select').forEach(el=>el.value=''); }
+    else{
+      node=document.createElement('div'); node.className='z2h-rep-item card p-2 mb-2';
+      node.innerHTML=`<div class="row g-2">
+        <div class="col"><input type="text" class="form-control z2h-dirty" data-k="label" placeholder="Label"></div>
+        <div class="col"><input type="text" class="form-control z2h-dirty" data-k="href" placeholder="Href"></div>
+      </div><div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>`;
+    }
+    node.querySelectorAll('input,textarea,select').forEach(x=>x.classList.add('z2h-dirty'));
+    return node;
+  }
+  document.addEventListener('click', (e)=>{
+    const addBtn = e.target.closest('.z2h-add');
+    if(addBtn){
+      const name=addBtn.getAttribute('data-repeater');
+      const host=addBtn.closest('section').querySelector(`.z2h-repeater[data-repeater="${name}"]`);
+      if(host){ host.appendChild(mkRepItem(host)); setDirty(true); }
+    }
+    const rmBtn = e.target.closest('.z2h-remove');
+    if(rmBtn){ const item=rmBtn.closest('.z2h-rep-item'); if(item){ item.remove(); setDirty(true); } }
+  });
 
+  // Contadores SEO
+  document.querySelectorAll('.z2h-count').forEach(inp=>{
+    const max=Number(inp.dataset.max||"0"); const meter=document.querySelector(`[data-for="${inp.id}"]`);
+    function upd(){ const n=(inp.value||'').trim().length; if(meter) meter.textContent=n; inp.classList.toggle('is-invalid', max&&n>max); }
+    inp.addEventListener('input', upd); upd();
+  });
+
+  // Delivery button (sin cache-buster; confiamos en ETag/Last-Modified)
+  (function(){
+    const tenant = root?.dataset?.tenant || '';
+    const section = root?.dataset?.sectionKey || '';
+    const slug = root?.dataset?.entrySlug || '';
+    const btn = document.getElementById('z2h-delivery-btn');
+    const publishBtn = document.getElementById('z2h-publish-btn');
+    if(tenant && section && slug){
+      btn.href=`/delivery/v1/tenants/${tenant}/sections/${encodeURIComponent(section)}/entries/${encodeURIComponent(slug)}`;
+      btn.classList.remove('d-none');
+      // Hacemos visible Publish (queda deshabilitado si hay cambios)
+      publishBtn && publishBtn.classList.remove('d-none');
+    }
+  })();
+
+  // --- Publish (modal + admin)
+  (function(){
+    const publishBtn = document.getElementById('z2h-publish-btn');
+    const publishModalEl = document.getElementById('z2hPublishModal');
+    const confirmPublish = document.getElementById('z2h-confirm-publish');
+    if (!publishBtn || !publishModalEl || !confirmPublish) return;
+
+    let bsModal = null;
+    function setStatusChip(v){
+      const chip=document.getElementById('z2h-status-chip');
+      if(!chip) return;
+      chip.textContent=v;
+      chip.classList.remove('published','draft','archived');
+      chip.classList.add(v);
+    }
+
+    publishBtn.addEventListener('click', ()=>{
+      if (isDirty){
+        alert('You have unsaved changes. Please press Save before publishing.');
+        return;
+      }
+      // Aviso si no hay secciones visibles
+      const hasSections = document.querySelectorAll('[data-section-index]').length > 0;
+      if(!hasSections){
+        alert('This page has no sections. Add content before publishing.');
+        return;
+      }
+      bsModal = new bootstrap.Modal(publishModalEl);
+      bsModal.show();
+    });
+
+    async function callPublish(){
+      const entryId  = root.dataset.entryId;
+      const res = await fetch(`/admin/pages/${entryId}/publish`, { method: 'POST', headers: { 'X-Requested-With': 'fetch' } });
+      if(!res.ok){
+        let txt=''; try{ txt = await res.text(); }catch(_){}
+        throw new Error(txt || 'Publish failed');
+      }
+      return res.json().catch(()=> ({}));
+    }
+
+    confirmPublish.addEventListener('click', async ()=>{
+      confirmPublish.disabled = true;
+      try{
+        await callPublish();
+        setStatusChip('published');
+        // Sin cache-buster: ETag/Last-Modified se encarga de la frescura del Delivery.
+      }catch(err){
+        alert(err?.message || 'Publish failed');
+      }finally{
+        confirmPublish.disabled = false;
+      }
+    });
+  })();
+
+  // Serializador del formulario (no manda "sections" si no hay paneles)
   function serialize(){
-    const out = {
+    const out={
       replace: !!document.getElementById('f-replace')?.checked,
       seo: {
         title: document.getElementById('f-seo-title')?.value || '',
         description: document.getElementById('f-seo-desc')?.value || ''
-      },
-      sections: []
+      }
     };
-    document.querySelectorAll('[data-section-index]').forEach(panel => {
-      const sec = {};
-      panel.querySelectorAll('[data-k]').forEach(el => {
-        const k = el.getAttribute('data-k'); let v = el.value;
-        if (k === 'schema_version') v = Number(v||1);
-        if (k) { if (k.includes('[')) setDeep(sec, k, v); else sec[k] = v; }
-      });
-      ['media','actions'].forEach(rep => {
-        const host = panel.querySelector(`.z2h-repeater[data-repeater="${rep}"]`);
-        if (host) {
-          const arr = [];
-          host.querySelectorAll('.z2h-rep-item').forEach(item => arr.push(getRepItemObject(item)));
-          if (arr.length) sec[rep] = arr;
+
+    const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
+    if (sectionPanels.length > 0){
+      out.sections = [];
+      sectionPanels.forEach(panel=>{
+        const sec={};
+        panel.querySelectorAll('[data-k]').forEach(el=>{
+          const k=el.getAttribute('data-k'); let v=el.value;
+          if(k==='schema_version') v=Number(v||1);
+          if(k){ if(k.includes('[')) setDeep(sec,k,v); else sec[k]=v; }
+        });
+        ['media','actions'].forEach(rep=>{
+          const host=panel.querySelector(`.z2h-repeater[data-repeater="${rep}"]`);
+          if(host){
+            const arr=[]; host.querySelectorAll('.z2h-rep-item').forEach(item=>arr.push(getRepItemObject(item)));
+            if(arr.length) sec[rep]=arr;
+          }
+        });
+        const jsonArea = panel.querySelector('.z2h-json-editor');
+        if(jsonArea){
+          const txt=jsonArea.value.trim()||'{}';
+          try{ const parsed=JSON.parse(txt); if(Object.keys(parsed).length) sec['data']=parsed; jsonArea.classList.remove('is-invalid'); }
+          catch(e){ jsonArea.classList.add('is-invalid'); throw new Error('Invalid JSON in Advanced Data'); }
         }
+        out.sections.push(sec);
       });
-      const dataObj = {};
-      panel.querySelectorAll('[data-data]').forEach(el => {
-        const path = el.getAttribute('data-data'); let val = el.value;
-        if (path.endsWith('rotatingWords') || path.endsWith('addressLines')) val = parseCSV(val);
-        setDeep(dataObj, path, val);
-      });
-      panel.querySelectorAll('.z2h-repeater[data-repeater^="data."]').forEach(host => {
-        const key = host.getAttribute('data-repeater').slice(5);
-        const arr = []; host.querySelectorAll('.z2h-rep-item').forEach(item => arr.push(getRepItemObject(item)));
-        if (arr.length) setDeep(dataObj, key, arr);
-      });
-      if (Object.keys(dataObj).length) sec['data'] = dataObj;
-      out.sections.push(sec);
-    });
-    const txt = JSON.stringify(out);
-    contentJson.value = txt;
-    jsonBytesEl.textContent = Math.round((new Blob([txt]).size / 1024) * 10) / 10;
+    }
+
+    contentJson.value = JSON.stringify(out);
     return out;
   }
 
-  // Dirty state + backup
+  // Dirty/backup
   let t;
-  function markDirty(){
-    document.querySelector('.z2h-dot').style.background = '#f59e0b';
-    saverTxt.textContent = 'Unsaved';
+  function onDirty(){
+    setDirty(true);
     clearTimeout(t);
-    t = setTimeout(()=>{ const obj = serialize(); try{ localStorage.setItem('z2h-edit-backup-{{ page.id }}', JSON.stringify(obj)); }catch{} }, 250);
+    t=setTimeout(()=>{ const obj=serialize(); try{ localStorage.setItem('z2h-edit-backup-'+entryId, JSON.stringify(obj)); }catch{} }, 250);
   }
-  document.addEventListener('input', (e)=>{ if(e.target.closest('.z2h-dirty')) markDirty(); });
-  document.addEventListener('change', (e)=>{ if(e.target.closest('.z2h-dirty')) markDirty(); });
+  document.addEventListener('input', (e)=>{ if(e.target.closest('.z2h-dirty')) onDirty(); });
+  document.addEventListener('change', (e)=>{ if(e.target.closest('.z2h-dirty')) onDirty(); });
 
   // Shortcuts
   window.addEventListener('keydown', (e)=>{
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); form.requestSubmit(); }
-    if (e.key.toLowerCase()==='f'){ finder.focus(); e.preventDefault(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); document.getElementById('z2h-edit-form').requestSubmit(); }
+    if(e.key.toLowerCase()==='f'){ document.getElementById('z2h-section-search').focus(); e.preventDefault(); }
   });
 
-  // Submit
-  form.addEventListener('submit', function(){
-    serialize();
-    try { localStorage.removeItem('z2h-edit-backup-{{ page.id }}'); } catch {}
-    document.querySelector('.z2h-dot').style.background = '#16a34a';
-    saverTxt.textContent = 'Saved';
+  // Submit (Save → draft)
+  document.getElementById('z2h-edit-form').addEventListener('submit', function(ev){
+    try{
+      const obj = serialize();
+      if (!obj.sections && !obj.replace){
+        // no-op: el back conservará las sections actuales
+      }
+    }catch(err){
+      ev.preventDefault(); alert(err.message||'Invalid data'); return;
+    }
+    try{ localStorage.removeItem('z2h-edit-backup-'+entryId); }catch{}
+    setDirty(false);
   });
 
-  // Initial
+  // Inicial
   serialize();
+  setDirty(false);
 })();
 </script>
 {% endblock %}
+
+
+
+
+
+
+
+
+
+
 
 
 

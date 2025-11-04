@@ -1,6 +1,10 @@
 /* =========================================================
-   Latente CMS · Admin UI — v2.0 (Pastel / Light)
+   Latente CMS · Admin UI — v2.1 (Pastel / Light, Calm UX)
    “Projects → Pages → Sections” friendly wording in UI.
+   Changes vs 2.0:
+   - No jump/bounce on cards or buttons (removed transforms)
+   - Subtle, steady hovers (no shadow pop)
+   - Slow page fade-in for #main-content (accessible)
    ========================================================= */
 
 /* -------------------------
@@ -80,7 +84,7 @@ a:hover{ color: #4f79b8; }
 .navbar .nav-link{
   position: relative; padding: .55rem .7rem; margin: 0 .1rem;
   color: var(--text-2); font-weight: 600; border-radius: 9px;
-  transition: color .15s ease, background-color .15s ease;
+  transition: color .18s ease, background-color .18s ease;
 }
 .navbar .nav-link::after{
   content:""; position:absolute; left:.7rem; right:.7rem; bottom:.25rem; height:2px;
@@ -96,14 +100,18 @@ a:hover{ color: #4f79b8; }
 .btn.btn-outline{ border:1px solid var(--border); background:#fff; }
 
 /* -------------------------
-   Cards / surfaces
+   Cards / surfaces  (NO JUMP, NO SHADOW POP)
    ------------------------- */
 .card{
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow-sm);
-  transition: transform .18s ease, box-shadow .18s ease;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* fixed calm shadow; does not change on hover */
+  box-shadow: var(--shadow-sm);
+  /* remove transform/shadow transitions to avoid “pop” */
+  transition: background-color .28s ease, border-color .28s ease;
 }
-.card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-md); }
+/* No hover transform or shadow swap */
 .z2h-card{ border-radius: 16px; }
 
 /* Soft divider */
@@ -114,15 +122,20 @@ a:hover{ color: #4f79b8; }
 }
 
 /* -------------------------
-   Buttons
+   Buttons  (calm, no bounce)
    ------------------------- */
 .btn{
   border-radius: var(--radius);
   padding:.62rem 1rem;
   font-weight:700; letter-spacing:.06em; text-transform: uppercase;
-  transition: filter .18s ease, transform .1s ease, background-color .18s ease, border-color .18s ease, color .18s ease;
+  transition:
+    background-color .28s ease,
+    border-color .28s ease,
+    color .28s ease,
+    filter .28s ease,
+    box-shadow .28s ease;
 }
-.btn:active{ transform: translateY(1px); }
+.btn:active{ transform: none; } /* kill press nudge */
 
 .btn-primary{
   background: var(--grad-1);
@@ -130,7 +143,7 @@ a:hover{ color: #4f79b8; }
   border: 1px solid #6e9ee6;
   box-shadow: 0 10px 24px rgba(110,158,230,.18);
 }
-.btn-primary:hover{ filter: brightness(1.05); }
+.btn-primary:hover{ filter: brightness(1.03); }
 .btn-primary:focus{ outline: none; box-shadow: 0 0 0 .22rem var(--focus); }
 
 .btn-outline{
@@ -152,7 +165,7 @@ a:hover{ color: #4f79b8; }
   border: 1px solid #6e9ee6;
   box-shadow: 0 10px 24px rgba(110,158,230,.18);
 }
-.btn-cta:hover{ filter: brightness(1.05); }
+.btn-cta:hover{ filter: brightness(1.03); }
 .btn-cta:focus{ outline:none; box-shadow: 0 0 0 .22rem var(--focus); }
 .btn-cta:disabled,
 .btn-cta[disabled]{ opacity:.6; cursor:not-allowed; }
@@ -204,6 +217,8 @@ label.form-label{ font-weight: 600; color: var(--text-1); }
 /* -------------------------
    Auth
    ------------------------- */
+/* Note: login page now carries its own inline styles.
+   Keep this as a neutral baseline for other auth views. */
 .z2h-auth-wrap{
   min-height: calc(100vh - 56px);
   display: grid; align-items: center;
@@ -244,7 +259,9 @@ label.form-label{ font-weight: 600; color: var(--text-1); }
 .z2h-kpi{
   background: #fff; border:1px solid var(--border);
   border-radius: 16px; padding: 1rem 1.1rem;
+  /* fixed, calm shadow */
   box-shadow: 0 6px 18px rgba(0,0,0,.05);
+  transition: background-color .28s ease, border-color .28s ease;
 }
 .z2h-kpi .z2h-kpi-label{
   font-size:.78rem; color:#7a8697; letter-spacing:.12em;
@@ -265,8 +282,10 @@ label.form-label{ font-weight: 600; color: var(--text-1); }
 .z2h-list-item{
   display:grid; grid-template-columns:1fr auto; align-items:center; gap:1rem;
   padding:.8rem .5rem .8rem 0; border-top:1px dashed var(--border);
+  transition: background-color .36s ease; /* calm */
 }
 .z2h-list-item:first-child{ border-top:0; }
+
 .z2h-list-title{ font-weight:800; color:var(--text-1); }
 .z2h-list-sub{ font-size:.92rem; color:var(--text-2); }
 
@@ -297,7 +316,6 @@ label.form-label{ font-weight: 600; color: var(--text-1); }
   .z2h-kpis{ grid-template-columns: 1fr 1fr; }
 }
 
-
 /* ====== Latente CMS · Editor UX Pro (add-on) ====== */
 :root{
   --ok: #16a34a;
@@ -308,3 +326,57 @@ kbd{ background:#eef2ff; border:1px solid #dbe4ff; border-bottom-color:#c7d2fe; 
 .list-group-item:focus { outline: none; box-shadow: inset 0 0 0 2px rgba(169,199,255,.5); }
 .is-invalid{ border-color:#ef4444 !important; box-shadow: 0 0 0 .18rem rgba(239,68,68,.16) !important; }
 
+/* -------------------------
+   Page entrance (slow, elegant)
+   ------------------------- */
+#main-content{
+  opacity: 0;
+  animation: z2hFadeIn .9s ease-out .05s both;
+}
+#main-content.no-entrance{ animation: none; opacity: 1; }
+
+@keyframes z2hFadeIn{
+  from{ opacity: 0; }
+  to  { opacity: 1; }
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  #main-content{ animation: none; opacity: 1; }
+}
+
+/* ===== Overrides: Pages list — no color on hover ===== */
+.z2h-card-list .z2h-list-item,
+.z2h-card-list .z2h-list-item:hover{
+  background: transparent !important;
+}
+
+/* Keep link color neutral inside rows */
+.z2h-card-list .z2h-list-item a{
+  color: var(--text-1) !important;
+  text-decoration: none;
+  transition: opacity .28s ease;
+}
+.z2h-card-list .z2h-list-item a:hover{
+  color: var(--text-1) !important;
+  opacity: .9; /* tiny cue only */
+}
+
+/* Optional: subtle left guide line (no fill) */
+.z2h-card-list .z2h-list-item{ position: relative; }
+.z2h-card-list .z2h-list-item::before{
+  content:"";
+  position:absolute; left:0; top:0; bottom:0; width:3px;
+  background: linear-gradient(180deg, rgba(110,158,230,.25), rgba(137,194,217,.15));
+  opacity:0; transform: translateX(-2px);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.z2h-card-list .z2h-list-item:hover::before{
+  opacity:1; transform: translateX(0);
+}
+
+/* Kill the left guideline on pages list rows */
+.z2h-card-list .z2h-list-item::before{
+  content: none !important;
+  display: none !important;
+}
