@@ -1,3 +1,4 @@
+# app/web/admin/router.py
 from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
@@ -11,15 +12,15 @@ from sqlalchemy import select, and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.auth import Tenant, User, UserTenant, UserTenantStatus, Role
+from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
-from app.services.passwords import verify_password
 
 ENABLE_SERVER_VALIDATION = False
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(include_in_schema=False)
 
+# Debe coincidir con auth router
 SESSION_USER_KEY = "user"
 SESSION_ACTIVE_TENANT_KEY = "active_tenant"
 
@@ -177,59 +178,6 @@ def _validate_against_schema(json_schema: dict, data_obj: dict) -> list[str]:
     if not ENABLE_SERVER_VALIDATION:
         return []
     return []
-
-
-# --------------------------- Web Login ---------------------------
-@router.get("/login")
-def login_get(request: Request):
-    if (request.session or {}).get(SESSION_USER_KEY):
-        return RedirectResponse(url="/admin", status_code=302)
-    return templates.TemplateResponse("auth/login.html", {"request": request})
-
-
-@router.post("/login")
-def login_post(
-    request: Request,
-    email: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db),
-):
-    user = db.scalar(select(User).where(User.email == email))
-    if not user or not verify_password(password, user.hashed_password or "") or not user.is_active:
-        ctx = {"request": request, "error": "Invalid credentials or inactive user."}
-        return templates.TemplateResponse("auth/login.html", ctx, status_code=401)
-
-    request.session[SESSION_USER_KEY] = {
-        "id": int(user.id),
-        "email": user.email,
-        "is_superadmin": bool(user.is_superadmin),
-        "full_name": user.full_name or "",
-    }
-
-    rows = db.execute(
-        select(Tenant, UserTenant, Role)
-        .join(UserTenant, UserTenant.tenant_id == Tenant.id)
-        .join(Role, Role.id == UserTenant.role_id)
-        .where(
-            and_(
-                UserTenant.user_id == int(user.id),
-                UserTenant.status == _active_status_value(),
-            )
-        )
-        .order_by(Tenant.name.asc())
-    ).all()
-
-    if len(rows) == 1:
-        t, _, _ = rows[0]
-        _set_active_tenant(request, t.id, t.slug, t.name)
-
-    return RedirectResponse(url="/admin", status_code=302)
-
-
-@router.post("/logout")
-def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse(url="/login", status_code=302)
 
 
 # --------------------------- Dashboard ---------------------------
@@ -865,4 +813,3 @@ def admin_publish_page(
     db.refresh(entry)
 
     return JSONResponse({"ok": True, "status": "published", "entry_id": int(entry.id)})
-

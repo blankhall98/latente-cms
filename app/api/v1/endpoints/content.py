@@ -21,9 +21,9 @@ from app.schemas.content import (
     SectionCreate, SectionUpdate, SectionOut,
     SectionSchemaCreate, SectionSchemaUpdate, SectionSchemaOut,
     EntryCreate, EntryUpdate, EntryOut,
-    EntryVersionOut,  # <-- Paso 17
+    EntryVersionOut,
 )
-from app.models.content import SectionSchema, Entry, EntryVersion  # <-- Paso 17
+from app.models.content import SectionSchema, Entry, EntryVersion
 from app.services.content_service import (
     create_section, add_schema_version, set_active_schema,
     create_entry, update_entry, list_entries,
@@ -37,17 +37,19 @@ from app.services.publish_service import (
     transition_entry_status, apply_cache_headers,
 )
 
-# 🚩 FIX: usamos deps JWT desde app.deps.auth (no desde app.api.deps)
+# ✅ JWT deps y permisos centralizados
 from app.deps.auth import (
     get_current_user_id,
     get_current_user_id_optional,
+    require_permission,
+    user_has_permission,
 )
 
 from app.security.preview_tokens import (
     create_preview_token, verify_preview_token, PreviewTokenError,
 )
 
-# 🚩 FIX: settings ahora vive en app.core.settings
+# ✅ settings unificado
 from app.core.settings import settings
 
 # --- Auditoría (Paso 16) ---
@@ -55,7 +57,7 @@ from app.services.audit_service import audit_entry_action, compute_changed_keys
 from app.models.audit import ContentAction
 
 # --- Versionado (Paso 17) ---
-from app.services.versioning_service import create_entry_snapshot  # <-- Paso 17
+from app.services.versioning_service import create_entry_snapshot
 
 # --- Paso 18: caps & idempotencia ---
 from app.utils.payload_guard import enforce_entry_data_size
@@ -69,15 +71,9 @@ router = APIRouter()
 # =======================
 # Rate limit (in-memory)
 # =======================
-# bucket por minuto, clave = (user_id, tenant_id, minute_bucket)
 _RL_COUNTER: dict[tuple[int, int, int], int] = defaultdict(int)
 
 def _check_write_rate_limit(user_id: int, tenant_id: int) -> None:
-    """
-    Limita escrituras por usuario y tenant en ventana de 1 minuto.
-    Respeta settings.RATELIMIT_ENABLED y settings.RATELIMIT_WRITE_PER_MIN.
-    Lanza HTTP 429 si se excede.
-    """
     if not getattr(settings, "RATELIMIT_ENABLED", False):
         return
     limit = int(getattr(settings, "RATELIMIT_WRITE_PER_MIN", 0) or 0)
@@ -87,7 +83,6 @@ def _check_write_rate_limit(user_id: int, tenant_id: int) -> None:
     key = (int(user_id), int(tenant_id), bucket)
     _RL_COUNTER[key] += 1
     if _RL_COUNTER[key] > limit:
-        # No seguimos con la operación; 429 Too Many Requests
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
 
@@ -102,7 +97,6 @@ def _get_entry_or_404(db: Session, entry_id: int, tenant_id: int | None) -> Entr
 
 # ---------- Helpers de autocompletado JSON Schema ----------
 def _json_default_for(prop_schema: Dict[str, Any]) -> Any:
-    """Default simple por tipo JSON Schema (draft 2020-12)."""
     t = prop_schema.get("type")
     if isinstance(t, list) and t:
         t = t[0]
@@ -118,30 +112,22 @@ def _json_default_for(prop_schema: Dict[str, Any]) -> Any:
 
 
 def _fill_required_defaults(schema: Dict[str, Any] | None, data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Completa recursivamente los campos 'required' con valores por defecto
-    según su tipo. Para 'object' recorre sus propiedades; para 'array' deja [].
-    No intenta resolver anyOf/oneOf/allOf (alcance suficiente para tests).
-    """
     if not schema:
         return data
 
     required = schema.get("required") or []
     properties: Dict[str, Any] = schema.get("properties") or {}
 
-    # Asegurar requeridos
     for key in required:
         if key not in data:
             prop_schema = properties.get(key, {})
             val = _json_default_for(prop_schema)
-            # Si es objeto, crear dict y luego llenar recursivamente
             if (prop_schema.get("type") == "object") or ("properties" in prop_schema):
                 if not isinstance(val, dict):
                     val = {}
                 val = _fill_required_defaults(prop_schema, val)
             data[key] = val
 
-    # Recursión en objetos ya presentes
     for key, val in list(data.items()):
         prop_schema = properties.get(key)
         if not prop_schema:
@@ -160,49 +146,17 @@ def _fill_required_defaults(schema: Dict[str, Any] | None, data: Dict[str, Any])
 # Paso 20: helper para disparar webhooks desde endpoints síncronos
 # ---------------------------------------------------------------------------
 def _trigger_webhook(db: Session, tenant_id: int, event: str, payload: Dict[str, Any]) -> None:
-    """
-    Dispara emit_event_async de forma segura desde este endpoint síncrono.
-    - En modo test (WEBHOOKS_SYNC_FOR_TEST=True): se usa asyncio.run para
-      ejecutar de forma bloqueante y determinística.
-    - En modo normal: intenta programar create_task en el loop activo; si
-      no hay loop (hilo de worker), hace un asyncio.run fire-and-forget.
-    """
     try:
         if getattr(settings, "WEBHOOKS_SYNC_FOR_TEST", False):
             asyncio.run(emit_event_async(db, tenant_id, event, payload))
             return
-        # Intentar programar en el event loop actual (si existe)
         loop = asyncio.get_event_loop()
         if loop.is_running():
             loop.create_task(emit_event_async(db, tenant_id, event, payload))
         else:
             asyncio.run(emit_event_async(db, tenant_id, event, payload))
     except RuntimeError:
-        # No hay loop en este hilo → ejecutar ad-hoc
         asyncio.run(emit_event_async(db, tenant_id, event, payload))
-
-
-# ---------------------------------------------------------------------------
-# 🚩 FIX: Factory local require_permission(perm_key)
-#     Úsalo cuando tenant_id venga por query (?tenant_id=)
-# ---------------------------------------------------------------------------
-def require_permission(perm_key: str):
-    """
-    Crea una dependencia FastAPI que:
-      - lee tenant_id de la query,
-      - valida JWT (get_current_user_id),
-      - verifica el permiso vía auth_deps.user_has_permission(...).
-    """
-    def _dep(
-        tenant_id: int = Query(...),
-        db: Session = Depends(get_db),
-        user_id: int = Depends(get_current_user_id),
-    ):
-        from app.api.deps import auth as auth_deps
-        if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key=perm_key):
-            raise HTTPException(status_code=403, detail=f"Missing permission: {perm_key}")
-        return True
-    return _dep
 
 
 # ============================================================================ #
@@ -219,8 +173,7 @@ def create_section_endpoint(
     user_id: int = Depends(get_current_user_id),
 ):
     # chequeo inline porque tenant_id viene en el body
-    from app.api.deps import auth as auth_deps
-    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
 
     section = create_section(
@@ -248,9 +201,7 @@ def add_schema_version_endpoint(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    # chequeo inline porque tenant_id viene en el body
-    from app.api.deps import auth as auth_deps
-    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
+    if not user_has_permission(db, user_id=user_id, tenant_id=payload.tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
 
     ss = add_schema_version(
@@ -258,7 +209,7 @@ def add_schema_version_endpoint(
         tenant_id=payload.tenant_id,
         section_id=payload.section_id,
         version=payload.version,
-        schema=payload.schema,
+        schema=payload.json_schema,
         title=payload.title,
         is_active=payload.is_active or False,
     )
@@ -270,7 +221,6 @@ def add_schema_version_endpoint(
 @router.patch(
     "/section-schemas/{tenant_id}/{section_id}/{version}",
     response_model=SectionSchemaOut,
-    # OJO: Quitamos el dependencies=[Depends(require_permission("content:write"))]
 )
 def update_schema_endpoint(
     tenant_id: int,
@@ -278,11 +228,10 @@ def update_schema_endpoint(
     version: int,
     patch: SectionSchemaUpdate,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id),  # validamos JWT aquí
+    user_id: int = Depends(get_current_user_id),
 ):
     # Permiso inline porque tenant_id viene en PATH, no por query
-    from app.deps import auth as auth_deps
-    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:write"):
+    if not user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:write"):
         raise HTTPException(status_code=403, detail="Missing permission: content:write")
 
     # Activación de versión (respetando reglas del registry)
@@ -372,24 +321,16 @@ def create_entry_endpoint(
     user_id: int = Depends(get_current_user_id),
 ):
     """
-    Crear Entry (los tests no exigen permiso content:write aquí).
-    Autocompleta recursivamente requeridos del JSON Schema activo.
-    Aplica:
-      - Paso 18: Idempotency-Key (replay) y cap de tamaño de data.
-      - Paso 18: Rate limit de escrituras por minuto (user+tenant).
+    Crear Entry.
+    Aplica: Idempotency, rate limit, cap de tamaño, autocompletado required.
     """
-    # 1) Idempotencia (replay si ya fue procesado)
     replay = maybe_replay_idempotent(request.headers.get("Idempotency-Key"))
     if replay:
         return replay
 
-    # 2) Rate limit (solo para nuevas ejecuciones, no replays)
     _check_write_rate_limit(user_id=user_id, tenant_id=payload.tenant_id)
-
-    # 3) Cap de tamaño
     enforce_entry_data_size(payload.data or {})
 
-    # 4) Autocompletar requeridos según SectionSchema si existe
     ss = db.scalar(
         select(SectionSchema).where(
             and_(
@@ -407,7 +348,7 @@ def create_entry_endpoint(
     try:
         entry = create_entry(db, payload)
 
-        # --- Audit: CREATE ---
+        # Audit: CREATE
         audit_entry_action(
             db,
             tenant_id=payload.tenant_id,
@@ -422,18 +363,12 @@ def create_entry_endpoint(
             request=None,
         )
 
-        # --- Snapshot: CREATE (Paso 17) ---
-        create_entry_snapshot(
-            db,
-            entry=entry,
-            reason="create",
-            created_by=user_id,
-        )
+        # Snapshot: CREATE (Paso 17)
+        create_entry_snapshot(db, entry=entry, reason="create", created_by=user_id)
 
         db.commit()
         db.refresh(entry)
 
-        # Respuesta + memo idempotente (Paso 18)
         resp = JSONResponse(
             content=EntryOut.model_validate(entry).model_dump(mode="json"),
             status_code=201,
@@ -463,9 +398,8 @@ def update_entry_endpoint(
         before = _get_entry_or_404(db, entry_id, tenant_id)
         before_status = before.status
         before_data = dict(before.data or {})
-        before_schema_version = before.schema_version  # <-- Para decidir si hay cambio de schema
+        before_schema_version = before.schema_version
 
-        # merge shallow + rellenar requeridos con el schema ACTUAL del entry (no el nuevo)
         merged = dict(before_data)
         if patch.data:
             merged.update(patch.data)
@@ -486,7 +420,6 @@ def update_entry_endpoint(
             patch.schema_version = before.schema_version
         patch.data = merged
 
-        # (Opcional) Cap de tamaño también en update si cambió data (Paso 18)
         enforce_entry_data_size(patch.data or {})
 
         entry = update_entry(db, entry_id, tenant_id, patch)
@@ -495,7 +428,7 @@ def update_entry_endpoint(
         after_data = dict(entry.data or {})
         changed_keys = compute_changed_keys(before_data, after_data)
 
-        # --- Audit: UPDATE ---
+        # Audit: UPDATE
         audit_entry_action(
             db,
             tenant_id=tenant_id,
@@ -510,16 +443,11 @@ def update_entry_endpoint(
             request=None,
         )
 
-        # --- Snapshot: UPDATE (Paso 17) ---
+        # Snapshot: UPDATE (Paso 17)
         status_changed = before_status != after_status
         schema_changed = (before_schema_version != entry.schema_version)
         if changed_keys or status_changed or schema_changed:
-            create_entry_snapshot(
-                db,
-                entry=entry,
-                reason="update",
-                created_by=current_user_id,
-            )
+            create_entry_snapshot(db, entry=entry, reason="update", created_by=current_user_id)
 
         db.commit()
         db.refresh(entry)
@@ -553,7 +481,7 @@ def list_entries_endpoint(
 
 
 # ============================================================================ #
-# Publish / Unpublish / Archive (permiso content:publish, admite tenant_id en body)
+# Publish / Unpublish / Archive
 # ============================================================================ #
 def _tenant_from_query_or_body(tenant_id_q: Optional[int], tenant_body: Optional[Dict[str, Any]]) -> int:
     if tenant_id_q is not None:
@@ -566,21 +494,19 @@ def _tenant_from_query_or_body(tenant_id_q: Optional[int], tenant_body: Optional
 @router.post("/entries/{entry_id}/publish", response_model=EntryOut)
 def publish_entry(
     entry_id: int,
-    request: Request,  # mantener antes de params con default
+    request: Request,
     tenant_id_q: int | None = Query(default=None, alias="tenant_id"),
     tenant_body: Dict[str, Any] | None = Body(default=None),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    from app.api.deps import auth as auth_deps
     tenant_id = _tenant_from_query_or_body(tenant_id_q, tenant_body)
 
-    # Idempotencia
     replay = maybe_replay_idempotent(request.headers.get("Idempotency-Key"))
     if replay:
         return replay
 
-    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
+    if not user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
         raise HTTPException(status_code=403, detail="Missing permission: content:publish")
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -588,7 +514,7 @@ def publish_entry(
 
         transition_entry_status(db, entry, "published")
 
-        # --- Audit: PUBLISH ---
+        # Audit: PUBLISH
         audit_entry_action(
             db,
             tenant_id=tenant_id,
@@ -604,18 +530,13 @@ def publish_entry(
             request=None,
         )
 
-        # --- Snapshot: PUBLISH (Paso 17) ---
-        create_entry_snapshot(
-            db,
-            entry=entry,
-            reason="publish",
-            created_by=user_id,
-        )
+        # Snapshot: PUBLISH
+        create_entry_snapshot(db, entry=entry, reason="publish", created_by=user_id)
 
         db.commit()
         db.refresh(entry)
 
-        # --- Paso 20: Webhook content.published ---
+        # Webhook
         payload = {
             "tenant_id": tenant_id,
             "section_id": entry.section_id,
@@ -627,7 +548,6 @@ def publish_entry(
         }
         _trigger_webhook(db, tenant_id, "content.published", payload)
 
-        # Respuesta + memo idempotente
         resp = JSONResponse(
             content=EntryOut.model_validate(entry).model_dump(mode="json"),
             status_code=200,
@@ -647,10 +567,9 @@ def unpublish_entry(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    from app.api.deps import auth as auth_deps
     tenant_id = _tenant_from_query_or_body(tenant_id_q, tenant_body)
 
-    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
+    if not user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
         raise HTTPException(status_code=403, detail="Missing permission: content:publish")
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -658,7 +577,7 @@ def unpublish_entry(
 
         transition_entry_status(db, entry, "draft")
 
-        # --- Audit: UNPUBLISH ---
+        # Audit: UNPUBLISH
         audit_entry_action(
             db,
             tenant_id=tenant_id,
@@ -672,18 +591,13 @@ def unpublish_entry(
             request=None,
         )
 
-        # --- Snapshot: UNPUBLISH (Paso 17) ---
-        create_entry_snapshot(
-            db,
-            entry=entry,
-            reason="unpublish",
-            created_by=user_id,
-        )
+        # Snapshot: UNPUBLISH
+        create_entry_snapshot(db, entry=entry, reason="unpublish", created_by=user_id)
 
         db.commit()
         db.refresh(entry)
 
-        # --- Paso 20: Webhook content.unpublished ---
+        # Webhook
         payload = {
             "tenant_id": tenant_id,
             "section_id": entry.section_id,
@@ -709,10 +623,9 @@ def archive_entry(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    from app.api.deps import auth as auth_deps
     tenant_id = _tenant_from_query_or_body(tenant_id_q, tenant_body)
 
-    if not auth_deps.user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
+    if not user_has_permission(db, user_id=user_id, tenant_id=tenant_id, perm_key="content:publish"):
         raise HTTPException(status_code=403, detail="Missing permission: content:publish")
     try:
         entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -720,7 +633,7 @@ def archive_entry(
 
         transition_entry_status(db, entry, "archived")
 
-        # --- Audit: ARCHIVE ---
+        # Audit: ARCHIVE
         audit_entry_action(
             db,
             tenant_id=tenant_id,
@@ -735,18 +648,13 @@ def archive_entry(
             request=None,
         )
 
-        # --- Snapshot: ARCHIVE (Paso 17) ---
-        create_entry_snapshot(
-            db,
-            entry=entry,
-            reason="archive",
-            created_by=user_id,
-        )
+        # Snapshot: ARCHIVE
+        create_entry_snapshot(db, entry=entry, reason="archive", created_by=user_id)
 
         db.commit()
         db.refresh(entry)
 
-        # --- Paso 20: Webhook content.archived ---
+        # Webhook
         payload = {
             "tenant_id": tenant_id,
             "section_id": entry.section_id,
@@ -776,11 +684,9 @@ def issue_preview_token_endpoint(
     db: Session = Depends(get_db),
     current_user_id: int | None = Depends(get_current_user_id_optional),
 ):
-    from app.api.deps import auth as auth_deps
-
     if not current_user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
-    if not auth_deps.user_has_permission(db, current_user_id, tenant_id, "content:publish"):
+    if not user_has_permission(db, current_user_id, tenant_id, "content:publish"):
         raise HTTPException(status_code=403, detail="Not allowed to issue preview tokens")
 
     entry = _get_entry_or_404(db, entry_id, tenant_id)
@@ -852,14 +758,10 @@ def list_entry_versions_endpoint(
     db: Session = Depends(get_db),
     current_user_id: int | None = Depends(get_current_user_id_optional),
 ):
-    # Requerimos estar autenticados, pero no aplicamos RBAC aquí
     if not current_user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
 
     entry = _get_entry_or_404(db, entry_id, tenant_id)
-
-    # Leer versiones directamente del modelo
-    from app.models.content import EntryVersion  # import local para no romper otros tests
 
     versions = db.scalars(
         select(EntryVersion)
@@ -919,20 +821,13 @@ def restore_entry_version_endpoint(
     db: Session = Depends(get_db),
     current_user_id: int | None = Depends(get_current_user_id_optional),
 ):
-    """
-    Restaura una versión previa del Entry.
-    Requiere estar autenticado, pero **no** aplica RBAC (alineado al test).
-    """
     if not current_user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
 
     tenant_id = _tenant_from_query_or_body(tenant_id_q, tenant_body)
 
-    # obtener entry y versión a restaurar
     entry = _get_entry_or_404(db, entry_id, tenant_id)
 
-    from sqlalchemy import select
-    from app.models.content import EntryVersion
     snap = db.scalar(
         select(EntryVersion).where(
             EntryVersion.tenant_id == tenant_id,
@@ -943,29 +838,20 @@ def restore_entry_version_endpoint(
     if not snap:
         raise HTTPException(status_code=404, detail="Version not found")
 
-    # guardar estado "antes" (para auditoría)
     before_status = entry.status
 
-    # aplicar restauración (data/status/schema_version)
     entry.data = dict(snap.data or {})
     entry.status = snap.status or "draft"
     entry.schema_version = snap.schema_version or entry.schema_version
 
-    # crear snapshot nuevo por la restauración (v + 1)
     from app.services.versioning_service import create_snapshot_for_entry
-    create_snapshot_for_entry(
-        db,
-        entry=entry,
-        reason="restore",
-        created_by=current_user_id,
-    )
+    create_snapshot_for_entry(db, entry=entry, reason="restore", created_by=current_user_id)
 
-    # auditoría
     audit_entry_action(
         db,
         tenant_id=tenant_id,
         entry=entry,
-        action=ContentAction.UPDATE,  # o ContentAction.RESTORE si tienes esa enum
+        action=ContentAction.UPDATE,  # o ContentAction.RESTORE si lo usas
         user_id=current_user_id,
         details={
             "reason": "restore",
@@ -979,3 +865,4 @@ def restore_entry_version_endpoint(
     db.commit()
     db.refresh(entry)
     return entry
+

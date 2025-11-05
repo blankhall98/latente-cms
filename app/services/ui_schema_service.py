@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.services.content_service import get_effective_schema
 from app.services.registry_service import get_registry_for_section
-from app.core.config import settings
+from app.core.settings import settings
 
 WIDGET_TEXT_LIKE = {"string"}
 WIDGET_NUMBER_LIKE = {"number", "integer"}

@@ -1,29 +1,121 @@
 {% extends "base.html" %}
 {% block title %}Pages · {{ active_tenant and active_tenant.name or "Project" }} · Latente CMS{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ---------------------------
+     Pages — professional, calm, no-code look
+     --------------------------- */
+
+  /* Header panel (mini-hero, consistent with dashboard) */
+  .z2h-page-head{
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+      radial-gradient(900px 420px at 14% -10%, rgba(110,158,230,.08), transparent 60%),
+      radial-gradient(700px 360px at 86% -6%, rgba(137,194,217,.07), transparent 55%),
+      linear-gradient(180deg, #ffffff 0%, #f7f5f0 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,.06);
+    padding: clamp(20px, 3.5vw, 40px);
+  }
+  .z2h-page-title{
+    letter-spacing:.12em; text-transform: uppercase; margin: .2rem 0 0 0;
+  }
+  .z2h-project-pill{
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.35rem .8rem; border:1px solid var(--border);
+    border-radius: 999px; background:#fff; font-size:.92rem; color: var(--text-1);
+    box-shadow: 0 8px 22px rgba(0,0,0,.05);
+  }
+  .z2h-project-pill .dot{ width:10px; height:10px; border-radius:50%; background: var(--primary); box-shadow: 0 0 0 6px rgba(110,158,230,.12); }
+
+  /* “Back to projects” chip */
+  .z2h-chip{
+    display:inline-flex; align-items:center; gap:.35rem; padding:.28rem .7rem;
+    border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--text-1);
+    text-decoration:none; transition: border-color .28s ease, background-color .28s ease;
+  }
+  .z2h-chip:hover{ background:#fff; border-color:#e9e1d7; }
+
+  /* Filters card */
+  .z2h-filters.card{
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+  }
+  .z2h-filters .form-control,
+  .z2h-filters .z2h-select{
+    background:#fff; border-color: var(--border);
+  }
+  .z2h-filters .btn{ font-weight:700; letter-spacing:.06em; }
+
+  /* Table — neutral hover, no paint, tidy spacing */
+  .z2h-table-wrap{ border-top:1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  table.z2h-table{ width:100%; border-collapse: separate; border-spacing:0; }
+  .z2h-table thead th{
+    background:#fff; position:sticky; top:0; z-index:1;
+    font-size:.78rem; letter-spacing:.12em; text-transform: uppercase;
+    color:#7a8697; font-weight:800; border-bottom:1px solid var(--border);
+    padding: .85rem 1rem;
+  }
+  .z2h-table tbody td{
+    padding: 1rem; border-bottom:1px dashed var(--border); background:#fff;
+    vertical-align: middle;
+  }
+
+  /* Row hover: no background fill, tiny opacity cue in title only */
+  .z2h-row-title{ font-weight:800; color:var(--text-1); transition: opacity .25s ease; }
+  .z2h-row-sub{ color:var(--text-2); font-size:.92rem; transition: opacity .25s ease; }
+  .z2h-table tbody tr:hover .z2h-row-title{ opacity:.96; }
+  .z2h-table tbody tr:hover .z2h-row-sub{ opacity:.9; }
+
+  /* Outline buttons like “Switch project” */
+  .btn.btn-outline,
+  .btn.btn-outline.btn-sm{
+    background: transparent; border-color: var(--border); color: var(--text-1);
+    box-shadow: none; transition: background-color .28s ease, border-color .28s ease, color .28s ease;
+  }
+  .btn.btn-outline:hover,
+  .btn.btn-outline.btn-sm:hover{
+    background: var(--accent-soft); border-color: var(--accent-soft); color: var(--text-1);
+  }
+
+  /* Status badges (calm palette) */
+  .z2h-status{ display:inline-block; padding:.18rem .5rem; border-radius:999px; font-size:.72rem; letter-spacing:.06em; text-transform: uppercase; border:1px solid transparent; }
+  .z2h-status.published{ background: rgba(16,185,129,.12); border-color:#10b98133; color:#065f46; }
+  .z2h-status.draft{ background: rgba(250,204,21,.18); border-color:#f59e0b33; color:#78350f; }
+  .z2h-status.archived{ background: rgba(148,163,184,.18); border-color:#94a3b833; color:#334155; }
+
+  /* Pager bar */
+  .z2h-pager{ background:#fff; border-top:1px solid var(--border); padding: .8rem 1rem; border-radius: 0 0 16px 16px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="container">
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-    <div>
-      <a href="/admin/projects" class="btn btn-outline px-2 py-1" style="border-radius:999px;">
-        &larr; Projects
-      </a>
-      <div class="z2h-brand--badge mt-2 mb-1">Pages</div>
-      <h1 class="h4 m-0">
-        {{ active_tenant and active_tenant.name or "—" }}
-      </h1>
-      <div class="text-muted small mt-1">
-        Pages are created via deployment scripts in this MVP; edit and manage content here.
+  <!-- Header / mini-hero -->
+  <div class="z2h-page-head mb-3">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <a href="/admin/projects" class="z2h-chip" aria-label="Back to Projects">&larr; Projects</a>
+        {% if active_tenant %}
+          <span class="z2h-project-pill" title="Active project">
+            <span class="dot" aria-hidden="true"></span>
+            <strong>{{ active_tenant.name }}</strong>
+            {% if active_tenant.slug %}<code class="ms-1">/{{ active_tenant.slug }}</code>{% endif %}
+          </span>
+        {% endif %}
+      </div>
+      <div class="ms-md-auto">
+        <div class="z2h-brand--badge text-uppercase">Pages</div>
       </div>
     </div>
-    <!-- No create button in MVP -->
-    <div class="d-flex gap-2"></div>
+    <h1 class="z2h-page-title h5 m-0 mt-2">Content pages for your project</h1>
+    <p class="text-muted small mb-0 mt-1">In this MVP, pages are provisioned on deploy. Edit and manage content here.</p>
   </div>
 
   <!-- Filters -->
-  <form class="card p-3 p-md-4 z2h-card mb-3" method="get" action="/admin/pages">
+  <form class="card z2h-filters mb-3" method="get" action="/admin/pages">
     <div class="row g-3 align-items-end">
       <div class="col-md-4">
         <label class="form-label">Search</label>
@@ -57,8 +149,8 @@
 
   <!-- List -->
   <div class="card p-0 z2h-card">
-    <div class="table-responsive">
-      <table class="table align-middle m-0">
+    <div class="z2h-table-wrap">
+      <table class="z2h-table align-middle">
         <thead>
           <tr>
             <th style="width:40%;">Title</th>
@@ -72,24 +164,18 @@
           {% for it in items %}
           <tr>
             <td>
-              <div class="fw-semibold">{{ it.title }}</div>
-              <div class="text-muted small">{{ it.slug }}</div>
+              <div class="z2h-row-title">{{ it.title }}</div>
+              <div class="z2h-row-sub">{{ it.slug }}</div>
             </td>
             <td>{{ it.section_name }}</td>
             <td>
-              {% set s = (it.status or "").lower() %}
-              <span class="z2h-badge"
-                    style="background: {{ 'rgba(16,185,129,.12)' if s=='published' else 'rgba(250,204,21,.18)' if s=='draft' else 'rgba(148,163,184,.18)' }};
-                           border-color: {{ '#10b98133' if s=='published' else '#f59e0b33' if s=='draft' else '#94a3b833' }};
-                           color: {{ '#065f46' if s=='published' else '#78350f' if s=='draft' else '#334155' }};">
-                {{ s }}
-              </span>
+              {% set s = (it.status|string)|lower %}
+              <span class="z2h-status {{ s }}">{{ s }}</span>
             </td>
             <td class="text-nowrap">
               {% if it.updated_at %}{{ it.updated_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
             </td>
             <td class="text-end">
-              <!-- Open the MVP editor -->
               <a class="btn btn-outline btn-sm" href="/admin/pages/{{ it.id }}/edit">Edit</a>
             </td>
           </tr>
@@ -101,18 +187,18 @@
     </div>
 
     <!-- Pager -->
-    <div class="d-flex justify-content-between align-items-center p-3">
+    <div class="d-flex justify-content-between align-items-center z2h-pager">
       <div class="small text-muted">Page {{ page }}</div>
       <div class="d-flex gap-2">
         {% if prev_page %}
           <a class="btn btn-outline btn-sm"
-             href="?q={{ filters.q }}&status={{ filters.status }}&section={{ filters.section }}&page={{ prev_page }}&per_page={{ per_page }}">Prev</a>
+             href="?q={{ filters.q|urlencode }}&status={{ filters.status }}&section={{ filters.section }}&page={{ prev_page }}&per_page={{ per_page }}">Prev</a>
         {% else %}
           <button class="btn btn-outline btn-sm" disabled>Prev</button>
         {% endif %}
         {% if next_page %}
           <a class="btn btn-outline btn-sm"
-             href="?q={{ filters.q }}&status={{ filters.status }}&section={{ filters.section }}&page={{ next_page }}&per_page={{ per_page }}">Next</a>
+             href="?q={{ filters.q|urlencode }}&status={{ filters.status }}&section={{ filters.section }}&page={{ next_page }}&per_page={{ per_page }}">Next</a>
         {% else %}
           <button class="btn btn-outline btn-sm" disabled>Next</button>
         {% endif %}
@@ -122,6 +208,8 @@
 
 </section>
 {% endblock %}
+
+
 
 
 

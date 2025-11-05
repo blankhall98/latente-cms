@@ -11,17 +11,8 @@
          data-entry-id="{{ page.id }}"
          data-entry-slug="{{ page.slug }}">
 
-  <!-- Breadcrumb -->
-  <nav class="mb-4" aria-label="breadcrumb" id="z2h-breadcrumb">
-    <ol class="breadcrumb m-0">
-      <li class="breadcrumb-item"><a href="/admin/projects">Projects</a></li>
-      <li class="breadcrumb-item"><a href="/admin/pages">Pages</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Edit</li>
-    </ol>
-  </nav>
-
-  <!-- Toolbar sticky -->
-  <header id="z2h-toolbar" class="z2h-toolbar mb-3">
+  <!-- Toolbar (sticky) -->
+  <header id="z2h-toolbar" class="z2h-toolbar mb-3" aria-label="Page header actions">
     <div>
       <h1 class="h4 m-0 text-capitalize">{{ page.title }}</h1>
       <div class="z2h-meta row gx-2 gy-1 mt-1">
@@ -44,25 +35,39 @@
     </div>
   </header>
 
-  {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
-  {% if ok_message %}<div class="alert alert-success" role="alert">{{ ok_message }}</div>{% endif %}
+  <!-- Toasts (flash) – fixed corner, always above sticky UI -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="z2h-toast-host" style="z-index:2000;">
+    {% if error %}
+    <div class="toast align-items-center text-bg-danger border-0" role="status" data-bs-delay="5500">
+      <div class="d-flex">
+        <div class="toast-body">{{ error }}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+    {% endif %}
+    {% if ok_message %}
+    <div class="toast align-items-center text-bg-success border-0" role="status" data-bs-delay="3800">
+      <div class="d-flex">
+        <div class="toast-body">{{ ok_message }}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 
   <!-- Layout -->
   <form id="z2h-edit-form" class="z2h-editor-grid-simple" method="post" action="">
     <!-- Sidebar -->
     <aside class="z2h-editor-sidebar">
-
       <div class="card p-3 mb-2">
         <label class="form-label small mb-1">Find section</label>
         <input type="search" id="z2h-section-search" class="form-control form-control-sm" placeholder="Type to filter…">
       </div>
 
-      <!-- Lista tipo “tabla” sin scroll interno -->
       <nav class="card p-2 z2h-side-list" id="z2h-side-nav" aria-label="Section navigator">
         <button type="button" class="z2h-side-item active" data-panel-id="panel-general">
           <span class="z2h-side-label">General</span><span class="chip chip-type">SEO</span>
         </button>
-
         {% if sections_ui and sections_ui|length > 0 %}
           {% for it in sections_ui %}
             {% set _type = (it.get('sec') or {}).get('type', 'Block') %}
@@ -75,10 +80,7 @@
           <div class="z2h-side-empty">No sections yet</div>
         {% endif %}
       </nav>
-
-      <div class="small text-muted px-2 mt-2 z2h-tips">
-        Tips: <kbd>F</kbd> search · <kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> save
-      </div>
+      
     </aside>
 
     <!-- Main -->
@@ -117,7 +119,7 @@
           </div>
         </section>
 
-        <!-- Secciones agnósticas -->
+        <!-- Sections -->
         {% for it in sections_ui %}
         {% set S = it.get('sec') or {} %}
         <section id="panel-section-{{ it.index }}"
@@ -226,7 +228,7 @@
             </div>
             <textarea class="form-control z2h-dirty z2h-json-editor" rows="8"
                       data-data-json="true">{{ (S.data | tojson(indent=2)) if S.data else "{}" }}</textarea>
-            <div class="form-hint">Debe ser JSON válido.</div>
+            <div class="form-hint">Must be valid JSON.</div>
           </div>
         </section>
         {% endfor %}
@@ -234,7 +236,7 @@
         <!-- Hidden JSON -->
         <textarea name="content_json" id="z2h-content-json" class="d-none"></textarea>
 
-        <!-- Botonera inferior (solo mobile) -->
+        <!-- Bottom actions (mobile only) -->
         <div class="z2h-bottom-actions d-md-none">
           <a class="btn btn-outline me-auto" href="/admin/pages">Cancel</a>
           <button class="btn btn-cta" type="submit">Save</button>
@@ -264,24 +266,23 @@
 </div>
 
 <style>
-  :root{ --nav-h: 56px; }
+  :root{ --nav-h:56px; }
 
-  /* Toolbar (sticky + transición más suave al full-bleed) */
+  /* Toolbar (sticky + seamless merge with navbar when stuck) */
   .z2h-toolbar{
     position: sticky;
     top: var(--nav-h);
-    z-index: 1040;
+    z-index: 1020; /* below modal backdrop (1040) and modal (1050) */
     display:flex; align-items:center; justify-content:space-between; gap:1rem;
     padding:.75rem 1rem; border:1px solid var(--border); border-radius:12px;
     background:#fff; box-shadow: var(--shadow-sm);
-    transition:
-      margin .55s ease-in-out,
-      padding .55s ease-in-out,
-      border-radius .45s ease-in-out,
-      box-shadow .45s ease-in-out;
+    transition: margin .55s ease-in-out, padding .55s ease-in-out,
+                border-radius .45s ease-in-out, box-shadow .45s ease-in-out;
   }
   .z2h-toolbar.is-stuck{
-    border-radius:0;
+    border-top: 0;            /* remove top border so it fuses with navbar bottom border */
+    margin-top: -1px;         /* overlap the navbar border by 1px: no seam */
+    border-radius:0 0 0 0;
     padding:.85rem 0;
     border-left:0; border-right:0;
     box-shadow: 0 6px 22px rgba(16,24,40,.12);
@@ -291,6 +292,7 @@
     padding-right: calc((100vw - 100%) / 2);
   }
 
+  /* Chips */
   .z2h-chip{ display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .5rem; border-radius:999px;
              background:#faf8f5; border:1px solid var(--border); color:var(--text-2); font-size:.78rem; }
   .z2h-chip.code{ background:#f6f8ff; border-color:#e3e8ff; color:#334; }
@@ -300,15 +302,20 @@
   .z2h-chip-status.archived{ background:#f4f6f8; border-color:#e5e7eb; color:#3b4450; }
   .z2h-dot{ width:.55rem; height:.55rem; border-radius:999px; background:#16a34a; display:inline-block; margin-right:.25rem; }
 
+  /* Grid */
   .z2h-editor-grid-simple{ display:grid; grid-template-columns: 300px minmax(0,1fr); gap:16px; }
   @media (max-width: 991.98px){ .z2h-editor-grid-simple{ grid-template-columns: 1fr; } }
-  .z2h-editor-sidebar{ position:sticky; top: calc(var(--nav-h) + 16px); align-self:start; }
 
+  /* Sidebar pinned below toolbar (below modal too) */
+  .z2h-editor-sidebar{ position:sticky; top: calc(var(--nav-h) + 16px); align-self:start; z-index: 1010; }
+
+  /* Side list */
   .z2h-side-list{ border:1px solid var(--border); }
   .z2h-side-item{
     display:grid; grid-template-columns: 1fr auto; align-items:center;
     gap:.5rem; padding:.58rem .7rem; border:0; width:100%; background:transparent;
     text-align:left; border-radius:8px; margin:.12rem 0; cursor:pointer; color:var(--text-2);
+    transition: background-color .25s ease, color .25s ease;
   }
   .z2h-side-item.active{ background:var(--surface-2); color:var(--text-1); font-weight:700; }
   .z2h-side-item:hover{ background:#f8f7f4; color:var(--text-1); }
@@ -316,11 +323,13 @@
   .chip-type{ min-width:88px; text-align:center; }
   .z2h-tips{ color:#344256; }
 
+  /* Panels */
   .z2h-panel{ animation:z2hFade .12s ease-in; outline:none; }
   .z2h-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
   .z2h-panel-title{ font-size:.95rem; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0; }
   .z2h-panel-sub{ color:var(--text-2); font-size:.85rem; }
   @keyframes z2hFade { from{opacity:.6; transform:translateY(2px);} to{opacity:1; transform:none;} }
+
   .form-control{ border-radius:10px; }
   .form-hint{ font-size:.78rem; color:var(--text-2); margin-top:.2rem; }
 
@@ -336,16 +345,32 @@
 
 <script>
 (function(){
-  // --- Calcular offset real de navbar y aplicarlo a --nav-h
+  // ---- Ensure we start at the very top once (fix #1) ----
+  try{
+    if (!sessionStorage.getItem('z2h_edit_scrolled_once')) {
+      window.scrollTo({top:0, left:0, behavior:'auto'});
+      sessionStorage.setItem('z2h_edit_scrolled_once','1');
+    }
+  }catch(_){}
+
+  // ---- Compute navbar offset ----
   function updateOffsets(){
     const nav = document.querySelector('.navbar, header nav, .z2h-navbar');
-    const h = nav ? nav.offsetHeight : 56;
-    document.documentElement.style.setProperty('--nav-h', `${h}px`);
+    const navH = nav ? nav.offsetHeight : 56;
+    document.documentElement.style.setProperty('--nav-h', `${navH}px`);
   }
   updateOffsets();
   window.addEventListener('resize', updateOffsets);
 
-  // --- Sticky: toggle clase para activar el full-bleed
+  // ---- Flash toasts (fix #4) ----
+  const host = document.getElementById('z2h-toast-host');
+  if (host){
+    host.querySelectorAll('.toast').forEach(t => {
+      try { new bootstrap.Toast(t).show(); } catch(_) {}
+    });
+  }
+
+  // ---- Sticky toolbar toggle (fix #2: merge with navbar) ----
   const toolbar = document.getElementById('z2h-toolbar');
   if (toolbar){
     let stuck=false;
@@ -353,6 +378,7 @@
     onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
   }
 
+  // ---- Editor logic (unchanged) ----
   const root   = document.getElementById('z2h-edit-root');
   const nav    = document.getElementById('z2h-side-nav');
   const panels = document.querySelectorAll('.z2h-panel');
@@ -360,48 +386,46 @@
   const contentJson = document.getElementById('z2h-content-json');
   const entryId = root?.dataset?.entryId;
 
-  // --- Dirty state & helper UI
   let isDirty = false;
   const statusDot = document.querySelector('.z2h-dot');
-  const saverTxt = document.querySelector('.z2h-save-txt');
+  const saverTxt  = document.querySelector('.z2h-save-txt');
   const publishBtn = document.getElementById('z2h-publish-btn');
 
   function setDirty(v){
     isDirty = !!v;
     if (statusDot) statusDot.style.background = v ? '#f59e0b' : '#16a34a';
-    if (saverTxt) saverTxt.textContent = v ? 'Unsaved' : 'Saved';
+    if (saverTxt)  saverTxt.textContent = v ? 'Unsaved' : 'Saved';
     if (publishBtn){
       publishBtn.disabled = v;
       publishBtn.title = v ? 'Save changes first' : 'Publish';
     }
   }
 
-  function showPanel(id){
+  // Scroll helper (skip on first render to avoid jumping; fix #1)
+  let firstRender = true;
+  function showPanel(id, opts){ // opts={silent:true}
     panels.forEach(p=>p.classList.add('d-none'));
     const el = document.getElementById(id);
     if (el){ el.classList.remove('d-none'); el.focus(); }
     nav.querySelectorAll('.z2h-side-item').forEach(it=>{
       it.classList.toggle('active', it.getAttribute('data-panel-id')===id);
     });
-
-    // Scroll (breadcrumb + respiro)
+    if (opts && opts.silent) return;
     const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56;
-    const tbH  = toolbar ? toolbar.offsetHeight : 0;
-    const bcH  = document.getElementById('z2h-breadcrumb')?.offsetHeight || 0;
-    const y = form.getBoundingClientRect().top + window.scrollY - navH - tbH - bcH - 8;
+    const y = form.getBoundingClientRect().top + window.scrollY - navH - 8;
     window.scrollTo({ top: y, behavior: 'smooth' });
   }
 
-  // Panel inicial
-  showPanel('panel-general');
+  // Initial panel (silent to prevent initial jump)
+  showPanel('panel-general', {silent:true});
 
-  // Click en side-menu
+  // Side-menu click
   nav.addEventListener('click', (e)=>{
     const btn = e.target.closest('.z2h-side-item'); if(!btn) return;
     const pid = btn.getAttribute('data-panel-id'); if(pid) showPanel(pid);
   });
 
-  // Busca en side-menu
+  // Filter
   const finder  = document.getElementById('z2h-section-search');
   function filterNav(){
     const q=(finder.value||'').toLowerCase();
@@ -414,7 +438,7 @@
   finder.addEventListener('input', filterNav);
   window.addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='f'){ finder.focus(); e.preventDefault(); } });
 
-  // Repeaters helpers
+  // Repeaters
   function setDeep(obj, path, value){
     const parts = path.replace(/\]/g,'').split('.');
     let cur=obj;
@@ -468,14 +492,14 @@
     if(rmBtn){ const item=rmBtn.closest('.z2h-rep-item'); if(item){ item.remove(); setDirty(true); } }
   });
 
-  // Contadores SEO
+  // Counters
   document.querySelectorAll('.z2h-count').forEach(inp=>{
     const max=Number(inp.dataset.max||"0"); const meter=document.querySelector(`[data-for="${inp.id}"]`);
     function upd(){ const n=(inp.value||'').trim().length; if(meter) meter.textContent=n; inp.classList.toggle('is-invalid', max&&n>max); }
     inp.addEventListener('input', upd); upd();
   });
 
-  // Delivery button (sin cache-buster; confiamos en ETag/Last-Modified)
+  // Delivery button
   (function(){
     const tenant = root?.dataset?.tenant || '';
     const section = root?.dataset?.sectionKey || '';
@@ -485,12 +509,11 @@
     if(tenant && section && slug){
       btn.href=`/delivery/v1/tenants/${tenant}/sections/${encodeURIComponent(section)}/entries/${encodeURIComponent(slug)}`;
       btn.classList.remove('d-none');
-      // Hacemos visible Publish (queda deshabilitado si hay cambios)
       publishBtn && publishBtn.classList.remove('d-none');
     }
   })();
 
-  // --- Publish (modal + admin)
+  // Publish flow (fix #3: modal over toolbar because of z-indexes)
   (function(){
     const publishBtn = document.getElementById('z2h-publish-btn');
     const publishModalEl = document.getElementById('z2hPublishModal');
@@ -511,7 +534,6 @@
         alert('You have unsaved changes. Please press Save before publishing.');
         return;
       }
-      // Aviso si no hay secciones visibles
       const hasSections = document.querySelectorAll('[data-section-index]').length > 0;
       if(!hasSections){
         alert('This page has no sections. Add content before publishing.');
@@ -536,7 +558,6 @@
       try{
         await callPublish();
         setStatusChip('published');
-        // Sin cache-buster: ETag/Last-Modified se encarga de la frescura del Delivery.
       }catch(err){
         alert(err?.message || 'Publish failed');
       }finally{
@@ -545,7 +566,7 @@
     });
   })();
 
-  // Serializador del formulario (no manda "sections" si no hay paneles)
+  // Serialize
   function serialize(){
     const out={
       replace: !!document.getElementById('f-replace')?.checked,
@@ -554,7 +575,6 @@
         description: document.getElementById('f-seo-desc')?.value || ''
       }
     };
-
     const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
     if (sectionPanels.length > 0){
       out.sections = [];
@@ -581,12 +601,11 @@
         out.sections.push(sec);
       });
     }
-
     contentJson.value = JSON.stringify(out);
     return out;
   }
 
-  // Dirty/backup
+  // Dirty + backup
   let t;
   function onDirty(){
     setDirty(true);
@@ -602,12 +621,12 @@
     if(e.key.toLowerCase()==='f'){ document.getElementById('z2h-section-search').focus(); e.preventDefault(); }
   });
 
-  // Submit (Save → draft)
+  // Submit
   document.getElementById('z2h-edit-form').addEventListener('submit', function(ev){
     try{
       const obj = serialize();
       if (!obj.sections && !obj.replace){
-        // no-op: el back conservará las sections actuales
+        // no-op
       }
     }catch(err){
       ev.preventDefault(); alert(err.message||'Invalid data'); return;
@@ -616,12 +635,16 @@
     setDirty(false);
   });
 
-  // Inicial
+  // Init
   serialize();
   setDirty(false);
 })();
 </script>
 {% endblock %}
+
+
+
+
 
 
 

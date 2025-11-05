@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Tuple
 
 import httpx
 
-from app.core.config import settings
+from app.core.settings import settings
 
 # Estructura mínima esperada de endpoints
 # [{"url": "...", "secret": "...", "events": ["content.published", ...]}]
@@ -108,9 +108,9 @@ async def emit_event_async(db, tenant_id: int, event: str, payload: Dict[str, An
                 url=str(ep["url"]),
                 headers=headers,
                 body=body_bytes,
-                timeout=int(settings.WEBHOOK_TIMEOUT_SECONDS),
-                max_retries=int(settings.WEBHOOK_MAX_RETRIES),
-                backoff_seconds=int(settings.WEBHOOK_BACKOFF_SECONDS),
+                timeout=int(settings.WEBHOOKS_TIMEOUT_SECONDS),
+                max_retries=int(settings.WEBHOOKS_MAX_RETRIES),
+                backoff_seconds=int(settings.WEBHOOKS_BACKOFF_SECONDS),
             )
         )
 

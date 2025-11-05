@@ -99,4 +99,3 @@ def logout_post(request: Request):
 def logout_get(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=302)
-

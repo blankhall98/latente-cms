@@ -47,11 +47,11 @@ class MemberCreate(BaseModel):
     user_id: int
     tenant_id: int
     role_id: int  # asignación inicial
-    status: Optional[Literal["active", "invited", "suspended"]] = "active"
+    status: Optional[Literal["active", "pending", "removed"]] = "active"
 
 class MemberUpdate(BaseModel):
     role_id: Optional[int] = None
-    status: Optional[Literal["active", "invited", "suspended"]] = None
+    status: Optional[Literal["active", "pending", "removed"]] = None
 
 class MemberOut(BaseModel):
     id: int

@@ -27,7 +27,6 @@ def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
         return parts[1]
     return None
 
-
 def _load_user_from_sub(db: Session, sub: str | int) -> Optional[User]:
     try:
         uid = int(sub)
@@ -114,7 +113,7 @@ def user_has_permission(
             and_(
                 UserTenant.user_id == int(user_id),
                 UserTenant.tenant_id == int(tenant_id),
-                UserTenant.status == UserTenantStatus.ACTIVE,
+                UserTenant.status == UserTenantStatus.active,
                 RolePermission.role_id == UserTenant.role_id,
                 Permission.id == RolePermission.permission_id,
                 Permission.key == perm_key,

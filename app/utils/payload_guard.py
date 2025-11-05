@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 from fastapi import HTTPException
-from app.core.config import settings
+from app.core.settings import settings
 
 def enforce_entry_data_size(data: dict):
     if settings.MAX_ENTRY_DATA_KB <= 0:

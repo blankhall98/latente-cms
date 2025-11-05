@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 import jwt
 
-from app.core.config import settings
+from app.core.settings import settings
 
 
 class PreviewTokenError(Exception):

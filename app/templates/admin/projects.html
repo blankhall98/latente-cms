@@ -1,43 +1,146 @@
 {% extends "base.html" %}
 {% block title %}Projects · Latente CMS{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ---------------------------
+     Projects — extra-desaturated left cluster
+     --------------------------- */
+
+  /* Header / mini-hero (unchanged look) */
+  .z2h-proj-head{
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+      radial-gradient(900px 420px at 14% -10%, rgba(110,158,230,.06), transparent 60%),
+      radial-gradient(700px 360px at 86% -6%, rgba(137,194,217,.05), transparent 55%),
+      linear-gradient(180deg, #ffffff 0%, #f7f5f0 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,.06);
+    padding: clamp(20px, 3.5vw, 40px);
+  }
+  .z2h-proj-title{
+    letter-spacing:.12em; text-transform: uppercase; margin:.2rem 0 0 0;
+  }
+
+  /* Back chip & project pill — remove color glow/shadows */
+  .z2h-chip{
+    display:inline-flex; align-items:center; gap:.35rem;
+    padding:.28rem .7rem; border:1px solid var(--border); border-radius:999px;
+    background:#fff; color:var(--text-1); text-decoration:none;
+    transition: border-color .28s ease, background-color .28s ease;
+  }
+  .z2h-chip:hover{ background:#fff; border-color:#e9e1d7; }
+
+  .z2h-project-pill{
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.32rem .72rem; border:1px solid var(--border); border-radius:999px;
+    background:#fff; color:var(--text-1); font-size:.9rem;
+    box-shadow: none;                           /* was 0 8px 22px… */
+  }
+  .z2h-project-pill .dot{
+    width:8px; height:8px; border-radius:50%;
+    background: rgba(110,158,230,.35);          /* softer blue */
+    box-shadow:none;                            /* remove halo */
+  }
+
+  /* Card list — neutral rows, no hover paint */
+  .z2h-card-list{ display:flex; flex-direction:column; gap:.5rem; }
+  .z2h-list-item{
+    display:grid; grid-template-columns:1fr auto; align-items:center; gap:1rem;
+    padding:.9rem .5rem .9rem 0; border-top:1px dashed var(--border);
+    background: transparent; transition: color .25s ease, border-color .25s ease;
+  }
+  .z2h-list-item:first-child{ border-top:0; }
+
+  /* Calmer title + subtitle */
+  .z2h-list-title{ font-weight:600; color:#303030; }  /* was 700 */
+  .z2h-list-sub{ color:var(--text-2); font-size:.92rem; }
+
+  /* Desaturated badges on the LEFT ONLY */
+  .z2h-badge-active{
+    display:inline-block; padding:.18rem .5rem; border-radius:999px;
+    font-size:.72rem; letter-spacing:.06em; text-transform: uppercase;
+    background: rgba(16,185,129,.06);           /* softer mint */
+    border:1px solid rgba(16,185,129,.14);
+    color:#335a4c;                               /* deep, not neon */
+  }
+  .z2h-card-list .z2h-list-item .z2h-list-sub .z2h-badge{
+    background:#faf9f7 !important;              /* neutral, not blue */
+    border-color: var(--border) !important;
+    color: #7a7a7a !important;                   /* muted text */
+    box-shadow: none !important;
+    padding:.14rem .44rem;
+  }
+
+  /* Buttons on the RIGHT — keep the established styles */
+  .btn.btn-outline, .btn.btn-outline.btn-sm{
+    background: transparent; border-color: var(--border); color: var(--text-1);
+    box-shadow: none; transition: background-color .28s ease, border-color .28s ease, color .28s ease;
+  }
+  .btn.btn-outline:hover, .btn.btn-outline.btn-sm:hover{
+    background: var(--accent-soft); border-color: var(--accent-soft); color: var(--text-1);
+  }
+  .btn.btn-cta.btn-sm{
+    padding:.45rem .75rem; background: var(--grad-1); color: var(--primary-ink);
+    border:1px solid #6e9ee6; box-shadow: 0 10px 24px rgba(110,158,230,.12);
+    transition: filter .28s ease, border-color .28s ease, box-shadow .28s ease;
+  }
+  .btn.btn-cta.btn-sm:hover{ filter: brightness(1.03); }
+  .btn.btn-cta.btn-sm:disabled{ opacity:.55; cursor:not-allowed; }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="container my-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-      <div class="z2h-brand--badge mb-2">Projects</div>
-      <h1 class="h4 m-0">Choose a project</h1>
-      <p class="text-muted mt-1 mb-0">Switch your active project to manage its pages and sections.</p>
+
+  <!-- Header / mini-hero -->
+  <div class="z2h-proj-head mb-3">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <a href="/admin" class="z2h-chip" aria-label="Back to Dashboard">&larr; Dashboard</a>
+        {% if active_tenant %}
+          <span class="z2h-project-pill" title="Current active project">
+            <span class="dot" aria-hidden="true"></span>
+            <strong>{{ active_tenant.name }}</strong>
+            {% if active_tenant.slug %}<code class="ms-1">/{{ active_tenant.slug }}</code>{% endif %}
+          </span>
+        {% endif %}
+      </div>
+      <div class="ms-md-auto">
+        <div class="z2h-brand--badge text-uppercase">Projects</div>
+      </div>
     </div>
-    <div>
-      <a class="btn btn-outline" href="/admin">Back to Dashboard</a>
-    </div>
+    <h1 class="z2h-proj-title h5 m-0 mt-2">Choose a project</h1>
+    <p class="text-muted small mb-0 mt-1">Switch your active project to manage its pages and sections.</p>
   </div>
 
-  {% if active_tenant %}
-    <div class="alert alert-light border d-flex align-items-center gap-2" role="alert">
-      <span class="z2h-badge">Active</span>
-      <strong>{{ active_tenant.name }}</strong>
-      <code class="small">/{{ active_tenant.slug }}</code>
-    </div>
-  {% endif %}
-
+  <!-- Projects list -->
   <div class="card p-3 p-md-4 z2h-card">
     {% if projects and projects|length > 0 %}
       <div class="z2h-card-list">
         {% for p in projects %}
           <div class="z2h-list-item">
             <div>
-              <div class="z2h-list-title">{{ p.name }}</div>
+              <div class="z2h-list-title">
+                {{ p.name }}
+                {% if active_tenant and active_tenant.id == p.id %}
+                  <span class="ms-2 z2h-badge-active">Active</span>
+                {% endif %}
+              </div>
               <div class="z2h-list-sub">
                 <span class="z2h-badge">/{{ p.slug }}</span>
                 <span class="ms-2 text-muted">Role: {{ p.role_label }}</span>
               </div>
             </div>
+
             <div class="d-flex gap-2">
-              <form method="post" action="/admin/projects/{{ p.id }}/set-active">
-                <button class="btn btn-cta btn-sm" type="submit">Set Active</button>
-              </form>
+              {% if active_tenant and active_tenant.id == p.id %}
+                <button class="btn btn-cta btn-sm" type="button" disabled>Set Active</button>
+              {% else %}
+                <form method="post" action="/admin/projects/{{ p.id }}/set-active">
+                  <button class="btn btn-cta btn-sm" type="submit">Set Active</button>
+                </form>
+              {% endif %}
               <a class="btn btn-outline btn-sm" href="/admin/pages?tenant_id={{ p.id }}">Open Pages</a>
             </div>
           </div>
@@ -47,7 +150,10 @@
       <div class="text-muted">No projects available for your account.</div>
     {% endif %}
   </div>
+
 </section>
 {% endblock %}
+
+
 
 

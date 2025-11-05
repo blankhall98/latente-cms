@@ -4,7 +4,7 @@ import time
 import threading
 from typing import Dict, Tuple, Optional
 from starlette.responses import Response
-from app.core.config import settings
+from app.core.settings import settings
 
 CacheValue = Tuple[float, int, bytes, Dict[str, str]]  # (expires_at, status_code, body, headers)
 

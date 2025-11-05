@@ -4,37 +4,46 @@
 {% block extra_head %}
 <style>
   /* ---------------------------
-     Dashboard — calm, pastel, no-code look (CLEANED)
+     Dashboard — calm, pastel, no-code look (REFINED)
      --------------------------- */
 
-  /* Hero: more space, active project highly visible */
+  /* Hero: more space, softer gradient, clearer hierarchy */
   .z2h-hero{
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 22px;
     background:
       radial-gradient(1000px 460px at 14% -10%, rgba(110,158,230,.08), transparent 60%),
       radial-gradient(780px 400px at 86% -6%, rgba(137,194,217,.07), transparent 55%),
       linear-gradient(180deg, #ffffff 0%, #f7f5f0 100%);
     box-shadow: 0 18px 40px rgba(0,0,0,.06);
-    padding: clamp(24px, 4vw, 44px);
+    padding: clamp(28px, 4.8vw, 56px);
+    position: relative;
+    overflow: hidden;
+  }
+  /* subtle bottom hairline for structure */
+  .z2h-hero::after{
+    content:""; position:absolute; left:16px; right:16px; bottom:0; height:1px;
+    background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.08), rgba(0,0,0,0));
+    opacity:.6;
   }
   .z2h-hero-title{
     letter-spacing:.12em;
     text-transform: uppercase;
     margin: .25rem 0 0 0;
+    font-size: clamp(1.05rem, 1.4vw, 1.15rem);
   }
   .z2h-hero-meta{
-    margin-top:.5rem; color: rgba(0,0,0,.66);
+    margin-top:.55rem; color: rgba(0,0,0,.66);
   }
 
-  /* Prominent active project pill */
+  /* Active project pill — a bit larger, premium feel */
   .z2h-project-pill{
-    display:inline-flex; align-items:center; gap:.5rem;
-    padding:.35rem .75rem;
+    display:inline-flex; align-items:center; gap:.6rem;
+    padding:.42rem .9rem;
     border:1px solid var(--border);
     border-radius:999px;
     background:#fff;
-    font-size:.9rem;
+    font-size:.95rem;
     color:var(--text-1);
     box-shadow: 0 8px 22px rgba(0,0,0,.05);
   }
@@ -44,22 +53,22 @@
     box-shadow: 0 0 0 6px rgba(110,158,230,.12);
   }
 
-  /* Cards — NO jump/shadow pop on hover */
+  /* Cards — steady, no hover pop */
   .card{
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);                 /* steady shadow */
+    box-shadow: var(--shadow-sm);
     transition: background-color .28s ease, border-color .28s ease;
   }
-  .card:hover{ box-shadow: var(--shadow-sm); }    /* lock hover */
+  .card:hover{ box-shadow: var(--shadow-sm); }
 
   /* Section headers */
   .z2h-section-head{
     display:flex; align-items:center; justify-content:space-between; gap:.75rem;
   }
 
-  /* Pages list — no blue paint, no bg fill, very subtle hover */
+  /* Pages list — neutral on hover (no paint), tiny text opacity cue */
   .z2h-card-list{ display:flex; flex-direction:column; gap:.5rem; }
   .z2h-list-item{
     position: relative;
@@ -67,57 +76,39 @@
     padding:.8rem .5rem .8rem 0;
     border-top:1px dashed var(--border);
     background: transparent;
-    transition: background-color .28s ease, color .28s ease, border-color .28s ease;
+    transition: color .28s ease, border-color .28s ease;
   }
   .z2h-list-item:first-child{ border-top:0; }
 
-  /* Subtle left guide line (no fill color on the row) */
-  .z2h-list-item::before{
-    content: "";
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: linear-gradient(180deg, rgba(110,158,230,.25), rgba(137,194,217,.15));
-    opacity: 0;
-    transform: translateX(-2px);
-    transition: opacity .35s ease, transform .35s ease;
-  }
-  .z2h-list-item:hover::before{
-    opacity: 1;
-    transform: translateX(0);
-  }
+  /* Removed left guideline & any row background fill */
 
-  /* Keep text colors steady; only micro opacity cue */
   .z2h-list-title{ font-weight:800; color:var(--text-1); transition: opacity .28s ease; }
   .z2h-list-sub{ font-size:.92rem; color:var(--text-2); transition: opacity .28s ease; }
   .z2h-list-item:hover .z2h-list-title{ opacity: .96; }
   .z2h-list-item:hover .z2h-list-sub{ opacity: .9; }
 
-  /* Links inside list should NOT paint blue on hover */
+  /* Make "OPEN" match the "Switch project" outline style */
+  /* (use the same outline behavior as header: transparent base, soft pastel hover) */
+  .z2h-card-list .btn-outline{
+    background: transparent !important;
+    border-color: var(--border) !important;
+    color: var(--text-1) !important;
+    box-shadow: none !important;
+    transition: background-color .28s ease, border-color .28s ease, color .28s ease;
+  }
+  .z2h-card-list .btn-outline:hover{
+    background: var(--accent-soft) !important;
+    border-color: var(--accent-soft) !important;
+    color: var(--text-1) !important;
+  }
+
+  /* Keep links neutral inside rows */
   .z2h-card-list .z2h-list-item a{
     color: var(--text-1) !important;
     text-decoration: none;
-    transition: color .28s ease, opacity .28s ease;
+    transition: opacity .28s ease;
   }
-  .z2h-card-list .z2h-list-item a:hover{
-    color: var(--text-1) !important;
-    opacity: .9;
-  }
-
-  /* Outline buttons inside list: keep neutral on hover */
-  .z2h-card-list .btn-outline{
-    background: #fff !important;
-    border-color: var(--border) !important;
-    color: var(--text-1) !important;
-    transition: border-color .28s ease, color .28s ease;
-    box-shadow: none !important;
-  }
-  .z2h-card-list .btn-outline:hover{
-    background: #fff !important;
-    border-color: #e9e1d7 !important;
-    color: var(--text-1) !important;
-    box-shadow: none !important;
-  }
+  .z2h-card-list .z2h-list-item a:hover{ opacity: .9; }
 </style>
 {% endblock %}
 
@@ -141,7 +132,7 @@
           {% endif %}
         </div>
 
-        <h1 class="z2h-hero-title h4 m-0">
+        <h1 class="z2h-hero-title m-0">
           {% if user and (user.email or "") %}Welcome, {{ user.email }}{% else %}Welcome{% endif %}
         </h1>
 
@@ -230,6 +221,7 @@
     </div>
   </div>
 {% endblock %}
+
 
 
 

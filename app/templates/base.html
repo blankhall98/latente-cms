@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" class="">
+<html lang="en" class="">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,17 +7,75 @@
   <meta name="theme-color" content="#f7f4ef">
   {% block meta %}{% endblock %}
 
-  <!-- Bootstrap primero -->
+  <!-- Bootstrap -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
     rel="stylesheet"
     crossorigin="anonymous"
   />
 
-  <!-- Estilos pastel (con cache-busting opcional) -->
+  <!-- Main pastel styles (with cache-busting) -->
   <link rel="stylesheet" href="/static/css/style.css?v={{ build_version|default('1') }}">
 
-  <!-- Hook opcional para estilos por página -->
+  <!-- Layout + Logout wave effect -->
+  <style>
+    /* ---------- Sticky footer layout ---------- */
+    html, body { height: 100%; }
+    body.z2h-body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    #main-content { flex: 1 0 auto; }
+    .z2h-footer { flex-shrink: 0; }
+
+    /* ---------- Logout button: full cover wave + slow reverse ---------- */
+    .z2h-logout{
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      transition: color .25s ease, border-color .25s ease, background-color .25s ease;
+      border-radius: var(--radius, 12px);
+      isolation: isolate; /* ensure pseudo sits beneath text */
+    }
+    /* Wave layer */
+    .z2h-logout::before{
+      content:"";
+      position:absolute;
+      /* slightly oversize so it fully covers, including borders */
+      inset:-2px;
+      border-radius: inherit;
+      /* soft reddish wave + gentle linear underlay */
+      background:
+        radial-gradient(130% 100% at 0% 50%,
+          rgba(220,53,69,.10) 0%,
+          rgba(220,53,69,.16) 45%,
+          rgba(220,53,69,.20) 60%,
+          rgba(220,53,69,.22) 72%,
+          rgba(220,53,69,0) 73%),
+        linear-gradient(90deg,
+          rgba(220,53,69,.10) 0%,
+          rgba(220,53,69,.18) 100%);
+      transform: translateX(-120%);   /* start fully off to the left */
+      transition: transform 2.2s ease-in-out; /* slow both ways */
+      z-index: 0;
+      pointer-events: none;
+    }
+    .z2h-logout:hover::before{
+      transform: translateX(0%);      /* fully covers the button */
+    }
+    /* Keep button label above wave */
+    .z2h-logout > * { position: relative; z-index: 1; }
+    /* Calm hover state—no bounce */
+    .z2h-logout:hover{
+      color:#333;
+      border-color: var(--border);
+      background:#fff;
+    }
+  </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body class="z2h-body {% block body_class %}{% endblock %}">
@@ -26,12 +84,12 @@
   {% set path = request.url.path %}
 
   {% if not hide_navbar %}
-  <nav class="z2h-nav navbar" role="navigation" aria-label="Principal">
+  <nav class="z2h-nav navbar" role="navigation" aria-label="Main">
     <div class="container d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center gap-3">
-        <div class="z2h-brand--badge" aria-label="Producto">Latente CMS</div>
+        <div class="z2h-brand--badge" aria-label="Product">Latente CMS</div>
         {% if request.session and request.session.get('active_tenant') %}
-          <div class="z2h-badge" title="Proyecto activo">/{{ request.session['active_tenant']['slug'] }}</div>
+          <div class="z2h-badge" title="Active project">/{{ request.session['active_tenant']['slug'] }}</div>
         {% else %}
           <div class="text-muted small">no project</div>
         {% endif %}
@@ -56,13 +114,13 @@
           aria-current="{{ 'page' if path.startswith('/admin/projects') else 'false' }}"
         >Projects</a>
 
-        {# Futuro:
+        {# Future:
         <a class="nav-link {{ 'active' if path.startswith('/admin/schemas') else '' }}" href="/admin/schemas">Schemas</a>
         <a class="nav-link {{ 'active' if path.startswith('/admin/members') else '' }}" href="/admin/members">Members</a>
         #}
 
-        <form action="/logout" method="post" class="ms-2" aria-label="Cerrar sesión">
-          <button class="btn btn-outline btn-sm" type="submit">Log out</button>
+        <form action="/logout" method="post" class="ms-2" aria-label="Sign out">
+          <button class="btn btn-outline btn-sm z2h-logout" type="submit">Log out</button>
         </form>
       </div>
     </div>
@@ -77,7 +135,6 @@
   <footer class="z2h-footer" role="contentinfo">
     <div class="container d-flex justify-content-between align-items-center">
       <small>Latente CMS Core — Admin</small>
-      <small><a href="/docs">/docs</a></small>
     </div>
   </footer>
   {% endif %}
@@ -90,6 +147,8 @@
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+
+
 
 
 
