@@ -15,12 +15,15 @@ from app.db.session import get_db
 from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
 
+# Enriched JSON Schema (with x-ui) for the auto-form
+from app.services.ui_schema_service import build_ui_jsonschema_for_active_section
+
 ENABLE_SERVER_VALIDATION = False
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(include_in_schema=False)
 
-# Debe coincidir con auth router
+# Must match auth router
 SESSION_USER_KEY = "user"
 SESSION_ACTIVE_TENANT_KEY = "active_tenant"
 
@@ -110,7 +113,7 @@ def _deep_merge(base: Any, override: Any) -> Any:
             out[k] = _deep_merge(base.get(k), v)
         return out
 
-    # list ← list (merge por índice; mantiene sobrantes del base)
+    # list ← list
     if isinstance(base, list) and isinstance(override, list):
         merged: list[Any] = []
         m = max(len(base), len(override))
@@ -123,7 +126,7 @@ def _deep_merge(base: Any, override: Any) -> Any:
                 merged.append(base[i])
         return merged
 
-    # override “gana” solo si no es None; si es None conserva base
+    # override wins only if not None
     return override if override is not None else base
 
 
@@ -543,10 +546,24 @@ def page_edit_get(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
+    # If page is published and has __draft, edit the draft
+    base_data = entry.data or {}
+    is_published = (getattr(entry, "status", "draft") == "published")
+    working_data = (base_data.get("__draft") if (is_published and isinstance(base_data.get("__draft"), dict)) else base_data)
+
+    # UI JSON Schema (enriched) for auto-form
+    try:
+        schema_ui_dict = build_ui_jsonschema_for_active_section(db, tenant_id=tid, section_id=section.id)
+        schema_ui_json = json.dumps(schema_ui_dict, ensure_ascii=False)
+        ss_version = schema_ui_dict.get("$version") or schema_ui_dict.get("version")
+    except Exception:
+        schema_ui_json = ""
+        ss_version = None
+
+    # Initial model (defaults merged with current data)
     ss = _get_active_schema(db, section.id)
     json_schema = _extract_schema_dict(ss)
-
-    form_model, _ = _build_form_model_from_active_schema(json_schema, entry.data or {})
+    form_model, _ = _build_form_model_from_active_schema(json_schema, working_data or {})
 
     replace_val = bool((form_model.get("replace") or False))
     seo = form_model.get("seo") or {}
@@ -577,13 +594,15 @@ def page_edit_get(
                 "title": (form_model.get("title") or form_model.get("name") or entry.slug),
                 "status": entry.status,
                 "section_name": section.name,
-                "section_key": getattr(section, "key", getattr(section, "name", "Section")),  # clave para Delivery
+                "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                 "schema_version": (ss.version if ss else entry.schema_version),
+                "section_id": int(section.id),
             },
             "replace_val": replace_val,
             "seo_title": seo_title,
             "seo_desc": seo_desc,
             "sections_ui": sections_ui,
+            "schema_ui_json": schema_ui_json,  # serialized
             "error": None,
             "ok_message": None,
         },
@@ -605,11 +624,20 @@ def page_edit_post(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
+    # UI JSON Schema (also for POST)
+    try:
+        schema_ui_dict = build_ui_jsonschema_for_active_section(db, tenant_id=tid, section_id=section.id)
+        schema_ui_json = json.dumps(schema_ui_dict, ensure_ascii=False)
+        ui_version = schema_ui_dict.get("$version") or schema_ui_dict.get("version")
+    except Exception:
+        schema_ui_json = ""
+        ui_version = None
+
     ss = _get_active_schema(db, section.id)
     json_schema = _extract_schema_dict(ss)
-    active_version = ss.version if ss else entry.schema_version
+    active_version = (ui_version if ui_version is not None else (ss.version if ss else entry.schema_version))
 
-    # --- Parseo seguro
+    # --- Safe parse
     try:
         parsed = json.loads(content_json)
         if not isinstance(parsed, dict):
@@ -636,6 +664,7 @@ def page_edit_post(
                     "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                    "section_id": int(section.id),
                     "schema_version": active_version,
                 },
                 "initial_json": content_json,
@@ -643,13 +672,14 @@ def page_edit_post(
                 "seo_title": (data.get("seo") or {}).get("title", ""),
                 "seo_desc": (data.get("seo") or {}).get("description", ""),
                 "sections_ui": sections_ui,
+                "schema_ui_json": schema_ui_json,
                 "error": f"Invalid JSON: {e}",
                 "ok_message": None,
             },
             status_code=400,
         )
 
-    # --- Validación mínima (opcionalmente ampliable)
+    # --- Minimal validation (pluggable)
     errors = _validate_against_schema(json_schema, parsed)
     if errors:
         sections = parsed.get("sections") or []
@@ -672,6 +702,7 @@ def page_edit_post(
                     "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                    "section_id": int(section.id),
                     "schema_version": active_version,
                 },
                 "initial_json": json.dumps(parsed, ensure_ascii=False, indent=2),
@@ -679,23 +710,19 @@ def page_edit_post(
                 "seo_title": (parsed.get("seo") or {}).get("title", ""),
                 "seo_desc": (parsed.get("seo") or {}).get("description", ""),
                 "sections_ui": sections_ui,
+                "schema_ui_json": schema_ui_json,
                 "error": "Schema validation failed: " + "; ".join(errors[:5]),
                 "ok_message": None,
             },
             status_code=422,
         )
 
-    # -----------------------------
-    # REGLAS ANTI-BORRADO ACCIDENTAL
-    # -----------------------------
+    # ----------------------------- Anti-wipe rules -----------------------------
     base_data = entry.data or {}
     payload = parsed or {}
 
-    # 1) Si NO viene "sections" en el payload, NO tocar las secciones actuales
     incoming_has_sections_key = "sections" in payload
     incoming_sections = payload.get("sections", None)
-
-    # 2) Si viene "sections" vacío y NO hay replace=true → rechazar
     replace_flag = bool(payload.get("replace", False))
     if incoming_has_sections_key and isinstance(incoming_sections, list) and len(incoming_sections) == 0 and not replace_flag:
         return templates.TemplateResponse(
@@ -711,6 +738,7 @@ def page_edit_post(
                     "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                    "section_id": int(section.id),
                     "schema_version": active_version,
                 },
                 "initial_json": json.dumps(payload, ensure_ascii=False, indent=2),
@@ -722,28 +750,38 @@ def page_edit_post(
                     "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
                     "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
                 } for i, blk in enumerate(base_data.get("sections") or [])],
+                "schema_ui_json": schema_ui_json,
                 "error": "Cannot clear sections without replace=true.",
                 "ok_message": None,
             },
             status_code=400,
         )
 
-    # 3) Merge NO destructivo (conserva valores actuales por defecto)
+    # Non-destructive merge
     merged = _deep_merge(base_data, payload)
-
-    # 4) Si el payload NO traía "sections", aseguramos que se queden las actuales
     if not incoming_has_sections_key and "sections" in base_data:
         merged["sections"] = base_data["sections"]
 
-    # Persistir
-    entry.data = merged
+    # Persist (draft vs root)
+    is_published_now = (getattr(entry, "status", "draft") == "published")
+    if is_published_now:
+        new_base = dict(base_data)
+        new_base["__draft"] = merged
+        entry.data = new_base
+    else:
+        entry.data = merged
+
     entry.schema_version = active_version
     entry.updated_at = datetime.now(timezone.utc)
     db.add(entry)
     db.commit()
     db.refresh(entry)
 
-    sections = entry.data.get("sections") or []
+    # Rebuild UI bits after save (based on current working data)
+    current_base = entry.data or {}
+    working_after = (current_base.get("__draft") if is_published_now and isinstance(current_base.get("__draft"), dict) else current_base)
+
+    sections = (working_after.get("sections") or [])
     sections_ui = [{
         "index": i,
         "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
@@ -759,17 +797,19 @@ def page_edit_post(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (entry.data or {}).get("title") or entry.slug,
+                "title": (working_after or {}).get("title") or entry.slug,
                 "status": entry.status,
                 "section_name": section.name,
                 "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                "section_id": int(section.id),
                 "schema_version": active_version,
             },
-            "initial_json": json.dumps(entry.data or {}, ensure_ascii=False, indent=2),
-            "replace_val": bool(entry.data.get("replace", False)),
-            "seo_title": (entry.data.get("seo") or {}).get("title", ""),
-            "seo_desc": (entry.data.get("seo") or {}).get("description", ""),
+            "initial_json": json.dumps(working_after or {}, ensure_ascii=False, indent=2),
+            "replace_val": bool((working_after or {}).get("replace", False)),
+            "seo_title": ((working_after or {}).get("seo") or {}).get("title", ""),
+            "seo_desc": ((working_after or {}).get("seo") or {}).get("description", ""),
             "sections_ui": sections_ui,
+            "schema_ui_json": schema_ui_json,
             "error": None,
             "ok_message": "Changes saved.",
         },
@@ -784,8 +824,8 @@ def admin_publish_page(
     db: Session = Depends(get_db),
 ):
     """
-    Publica una página desde el Admin usando la sesión (sin JWT).
-    Esto garantiza que Delivery la exponga (status='published').
+    Publish page: if data.__draft exists, promote it to root; otherwise publish current root.
+    Delivery always reads entry.data (without __draft).
     """
     _require_web_user(request)
     active = _get_active_tenant(request)
@@ -795,15 +835,32 @@ def admin_publish_page(
 
     entry, _section = _load_entry_or_404(db, entry_id, tid)
 
-    # No publicar páginas vacías (sin sections)
     data_now = entry.data or {}
-    if not (isinstance(data_now, dict) and isinstance(data_now.get("sections"), list) and len(data_now["sections"]) > 0):
+    working = data_now.get("__draft") if isinstance(data_now.get("__draft"), dict) else None
+    candidate = (working or data_now)
+
+    # Do not publish pages without sections
+    if not (isinstance(candidate, dict) and isinstance(candidate.get("sections"), list) and len(candidate["sections"]) > 0):
         raise HTTPException(status_code=409, detail="Cannot publish an empty page (no sections). Save content first.")
 
     now = datetime.now(timezone.utc)
+
+    # If draft exists, promote it and clear __draft
+    if working is not None:
+        published_at_prev = getattr(entry, "published_at", None)
+        data_new = dict(candidate)
+        data_new.pop("__draft", None)
+        entry.data = data_new
+        if published_at_prev:
+            try:
+                setattr(entry, "published_at", published_at_prev)
+            except Exception:
+                pass
+
+    # Publish
     entry.status = "published"
     try:
-        setattr(entry, "published_at", now)
+        setattr(entry, "published_at", now if not getattr(entry, "published_at", None) else getattr(entry, "published_at"))
     except Exception:
         pass
     entry.updated_at = now
@@ -813,3 +870,27 @@ def admin_publish_page(
     db.refresh(entry)
 
     return JSONResponse({"ok": True, "status": "published", "entry_id": int(entry.id)})
+
+
+# --------------------------- Sections JSON (for Admin UI helpers) ---------------------------
+@router.get("/admin/tenants/{tenant_id}/sections.json")
+def sections_json(
+    tenant_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Minimal JSON list of sections for a tenant. Used by admin UI dropdowns/filters.
+    """
+    _require_web_user(request)
+
+    rows = db.execute(
+        select(Section.id, Section.key, Section.name)
+        .where(Section.tenant_id == tenant_id)
+        .order_by(Section.name.asc())
+    ).all()
+
+    data = [{"id": int(i), "key": k, "name": n} for (i, k, n) in rows]
+    return JSONResponse({"sections": data})
+
+

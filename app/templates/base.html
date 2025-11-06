@@ -17,63 +17,65 @@
   <!-- Main pastel styles (with cache-busting) -->
   <link rel="stylesheet" href="/static/css/style.css?v={{ build_version|default('1') }}">
 
-  <!-- Layout + Logout wave effect -->
   <style>
-    /* ---------- Sticky footer layout ---------- */
+    /* ---------- Layout básico ---------- */
     html, body { height: 100%; }
-    body.z2h-body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    #main-content { flex: 1 0 auto; }
-    .z2h-footer { flex-shrink: 0; }
+    body.z2h-body { display:flex; flex-direction:column; min-height:100vh; }
+    #main-content { flex:1 0 auto; }
+    .z2h-footer { flex-shrink:0; }
 
-    /* ---------- Logout button: full cover wave + slow reverse ---------- */
+    /* ---------- Botón logout: estilo + efecto ---------- */
     .z2h-logout{
-      position: relative;
-      overflow: hidden;
-      background: #fff;
-      color: var(--text-1);
-      border: 1px solid var(--border);
-      transition: color .25s ease, border-color .25s ease, background-color .25s ease;
-      border-radius: var(--radius, 12px);
-      isolation: isolate; /* ensure pseudo sits beneath text */
+      position:relative;
+      overflow:hidden;
+      background:#fff; color:var(--text-1);
+      border:1px solid var(--border); border-radius:12px;
+      transition: color .2s ease, border-color .2s ease, background-color .2s ease, transform .06s ease;
+      will-change: transform;
+      --shine: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.6) 50%, transparent 100%);
     }
-    /* Wave layer */
+    .z2h-logout:hover{ color:#222; border-color: var(--border); background:#fff; }
+    .z2h-logout:active{ transform: translateY(1px); }
+
+    /* Shine sweep */
     .z2h-logout::before{
       content:"";
-      position:absolute;
-      /* slightly oversize so it fully covers, including borders */
-      inset:-2px;
-      border-radius: inherit;
-      /* soft reddish wave + gentle linear underlay */
-      background:
-        radial-gradient(130% 100% at 0% 50%,
-          rgba(220,53,69,.10) 0%,
-          rgba(220,53,69,.16) 45%,
-          rgba(220,53,69,.20) 60%,
-          rgba(220,53,69,.22) 72%,
-          rgba(220,53,69,0) 73%),
-        linear-gradient(90deg,
-          rgba(220,53,69,.10) 0%,
-          rgba(220,53,69,.18) 100%);
-      transform: translateX(-120%);   /* start fully off to the left */
-      transition: transform 2.2s ease-in-out; /* slow both ways */
-      z-index: 0;
-      pointer-events: none;
+      position:absolute; top:0; left:-150%;
+      width:120%; height:100%;
+      background: var(--shine);
+      transform: skewX(-15deg);
+      opacity:.0; pointer-events:none;
     }
     .z2h-logout:hover::before{
-      transform: translateX(0%);      /* fully covers the button */
+      animation: z2hShine .9s ease forwards;
+      opacity:.9;
     }
-    /* Keep button label above wave */
-    .z2h-logout > * { position: relative; z-index: 1; }
-    /* Calm hover state—no bounce */
-    .z2h-logout:hover{
-      color:#333;
-      border-color: var(--border);
-      background:#fff;
+    @keyframes z2hShine{
+      0%{ left:-150%; opacity:.0; }
+      10%{ opacity:.35; }
+      100%{ left:130%; opacity:0; }
     }
+    @media (prefers-reduced-motion: reduce){
+      .z2h-logout{ transition:none; }
+      .z2h-logout:hover::before{ animation:none; opacity:0; }
+    }
+
+    /* Ripple circle (se pinta vía JS con <span>) */
+    .z2h-ripple{
+      position:absolute; border-radius:50%;
+      transform: scale(0); pointer-events:none;
+      background: rgba(0,0,0,.12);
+      animation: z2hRipple .45s ease-out forwards;
+      mix-blend-mode: multiply;
+    }
+    @keyframes z2hRipple{
+      to{ transform: scale(12); opacity:0; }
+    }
+
+    /* ---------- Z-index seguro toasts/modals ---------- */
+    .modal { z-index: 1080; }
+    .modal-backdrop { z-index: 1070; }
+    .toast-container { z-index: 2000; }
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -96,31 +98,24 @@
       </div>
 
       <div class="d-flex align-items-center gap-2">
-        <a
-          class="nav-link {{ 'active' if path == '/admin' else '' }}"
-          href="/admin"
-          aria-current="{{ 'page' if path == '/admin' else 'false' }}"
-        >Dashboard</a>
+        {% set is_dash = (path == '/admin') %}
+        <a class="nav-link {{ 'active' if is_dash else '' }}"
+           href="/admin"
+           {% if is_dash %}aria-current="page"{% endif %}>Dashboard</a>
 
-        <a
-          class="nav-link {{ 'active' if path.startswith('/admin/pages') else '' }}"
-          href="/admin/pages"
-          aria-current="{{ 'page' if path.startswith('/admin/pages') else 'false' }}"
-        >Pages</a>
+        {% set is_pages = path.startswith('/admin/pages') %}
+        <a class="nav-link {{ 'active' if is_pages else '' }}"
+           href="/admin/pages"
+           {% if is_pages %}aria-current="page"{% endif %}>Pages</a>
 
-        <a
-          class="nav-link {{ 'active' if path.startswith('/admin/projects') else '' }}"
-          href="/admin/projects"
-          aria-current="{{ 'page' if path.startswith('/admin/projects') else 'false' }}"
-        >Projects</a>
-
-        {# Future:
-        <a class="nav-link {{ 'active' if path.startswith('/admin/schemas') else '' }}" href="/admin/schemas">Schemas</a>
-        <a class="nav-link {{ 'active' if path.startswith('/admin/members') else '' }}" href="/admin/members">Members</a>
-        #}
+        {% set is_projects = path.startswith('/admin/projects') %}
+        <a class="nav-link {{ 'active' if is_projects else '' }}"
+           href="/admin/projects"
+           {% if is_projects %}aria-current="page"{% endif %}>Projects</a>
 
         <form action="/logout" method="post" class="ms-2" aria-label="Sign out">
-          <button class="btn btn-outline btn-sm z2h-logout" type="submit">Log out</button>
+          <!-- efecto restaurado -->
+          <button class="btn btn-outline btn-sm z2h-logout" type="submit" id="z2h-logout-btn" data-ripple>Log out</button>
         </form>
       </div>
     </div>
@@ -139,14 +134,66 @@
   </footer>
   {% endif %}
 
+  <!-- Host global para toasts -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="z2h-global-toasts"></div>
+
+  {% block modals %}{% endblock %}
+
   <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous" defer>
   </script>
 
+  <script defer>
+    // Helper global de flash toasts (éxito/error)
+    window.z2hFlash = function(message, kind){
+      try{
+        const host = document.getElementById('z2h-global-toasts');
+        if(!host) return;
+        const tone = (kind||'success').toLowerCase();
+        const ok   = tone === 'success';
+        const el = document.createElement('div');
+        el.className = 'toast align-items-center border-0 ' + (ok ? 'text-bg-success' : 'text-bg-danger');
+        el.setAttribute('role','status');
+        el.setAttribute('data-bs-delay', ok ? '3200' : '6000');
+        el.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body">${message || (ok?'Done.':'Something went wrong.')}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>`;
+        host.appendChild(el);
+        new bootstrap.Toast(el).show();
+        el.addEventListener('hidden.bs.toast', ()=>el.remove());
+      }catch(_){}
+    };
+
+    // Ripple click para el botón de logout (restaurado)
+    (function(){
+      const btn = document.getElementById('z2h-logout-btn');
+      if(!btn) return;
+      btn.addEventListener('click', function(ev){
+        try{
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          const rect = btn.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          const span = document.createElement('span');
+          span.className = 'z2h-ripple';
+          span.style.width = span.style.height = size + 'px';
+          span.style.left = (ev.clientX - rect.left - size/2) + 'px';
+          span.style.top  = (ev.clientY - rect.top  - size/2) + 'px';
+          btn.appendChild(span);
+          setTimeout(()=>span.remove(), 500);
+        }catch(_){}
+      }, { passive:true });
+    })();
+  </script>
+
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+
+
+
 
 
 

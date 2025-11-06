@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import pathlib
 from dataclasses import dataclass
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Tuple
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
@@ -32,9 +32,8 @@ def get_tenant_id_by_key_or_name(db: Session, *, tenant_key_or_name: str) -> int
 def _read_json(path: pathlib.Path) -> dict:
     if not path.exists():
         raise FileNotFoundError(f"No existe el archivo de schema: {path.as_posix()}")
-    # tolera BOM/UTF-8 y asegura objeto dict
     raw = path.read_bytes()
-    txt = raw.decode("utf-8-sig")
+    txt = raw.decode("utf-8-sig")  # tolera BOM/UTF-8
     data = json.loads(txt)
     if not isinstance(data, dict):
         raise ValueError(f"El schema en {path.name} debe ser un objeto JSON.")
@@ -52,32 +51,27 @@ def load_section_schema_from_file(
 ) -> Tuple[int, int]:
     """
     Carga UNA versión de schema desde file_path.
-    Inserta siempre la versión como inactiva y, si make_active=True, la activa atómicamente.
+    No abre/cierra transacciones: el caller maneja commit/rollback.
     Retorna (section_id, version).
     """
     p = pathlib.Path(file_path)
     schema = _read_json(p)
 
-    # (opcional) sanity checks mínimos del schema
-    if "type" not in schema and "properties" not in schema:
-        # No bloquea, pero avisa: muchos JSON Schema válidos tienen al menos uno
-        pass
+    # Crear/asegurar sección (idempotente) y añadir versión inactiva
+    section = create_section(db, tenant_id=tenant_id, key=section_key, name=section_name)
+    db.flush()
 
-    with db.begin():  # transacción atómica
-        section = create_section(db, tenant_id=tenant_id, key=section_key, name=section_name)
-        db.flush()
-
-        add_schema_version(
-            db,
-            tenant_id=tenant_id,
-            section_id=section.id,
-            version=version,
-            schema=schema,
-            title=f"{section_key}@{version}",
-            is_active=False,  # clave: insertar inactivo
-        )
-        if make_active:
-            set_active_schema(db, tenant_id=tenant_id, section_id=section.id, version=version)
+    add_schema_version(
+        db,
+        tenant_id=tenant_id,
+        section_id=section.id,
+        version=version,
+        schema=schema,
+        title=f"{section_key}@{version}",
+        is_active=False,
+    )
+    if make_active:
+        set_active_schema(db, tenant_id=tenant_id, section_id=section.id, version=version)
 
     return int(section.id), int(version)
 
@@ -88,10 +82,13 @@ def bulk_load_tenant_schemas(
     base_dir: str,
     files: Iterable[SectionFile],
 ) -> None:
+    """
+    No maneja transacciones. Carga múltiples SectionFile.
+    El caller debe hacer db.commit() (o rollback ante error).
+    """
     tenant_id = get_tenant_id_by_key_or_name(db, tenant_key_or_name=tenant_key_or_name)
     base = pathlib.Path(base_dir)
 
-    # Ordenar por (section_key, version) ayuda cuando hay múltiples versiones
     ordered = sorted(files, key=lambda f: (f.section_key, f.version))
 
     for f in ordered:
@@ -106,4 +103,3 @@ def bulk_load_tenant_schemas(
             make_active=f.is_active,
         )
         print(f"[seed] {tenant_key_or_name} · {f.section_key}@{ver} (active={f.is_active}) OK (section_id={section_id})")
-

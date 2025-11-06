@@ -1,263 +1,168 @@
 {
-  "replace": true,
-  "seo": {
-    "title": "OWA — Wellness Club CDMX",
-    "description": "OWA integra terapias de contraste, nutrición y hospitalidad para el bienestar integral."
-  },
+  "seo": { "title": "OWA — Home", "description": "Experience the art of being well." },
   "sections": [
     {
-      "schema_version": 1,
-      "type": "NavBar",
-      "eyebrow": "OWA",
-      "heading": "Navigation",
-      "data": {
-        "brand": { "text": "OWA", "href": "/" },
-        "linksLeft": [
-          { "label": "BECOME A MEMBER", "href": "/membership" },
-          { "label": "BOOK A SESSION", "href": "/book" }
-        ],
-        "linksRight": [
-          { "label": "SERVICES", "href": "/services" },
-          { "label": "SCIENCE", "href": "/science" },
-          { "label": "THERAPIES", "href": "/therapies" }
-        ]
-      }
-    },
-
-    {
-      "schema_version": 1,
-      "type": "Hero",
-      "eyebrow": "ONE WITH",
-      "heading": "MIND",
-      "subheading": "Sauna, cold plunge, comunidad y hospitalidad en CDMX.",
-      "media": [
-        { "type": "image", "url": "https://example.com/owa-hero-left.jpg", "alt": "Textura de agua" },
-        { "type": "image", "url": "https://example.com/owa-hero-right.jpg", "alt": "Mujer en sauna" }
-      ],
-      "data": {
-        "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"]
-      },
-      "actions": [
-        { "label": "BOOK A SESSION", "href": "/book" },
-        { "label": "BECOME A MEMBER", "href": "/membership" }
-      ]
-    },
-
-    {
-      "schema_version": 1,
-      "type": "Intro",
-      "eyebrow": "ABOUT OWA",
-      "heading": "EXPERIENCE THE ART OF BEING WELL",
-      "richText": "OWA es el primer wellness club de su tipo en CDMX: integra terapias de contraste, nutrición, suplementación, conexión social y hospitalidad en un ecosistema pensado para la vitalidad.",
-      "actions": [
-        { "label": "BOOK A SESSION", "href": "/book" },
+      "type": "Navbar",
+      "leftLinks": [
         { "label": "BECOME A MEMBER", "href": "/membership" },
-        { "label": "STAY AT OWA", "href": "/stay" }
+        { "label": "BOOK A SESSION", "href": "/book" }
+      ],
+      "rightLinks": [
+        { "label": "SERVICES", "href": "#services" },
+        { "label": "SCIENCE", "href": "#science" },
+        { "label": "THERAPIES", "href": "#therapies" }
       ]
     },
-
     {
-      "schema_version": 1,
-      "type": "Grid",
-      "heading": "DISCOVER OWA",
-      "subheading": "Club de bienestar, café, residencias y colaboraciones.",
-      "data": {
-        "items": [
-          {
-            "title": "WELLNESS CLUB",
-            "description": "Saunas privadas, cold plunges e interiores serenos para recuperación consciente.",
-            "image": "https://example.com/discover-wellness-club.jpg",
-            "imageAlt": "Rostro con gotas de agua",
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
-          },
-          {
-            "title": "SESEN ROOM X OWA",
-            "description": "Suplementos premium y oferta gastronómica restaurativa en Roma Norte.",
-            "image": "https://example.com/discover-sesen-room.jpg",
-            "imageAlt": "Taza de matcha",
-            "actions": [{ "label": "LEARN MORE", "href": "/sesen-room" }]
-          },
-          {
-            "title": "CASA OWA",
-            "description": "Nueve residencias con concierge y acceso total al Wellness Club.",
-            "image": "https://example.com/discover-casa-owa.jpg",
-            "imageAlt": "Habitación tranquila",
-            "actions": [{ "label": "RESERVE YOUR STAY", "href": "/stay" }]
-          },
-          {
-            "title": "COLLABORATIONS",
-            "description": "Sesiones, encuentros culturales y eventos íntimos que conectan y celebran el bienestar.",
-            "image": "https://example.com/discover-collaborations.jpg",
-            "imageAlt": "Vapor y hielo",
-            "actions": [{ "label": "CONTACT US TO GET STARTED", "href": "/collaborate" }]
-          }
-        ]
-      }
+      "type": "Hero",
+      "leftImage":  { "url": "/img/owa/hero-left.jpg",  "alt": "OWA left" },
+      "rightImage": { "url": "/img/owa/hero-right.jpg", "alt": "OWA right" },
+      "phrase": "ONE WITH",
+      "loopWords": ["ALL", "COMMUNITY", "CENTER", "JOY", "MIND", "BODY", "SPIRIT"]
     },
-
     {
-      "schema_version": 1,
-      "type": "Accordion",
-      "heading": "THERAPIES",
-      "richText": "Rituales modernos de recuperación para balancear cuerpo y mente.",
-      "data": {
-        "sideImage": { "type": "image", "url": "https://example.com/therapies-side.jpg", "alt": "Sauna madera cálida" },
-        "items": [
-          {
-            "title": "SAUNA",
-            "description": "Calor profundo para liberar tensión, restaurar y recargar.",
-            "bullets": ["Promueve detox", "Reduce estrés", "Mejora salud cardiovascular", "Potencia la piel", "Recuperación muscular"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
-          },
-          {
-            "title": "COLD PLUNGE",
-            "description": "Inmersión fría para claridad mental y menor inflamación.",
-            "bullets": ["Mejora circulación", "Menos dolor muscular", "Fortalece inmunidad", "Mayor enfoque", "Mejor estado de ánimo"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
-          },
-          {
-            "title": "HYPERBARIC CHAMBER",
-            "description": "Oxigenación avanzada para acelerar regeneración y vitalidad.",
-            "bullets": ["Recuperación acelerada", "Más oxígeno tisular", "Mejor función cognitiva", "Apoya inmunidad", "Longevidad"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
-          },
-          {
-            "title": "ZERO GRAVITY CHAIR",
-            "description": "Relajación sin peso para aliviar presión y mejorar flujo.",
-            "bullets": ["Menos presión espinal", "Mejor circulación", "Relaja articulaciones", "Calma profunda", "Sueño reparador"],
-            "actions": [{ "label": "BOOK A SESSION", "href": "/book" }]
-          }
-        ]
-      }
+      "type": "Intro",
+      "title": "WELCOME TO OWA",
+      "text": "A curated space to reconnect, restore, and thrive.",
+      "leftLink":   { "label": "Explore memberships", "href": "/membership" },
+      "centerLink": { "label": "Our therapies", "href": "/therapies" },
+      "rightLink":  { "label": "Read our science", "href": "/science" }
     },
-
     {
-      "schema_version": 1,
-      "type": "Plans",
-      "heading": "MEMBERSHIPS",
-      "subheading": "Opciones para tu ritmo y estilo de vida.",
-      "data": {
-        "items": [
-          {
-            "badge": "01",
-            "title": "FULL ACCESS",
-            "description": "Acceso ilimitado al club: haz del bienestar tu hábito.",
-            "image": "https://example.com/membership-full-access.jpg",
-            "imageAlt": "Espalda con agua",
-            "actions": [{ "label": "GET STARTED", "href": "/join/full" }]
-          },
-          {
-            "badge": "02",
-            "title": "TRAVEL PASS",
-            "description": "Hasta 10 visitas/mes, sin caducidad.",
-            "image": "https://example.com/membership-travel-pass.jpg",
-            "imageAlt": "Luz teal en movimiento",
-            "actions": [{ "label": "GET STARTED", "href": "/join/travel" }]
-          },
-          {
-            "badge": "03",
-            "title": "DAY PASS",
-            "description": "Un día de restauración y reseteo.",
-            "image": "https://example.com/membership-day-pass.jpg",
-            "imageAlt": "Hielo",
-            "actions": [{ "label": "GET STARTED", "href": "/join/day" }]
-          }
-        ]
-      }
+      "type": "Discover",
+      "title": "DISCOVER OWA",
+      "text": "Explore experiences tailored to your well-being.",
+      "cards": [
+        { "image": { "url": "/img/owa/discover-1.jpg", "alt": "Stay" }, "title": "Stay at OWA", "buttonText": "Explore", "buttonHref": "/stay", "description": "Residences designed for deep rest." },
+        { "image": { "url": "/img/owa/discover-2.jpg", "alt": "Memberships" }, "title": "Memberships", "buttonText": "Learn more", "buttonHref": "/membership", "description": "Plans for continuous care." },
+        { "image": { "url": "/img/owa/discover-3.jpg", "alt": "Therapies" }, "title": "Therapies", "buttonText": "See therapies", "buttonHref": "/therapies", "description": "Evidence-based modalities." },
+        { "image": { "url": "/img/owa/discover-4.jpg", "alt": "Science" }, "title": "Science", "buttonText": "Read", "buttonHref": "/science", "description": "Research and insights." }
+      ]
     },
-
     {
-      "schema_version": 1,
-      "type": "HeroOverlay",
-      "heading": "ONE WITH MIND",
-      "media": [
-        { "type": "image", "url": "https://example.com/owa-mid-hero.jpg", "alt": "Hombros en hielo" }
-      ],
-      "data": {
-        "rotatingWords": ["MIND", "BODY", "SPIRIT", "ALL", "COMMUNITY", "CENTER", "JOY"]
-      }
-    },
-
-    {
-      "schema_version": 1,
-      "type": "SocialGallery",
-      "heading": "FOLLOW US",
-      "data": {
-        "heading": "FOLLOW US",
-        "handle": "@owa.wellness",
-        "profileUrl": "https://www.instagram.com/owa.wellness/",
-        "source": "manual",
-        "images": [
-          { "type": "image", "url": "https://example.com/ig1.jpg", "alt": "Mano en plunge" },
-          { "type": "image", "url": "https://example.com/ig2.jpg", "alt": "Fuente interior" },
-          { "type": "image", "url": "https://example.com/ig3.jpg", "alt": "Luz y burbujas" },
-          { "type": "image", "url": "https://example.com/ig4.jpg", "alt": "Espalda y hombro" }
-        ]
-      }
-    },
-
-    {
-      "schema_version": 1,
-      "type": "Footer",
-      "heading": "CONTACT",
-      "data": {
-        "title": "CONTACT",
-        "contact": {
-          "heading": "GET IN TOUCH",
-          "addressLines": ["Sinaloa 49 Col. Roma Norte", "México, CDMX. CP. 6700"],
-          "email": "hello@owawellness.com",
-          "emailHref": "mailto:hello@owawellness.com",
-          "phone": "+52 555 505 7158",
-          "phoneHref": "tel:+525555057158"
+      "type": "Therapies",
+      "title": "THERAPIES",
+      "text": "A multi-disciplinary set of treatments designed for holistic outcomes.",
+      "services": [
+        {
+          "title": "Red Light Therapy",
+          "description": "Near-infrared light to support cellular energy.",
+          "benefits": ["Energy", "Recovery", "Skin health"],
+          "buttonText": "Book now",
+          "buttonHref": "/therapies/red-light",
+          "image": { "url": "/img/owa/therapies/red.jpg", "alt": "Red light" }
         },
-        "groups": [
-          {
-            "heading": "EXPLORE",
-            "links": [
-              { "label": "The OWA Experience", "href": "/experience" },
-              { "label": "The Science", "href": "/science" },
-              { "label": "Our Timers & FAQ's", "href": "/faq" },
-              { "label": "Policies", "href": "/policies" }
-            ]
-          },
-          {
-            "heading": "CONNECT",
-            "links": [
-              { "label": "Instagram", "href": "https://instagram.com/owa.wellness" },
-              { "label": "Spotify", "href": "https://spotify.com" },
-              { "label": "Careers", "href": "/careers" }
-            ]
-          },
-          {
-            "heading": "BOOK",
-            "links": [
-              { "label": "Book a Session", "href": "/book" },
-              { "label": "Become a Member", "href": "/membership" },
-              { "label": "Stay at OWA", "href": "/stay" },
-              { "label": "Host Your Event", "href": "/events" }
-            ]
-          }
-        ],
-        "newsletter": {
-          "heading": "STAY IN THE LOOP",
-          "subtext": "Nuevas experiencias y colaboraciones",
-          "action": "Subscribe",
-          "placeholder": "Email Address",
-          "submitHref": "/api/forms/newsletter"
+        {
+          "title": "Cold Plunge",
+          "description": "Brief cold exposure to train resilience.",
+          "benefits": ["Mood", "Resilience", "Recovery"],
+          "buttonText": "Book now",
+          "buttonHref": "/therapies/cold-plunge",
+          "image": { "url": "/img/owa/therapies/cold.jpg", "alt": "Cold plunge" }
         },
-        "bottomBar": {
-          "leftNote": "Creative Strategy @ Latente",
-          "legalLinks": [
-            { "label": "Terms of Service", "href": "/terms" },
-            { "label": "Privacy Policy", "href": "/privacy" },
-            { "label": "Cookies", "href": "/cookies" },
-            { "label": "Disclaimers", "href": "/disclaimers" }
-          ],
-          "copyright": "© All rights reserved 2025"
+        {
+          "title": "Infrared Sauna",
+          "description": "Deep, gentle heat for detox and relaxation.",
+          "benefits": ["Relaxation", "Detox", "Sleep"],
+          "buttonText": "Book now",
+          "buttonHref": "/therapies/infrared-sauna",
+          "image": { "url": "/img/owa/therapies/sauna.jpg", "alt": "Infrared sauna" }
+        },
+        {
+          "title": "Breathwork",
+          "description": "Guided sessions to balance the nervous system.",
+          "benefits": ["Focus", "Calm", "Performance"],
+          "buttonText": "Book now",
+          "buttonHref": "/therapies/breathwork",
+          "image": { "url": "/img/owa/therapies/breathwork.jpg", "alt": "Breathwork" }
+        },
+        {
+          "title": "IV Therapy",
+          "description": "Targeted micronutrients for specific needs.",
+          "benefits": ["Recovery", "Immunity", "Performance"],
+          "buttonText": "Book now",
+          "buttonHref": "/therapies/iv-therapy",
+          "image": { "url": "/img/owa/therapies/iv.jpg", "alt": "IV therapy" }
+        },
+        {
+          "title": "Massage",
+          "description": "Relief and release through expert touch.",
+          "benefits": ["Recovery", "Mobility", "Stress relief"],
+          "buttonText": "Book now",
+          "buttonHref": "/therapies/massage",
+          "image": { "url": "/img/owa/therapies/massage.jpg", "alt": "Massage" }
         }
+      ],
+      "bottomText": "Not sure where to start?",
+      "bottomButton": { "label": "Talk to a guide", "href": "/contact" }
+    },
+    {
+      "type": "Memberships",
+      "title": "MEMBERSHIPS",
+      "text": "Choose the rhythm that fits your goals.",
+      "cards": [
+        { "image": { "url": "/img/owa/memberships/1.jpg", "alt": "Entry" }, "title": "Entry", "buttonText": "Choose plan", "buttonHref": "/membership#entry", "description": "Essentials to begin your journey." },
+        { "image": { "url": "/img/owa/memberships/2.jpg", "alt": "Core" }, "title": "Core", "buttonText": "Choose plan", "buttonHref": "/membership#core", "description": "Balance and consistency." },
+        { "image": { "url": "/img/owa/memberships/3.jpg", "alt": "Peak" }, "title": "Peak", "buttonText": "Choose plan", "buttonHref": "/membership#peak", "description": "Full access and priority." }
+      ]
+    },
+    {
+      "type": "Hero2",
+      "background": { "url": "/img/owa/hero2.jpg", "alt": "OWA ambient" },
+      "phrase": "STAY WITH",
+      "loopWords": ["EASE", "FLOW", "BALANCE"]
+    },
+    {
+      "type": "FollowUs",
+      "title": "FOLLOW US",
+      "account": "@owawellness",
+      "items": [
+        { "image": { "url": "/img/owa/social/1.jpg", "alt": "post 1" }, "link": { "label": "Instagram", "href": "https://instagram.com/owawellness" } },
+        { "image": { "url": "/img/owa/social/2.jpg", "alt": "post 2" }, "link": { "label": "Instagram", "href": "https://instagram.com/owawellness" } },
+        { "image": { "url": "/img/owa/social/3.jpg", "alt": "post 3" }, "link": { "label": "Instagram", "href": "https://instagram.com/owawellness" } },
+        { "image": { "url": "/img/owa/social/4.jpg", "alt": "post 4" }, "link": { "label": "Instagram", "href": "https://instagram.com/owawellness" } }
+      ]
+    },
+    {
+      "type": "Contact",
+      "title": "CONTACT",
+      "getInTouch": {
+        "heading": "GET IN TOUCH",
+        "address": "123 Wellness Ave, MX",
+        "email": "hello@owawellness.com",
+        "phone": "+52 55 0000 0000"
+      },
+      "explore": {
+        "heading": "EXPLORE",
+        "links": [
+          { "label": "Home", "href": "/" },
+          { "label": "Therapies", "href": "/therapies" },
+          { "label": "Memberships", "href": "/membership" },
+          { "label": "Science", "href": "/science" }
+        ]
+      },
+      "connect": {
+        "heading": "CONNECT",
+        "instagram": { "label": "Instagram", "href": "https://instagram.com/owawellness" },
+        "spotify":   { "label": "Spotify",   "href": "https://spotify.com/owawellness" },
+        "careers":   { "label": "Careers",   "href": "/careers" }
+      },
+      "book": {
+        "heading": "BOOK",
+        "links": [
+          { "label": "Red Light", "href": "/therapies/red-light" },
+          { "label": "Cold Plunge", "href": "/therapies/cold-plunge" },
+          { "label": "Sauna", "href": "/therapies/infrared-sauna" },
+          { "label": "Massage", "href": "/therapies/massage" }
+        ]
+      },
+      "stayInTheLoop": {
+        "heading": "STAY IN THE LOOP",
+        "text": "Sign up to receive news and events."
       }
     }
   ]
 }
+
 
 

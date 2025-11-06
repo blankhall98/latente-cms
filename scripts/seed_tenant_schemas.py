@@ -9,34 +9,21 @@ from app.seeds.content_loader import SectionFile, bulk_load_tenant_schemas
 """
 Uso (PowerShell/Terminal):
   (.venv) PS> python -m scripts.seed_tenant_schemas owa
-  (.venv) PS> python -m scripts.seed_tenant_schemas OWA
-
-Estructura esperada:
-app/schemas/
-  owa/
-    landing_pages/
-      v1.json
-      v2.json   <-- (nuevo, con x-ui hints)
 """
 
 def run(tenant_key_or_name: str):
     files = [
-        # OWA — LandingPages v1 (legacy/monolítico)
+        # OWA — LandingPages v1 (content-only v1)
         SectionFile(
             section_key="LandingPages",
             section_name="Landing Pages",
             version=1,
             file_path="owa/landing_pages/v1.json",  # relativo a base_dir
-            is_active=False,  # v1 queda disponible pero NO activo
+            is_active=True,  # activamos v1 en esta fase
         ),
-        # OWA — LandingPages v2 (editor-friendly con x-ui:* hints)
-        SectionFile(
-            section_key="LandingPages",
-            section_name="Landing Pages",
-            version=2,
-            file_path="owa/landing_pages/v2.json",  # relativo a base_dir
-            is_active=True,  # v2 se activa
-        ),
+        # Si luego quieres cargar v2, agrega otra SectionFile con is_active=False por ahora.
+        # SectionFile(section_key="LandingPages", section_name="Landing Pages",
+        #             version=2, file_path="owa/landing_pages/v2.json", is_active=False),
     ]
 
     base_dir = "app/schemas"
@@ -49,7 +36,11 @@ def run(tenant_key_or_name: str):
             base_dir=base_dir,
             files=files,
         )
-        print(f"[OK] Schemas (v1+v2) cargados y v2 activado para tenant='{tenant_key_or_name}'.")
+        db.commit()  # <-- commit del batch aquí
+        print(f"[OK] Schemas cargados para tenant='{tenant_key_or_name}'. v1 activo.")
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 

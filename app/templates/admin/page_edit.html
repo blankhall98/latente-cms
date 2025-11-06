@@ -1,3 +1,4 @@
+<!-- app/templates/admin/page_edit.html -->
 {% extends "base.html" %}
 {% block title %}Edit Page · {{ page.title }} · Latente CMS{% endblock %}
 
@@ -9,51 +10,43 @@
          data-user-id="{{ user.id if user else '' }}"
          data-section-key="{{ page.section_key if page.section_key else '' }}"
          data-entry-id="{{ page.id }}"
-         data-entry-slug="{{ page.slug }}">
+         data-entry-slug="{{ page.slug }}"
+         data-section-id="{{ page.section_id if page.section_id is defined else '' }}">
 
-  <!-- Toolbar (sticky) -->
-  <header id="z2h-toolbar" class="z2h-toolbar mb-3" aria-label="Page header actions">
-    <div>
-      <h1 class="h4 m-0 text-capitalize">{{ page.title }}</h1>
-      <div class="z2h-meta row gx-2 gy-1 mt-1">
-        <div class="col-auto"><code class="z2h-chip code">/{{ page.slug }}</code></div>
-        <div class="col-auto"><span class="z2h-chip">Section: <strong>{{ page.section_name }}</strong></span></div>
-        {% set s=(page.status or '').lower() %}
-        <div class="col-auto">
-          <span id="z2h-status-chip" class="z2h-chip z2h-chip-status {{ s }}">{{ s }}</span>
+  {% if schema_ui_json is defined and schema_ui_json %}
+    <!-- 👇 Already JSON-serialized; don't tojson -->
+    <script id="z2h-schema-ui" type="application/json">{{ schema_ui_json | safe }}</script>
+  {% endif %}
+
+  <!-- Header -->
+  <header id="z2h-toolbar" class="mb-3" aria-label="Page header actions">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 p-3 border rounded-3 bg-white shadow-sm">
+      <div>
+        <h1 class="h4 m-0 text-capitalize">{{ page.title }}</h1>
+        <div class="z2h-meta row gx-2 gy-1 mt-1">
+          <div class="col-auto"><code class="z2h-chip code">/{{ page.slug }}</code></div>
+          <div class="col-auto"><span class="z2h-chip">Section: <strong>{{ page.section_name }}</strong></span></div>
+          {% set s=(page.status or '').lower() %}
+          <div class="col-auto">
+            <span id="z2h-status-chip" class="z2h-chip z2h-chip-status {{ s }}">{{ s }}</span>
+          </div>
+          <div class="col-auto"><span class="z2h-chip">Schema v{{ page.schema_version }}</span></div>
+          <div class="col-auto d-none d-sm-inline"><span class="z2h-dot"></span><span class="z2h-save-txt">Saved</span></div>
         </div>
-        <div class="col-auto"><span class="z2h-chip">Schema v{{ page.schema_version }}</span></div>
-        <div class="col-auto d-none d-sm-inline"><span class="z2h-dot"></span><span class="z2h-save-txt">Saved</span></div>
       </div>
-    </div>
 
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline d-none d-md-inline" id="z2h-delivery-btn" target="_blank" rel="noopener">Delivery JSON</a>
-      <button type="button" class="btn btn-outline d-none d-md-inline" id="z2h-publish-btn" disabled title="Save changes first">Publish</button>
-      <a class="btn btn-outline" href="/admin/pages">Cancel</a>
-      <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline d-none d-md-inline" id="z2h-delivery-btn" target="_blank" rel="noopener">Delivery JSON</a>
+        <button type="button" class="btn btn-outline d-none d-md-inline" id="z2h-restore-btn" title="Load from published Delivery JSON">Restore from Delivery</button>
+        <button type="button" class="btn btn-outline d-none d-md-inline" id="z2h-publish-btn" title="Save changes first">Publish</button>
+        <a class="btn btn-outline" href="/admin/pages">Cancel</a>
+        <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
+      </div>
     </div>
   </header>
 
-  <!-- Toasts (flash) – fixed corner, always above sticky UI -->
-  <div class="toast-container position-fixed top-0 end-0 p-3" id="z2h-toast-host" style="z-index:2000;">
-    {% if error %}
-    <div class="toast align-items-center text-bg-danger border-0" role="status" data-bs-delay="5500">
-      <div class="d-flex">
-        <div class="toast-body">{{ error }}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>
-    {% endif %}
-    {% if ok_message %}
-    <div class="toast align-items-center text-bg-success border-0" role="status" data-bs-delay="3800">
-      <div class="d-flex">
-        <div class="toast-body">{{ ok_message }}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  <!-- Local toasts (plus any global from base.html) -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="z2h-toast-host"></div>
 
   <!-- Layout -->
   <form id="z2h-edit-form" class="z2h-editor-grid-simple" method="post" action="">
@@ -80,7 +73,6 @@
           <div class="z2h-side-empty">No sections yet</div>
         {% endif %}
       </nav>
-      
     </aside>
 
     <!-- Main -->
@@ -89,9 +81,9 @@
 
         <!-- General -->
         <section id="panel-general" class="z2h-panel" tabindex="-1">
-          <div class="z2h-panel-head">
-            <h2 class="z2h-panel-title">General</h2>
-            <span class="z2h-panel-sub">Page meta</span>
+          <div class="z2h-panel-head d-flex align-items-center justify-content-between mb-2">
+            <h2 class="z2h-panel-title text-uppercase small fw-bold m-0">General</h2>
+            <span class="z2h-panel-sub text-muted">Page meta</span>
           </div>
 
           <div class="card p-3 mb-3">
@@ -119,117 +111,134 @@
           </div>
         </section>
 
-        <!-- Sections -->
+        <!-- Panels per section -->
         {% for it in sections_ui %}
         {% set S = it.get('sec') or {} %}
         <section id="panel-section-{{ it.index }}"
                  class="z2h-panel d-none"
                  data-section-index="{{ it.index }}"
+                 data-section-type="{{ S.type or '' }}"
                  tabindex="-1">
 
-          <div class="z2h-panel-head">
-            <h2 class="z2h-panel-title">{{ it.label }}</h2>
-            <span class="z2h-panel-sub">Block editor</span>
+          <div class="z2h-panel-head d-flex align-items-center justify-content-between mb-2">
+            <h2 class="z2h-panel-title text-uppercase small fw-bold m-0">{{ it.label }}</h2>
+            <span class="z2h-panel-sub text-muted">Block editor</span>
           </div>
 
-          <!-- Base -->
+          <!-- Seed the full section JSON for this panel -->
+          <script type="application/json" class="z2h-sec-json">{{ S | tojson }}</script>
+
+          <!-- Auto-Form (if schema UI exists) -->
           <div class="card p-3 mb-3">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Type</label>
-                <input type="text" class="form-control" data-k="type" value="{{ S.type or '' }}" readonly>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Schema Version</label>
-                <input type="number" class="form-control z2h-dirty" data-k="schema_version" value="{{ S.schema_version or 1 }}" min="1">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Eyebrow</label>
-                <input type="text" class="form-control z2h-dirty" data-k="eyebrow" value="{{ S.eyebrow or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Heading</label>
-                <input type="text" class="form-control z2h-dirty" data-k="heading" value="{{ S.heading or '' }}">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Subheading</label>
-                <input type="text" class="form-control z2h-dirty" data-k="subheading" value="{{ S.subheading or '' }}">
-              </div>
-              <div class="col-12">
-                <label class="form-label">Rich Text</label>
-                <textarea rows="5" class="form-control z2h-dirty" data-k="richText" placeholder="Markdown/HTML later">{{ S.richText or '' }}</textarea>
-              </div>
+            <div class="z2h-autoform" data-autoform-for="section"></div>
+            <div class="text-muted small" data-autoform-hint style="display:none;">
+              This form is generated from the active JSON Schema.
             </div>
           </div>
 
-          <!-- Media -->
-          <div class="card p-3 mb-3">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <h3 class="h6 m-0">Media</h3>
-              <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="media">Add media</button>
-            </div>
-            <div class="z2h-repeater mt-2" data-repeater="media">
-              {% for m in (S.media or []) %}
-              <div class="z2h-rep-item card p-2 mb-2">
-                <div class="row g-2 align-items-end">
-                  <div class="col-3">
-                    <label class="form-label small">Type</label>
-                    <select class="form-control z2h-dirty" data-k="type">
-                      {% set _t = m.type or 'image' %}
-                      <option value="image" {{ 'selected' if _t=='image' else '' }}>image</option>
-                      <option value="video" {{ 'selected' if _t=='video' else '' }}>video</option>
-                    </select>
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label small">URL</label>
-                    <input type="text" class="form-control z2h-dirty" data-k="url" value="{{ m.url or '' }}" placeholder="https://...">
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Alt</label>
-                    <input type="text" class="form-control z2h-dirty" data-k="alt" value="{{ m.alt or '' }}">
-                  </div>
+          <!-- Legacy (fallback) -->
+          <details class="card p-3 mb-1 z2h-legacy" open>
+            <summary class="small text-muted mb-2">Legacy editor (fallback)</summary>
+
+            <!-- Base -->
+            <div class="card p-3 mb-3">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Type</label>
+                  <input type="text" class="form-control" data-k="type" value="{{ S.type or '' }}" readonly>
                 </div>
-                <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="card p-3 mb-3">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <h3 class="h6 m-0">Actions</h3>
-              <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="actions">Add action</button>
-            </div>
-            <div class="z2h-repeater mt-2" data-repeater="actions">
-              {% for b in (S.actions or []) %}
-              <div class="z2h-rep-item card p-2 mb-2">
-                <div class="row g-2 align-items-end">
-                  <div class="col-md-4">
-                    <label class="form-label small">Label</label>
-                    <input type="text" class="form-control z2h-dirty" data-k="label" value="{{ b.label or '' }}">
-                  </div>
-                  <div class="col-md-8">
-                    <label class="form-label small">Href</label>
-                    <input type="text" class="form-control z2h-dirty" data-k="href" value="{{ b.href or '' }}">
-                  </div>
+                <div class="col-md-4">
+                  <label class="form-label">Schema Version</label>
+                  <input type="number" class="form-control z2h-dirty" data-k="schema_version" value="{{ S.schema_version or 1 }}" min="1">
                 </div>
-                <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
+                <div class="col-md-4">
+                  <label class="form-label">Eyebrow</label>
+                  <input type="text" class="form-control z2h-dirty" data-k="eyebrow" value="{{ S.eyebrow or '' }}">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Heading</label>
+                  <input type="text" class="form-control z2h-dirty" data-k="heading" value="{{ S.heading or '' }}">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Subheading</label>
+                  <input type="text" class="form-control z2h-dirty" data-k="subheading" value="{{ S.subheading or '' }}">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Rich Text</label>
+                  <textarea rows="5" class="form-control z2h-dirty" data-k="richText" placeholder="Markdown/HTML later">{{ S.richText or '' }}</textarea>
+                </div>
               </div>
-              {% endfor %}
             </div>
-          </div>
 
-          <!-- Advanced Data (JSON) -->
-          <div class="card p-3 mb-1">
-            <div class="d-flex align-items-center justify-content-between">
-              <h3 class="h6 m-0">Advanced Data (JSON)</h3>
-              <small class="text-muted">Edits <code>section.data</code></small>
+            <!-- Media -->
+            <div class="card p-3 mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <h3 class="h6 m-0">Media</h3>
+                <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="media">Add media</button>
+              </div>
+              <div class="z2h-repeater mt-2" data-repeater="media">
+                {% for m in (S.media or []) %}
+                <div class="z2h-rep-item card p-2 mb-2">
+                  <div class="row g-2 align-items-end">
+                    <div class="col-3">
+                      <label class="form-label small">Type</label>
+                      <select class="form-control z2h-dirty" data-k="type">
+                        {% set _t = m.type or 'image' %}
+                        <option value="image" {{ 'selected' if _t=='image' else '' }}>image</option>
+                        <option value="video" {{ 'selected' if _t=='video' else '' }}>video</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small">URL</label>
+                      <input type="text" class="form-control z2h-dirty" data-k="url" value="{{ m.url or '' }}" placeholder="https://...">
+                    </div>
+                    <div class="col-3">
+                      <label class="form-label small">Alt</label>
+                      <input type="text" class="form-control z2h-dirty" data-k="alt" value="{{ m.alt or '' }}">
+                    </div>
+                  </div>
+                  <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
+                </div>
+                {% endfor %}
+              </div>
             </div>
-            <textarea class="form-control z2h-dirty z2h-json-editor" rows="8"
-                      data-data-json="true">{{ (S.data | tojson(indent=2)) if S.data else "{}" }}</textarea>
-            <div class="form-hint">Must be valid JSON.</div>
-          </div>
+
+            <!-- Actions -->
+            <div class="card p-3 mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <h3 class="h6 m-0">Actions</h3>
+                <button type="button" class="btn btn-outline btn-sm z2h-add" data-repeater="actions">Add action</button>
+              </div>
+              <div class="z2h-repeater mt-2" data-repeater="actions">
+                {% for b in (S.actions or []) %}
+                <div class="z2h-rep-item card p-2 mb-2">
+                  <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                      <label class="form-label small">Label</label>
+                      <input type="text" class="form-control z2h-dirty" data-k="label" value="{{ b.label or '' }}">
+                    </div>
+                    <div class="col-md-8">
+                      <label class="form-label small">Href</label>
+                      <input type="text" class="form-control z2h-dirty" data-k="href" value="{{ b.href or '' }}">
+                    </div>
+                  </div>
+                  <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Advanced Data (JSON) -->
+            <div class="card p-3 mb-1">
+              <div class="d-flex align-items-center justify-content-between">
+                <h3 class="h6 m-0">Advanced Data (JSON)</h3>
+                <small class="text-muted">Edits <code>section.data</code></small>
+              </div>
+              <textarea class="form-control z2h-dirty z2h-json-editor" rows="8"
+                        data-data-json="true">{{ (S.data | tojson(indent=2)) if S.data else "{}" }}</textarea>
+              <div class="form-hint">Must be valid JSON.</div>
+            </div>
+          </details>
         </section>
         {% endfor %}
 
@@ -246,53 +255,12 @@
   </form>
 </section>
 
-<!-- Modal Publish -->
-<div class="modal fade" id="z2hPublishModal" tabindex="-1" aria-labelledby="z2hPublishLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="z2hPublishLabel">Publish this page?</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        The page will be published to the public Delivery API. Continue?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-cta" id="z2h-confirm-publish">Publish</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <style>
-  :root{ --nav-h:56px; }
-
-  /* Toolbar (sticky + seamless merge with navbar when stuck) */
-  .z2h-toolbar{
-    position: sticky;
-    top: var(--nav-h);
-    z-index: 1020; /* below modal backdrop (1040) and modal (1050) */
-    display:flex; align-items:center; justify-content:space-between; gap:1rem;
-    padding:.75rem 1rem; border:1px solid var(--border); border-radius:12px;
-    background:#fff; box-shadow: var(--shadow-sm);
-    transition: margin .55s ease-in-out, padding .55s ease-in-out,
-                border-radius .45s ease-in-out, box-shadow .45s ease-in-out;
-  }
-  .z2h-toolbar.is-stuck{
-    border-top: 0;            /* remove top border so it fuses with navbar bottom border */
-    margin-top: -1px;         /* overlap the navbar border by 1px: no seam */
-    border-radius:0 0 0 0;
-    padding:.85rem 0;
-    border-left:0; border-right:0;
-    box-shadow: 0 6px 22px rgba(16,24,40,.12);
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-    padding-left: calc((100vw - 100%) / 2);
-    padding-right: calc((100vw - 100%) / 2);
+  /* Navbar merge helpers */
+  :root{
+    --nav-height: 64px; /* adjust to your navbar height */
   }
 
-  /* Chips */
   .z2h-chip{ display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .5rem; border-radius:999px;
              background:#faf8f5; border:1px solid var(--border); color:var(--text-2); font-size:.78rem; }
   .z2h-chip.code{ background:#f6f8ff; border-color:#e3e8ff; color:#334; }
@@ -302,14 +270,14 @@
   .z2h-chip-status.archived{ background:#f4f6f8; border-color:#e5e7eb; color:#3b4450; }
   .z2h-dot{ width:.55rem; height:.55rem; border-radius:999px; background:#16a34a; display:inline-block; margin-right:.25rem; }
 
-  /* Grid */
   .z2h-editor-grid-simple{ display:grid; grid-template-columns: 300px minmax(0,1fr); gap:16px; }
   @media (max-width: 991.98px){ .z2h-editor-grid-simple{ grid-template-columns: 1fr; } }
+  .z2h-editor-sidebar{
+    position:sticky;
+    top: calc(var(--nav-height) + 16px); /* sits right under a sticky navbar */
+    align-self:start; z-index: 1;
+  }
 
-  /* Sidebar pinned below toolbar (below modal too) */
-  .z2h-editor-sidebar{ position:sticky; top: calc(var(--nav-h) + 16px); align-self:start; z-index: 1010; }
-
-  /* Side list */
   .z2h-side-list{ border:1px solid var(--border); }
   .z2h-side-item{
     display:grid; grid-template-columns: 1fr auto; align-items:center;
@@ -319,128 +287,104 @@
   }
   .z2h-side-item.active{ background:var(--surface-2); color:var(--text-1); font-weight:700; }
   .z2h-side-item:hover{ background:#f8f7f4; color:var(--text-1); }
+
   .chip{ font-size:.72rem; border-radius:999px; padding:.05rem .55rem; border:1px solid var(--border); background:#fff; color:#2f5fa8; }
   .chip-type{ min-width:88px; text-align:center; }
-  .z2h-tips{ color:#344256; }
 
-  /* Panels */
-  .z2h-panel{ animation:z2hFade .12s ease-in; outline:none; }
-  .z2h-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
-  .z2h-panel-title{ font-size:.95rem; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0; }
-  .z2h-panel-sub{ color:var(--text-2); font-size:.85rem; }
-  @keyframes z2hFade { from{opacity:.6; transform:translateY(2px);} to{opacity:1; transform:none;} }
-
+  .z2h-panel{ outline:none; }
+  .z2h-panel-title{ font-size:.95rem; letter-spacing:.08em; }
   .form-control{ border-radius:10px; }
   .form-hint{ font-size:.78rem; color:var(--text-2); margin-top:.2rem; }
-
   .z2h-rep-item{ border:1px dashed var(--border); }
-
-  .z2h-bottom-actions{
-    position:sticky; bottom:0; padding:.75rem; display:flex; gap:.5rem; justify-content:end;
-    background:transparent; border:0;
-  }
-
+  .z2h-bottom-actions{ position:sticky; bottom:0; padding:.75rem; display:flex; gap:.5rem; justify-content:end; background:transparent; border:0; }
   .is-invalid{ border-color:#ef4444 !important; box-shadow:0 0 0 .18rem rgba(239,68,68,.16) !important; }
 </style>
 
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
 (function(){
-  // ---- Ensure we start at the very top once (fix #1) ----
+  // --- Scroll to top only on first entry into editor
   try{
-    if (!sessionStorage.getItem('z2h_edit_scrolled_once')) {
-      window.scrollTo({top:0, left:0, behavior:'auto'});
+    if(!sessionStorage.getItem('z2h_edit_scrolled_once')){
+      window.scrollTo({top:0,left:0,behavior:'auto'});
       sessionStorage.setItem('z2h_edit_scrolled_once','1');
     }
   }catch(_){}
 
-  // ---- Compute navbar offset ----
-  function updateOffsets(){
-    const nav = document.querySelector('.navbar, header nav, .z2h-navbar');
-    const navH = nav ? nav.offsetHeight : 56;
-    document.documentElement.style.setProperty('--nav-h', `${navH}px`);
-  }
-  updateOffsets();
-  window.addEventListener('resize', updateOffsets);
+  // --- Local toast (if no global)
+  (function ensureToast(){
+    if(typeof window.z2hFlash === 'function') return;
+    const host = document.getElementById('z2h-toast-host');
+    window.z2hFlash = function(msg, type){
+      const n = document.createElement('div');
+      n.className = 'toast align-items-center show';
+      n.setAttribute('role','alert'); n.setAttribute('aria-live','assertive'); n.setAttribute('aria-atomic','true');
+      n.style.minWidth='240px';
+      n.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body ${type==='error'?'text-danger':''}">${msg||'Done.'}</div>
+          <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>`;
+      (host||document.body).appendChild(n);
+      setTimeout(()=>{ n.classList.remove('show'); n.addEventListener('transitionend',()=>n.remove(),{once:true}); }, 3000);
+    };
+  })();
 
-  // ---- Flash toasts (fix #4) ----
-  const host = document.getElementById('z2h-toast-host');
-  if (host){
-    host.querySelectorAll('.toast').forEach(t => {
-      try { new bootstrap.Toast(t).show(); } catch(_) {}
-    });
-  }
+  // --- Base refs
+  const root=document.getElementById('z2h-edit-root');
+  const nav=document.getElementById('z2h-side-nav');
+  const panels=document.querySelectorAll('.z2h-panel');
+  const form=document.getElementById('z2h-edit-form');
+  const contentJson=document.getElementById('z2h-content-json');
+  const entryId=root?.dataset?.entryId;
+  const statusDot=document.querySelector('.z2h-dot');
+  const saverTxt=document.querySelector('.z2h-save-txt');
+  const publishBtn=document.getElementById('z2h-publish-btn');
+  const restoreBtn=document.getElementById('z2h-restore-btn');
 
-  // ---- Sticky toolbar toggle (fix #2: merge with navbar) ----
-  const toolbar = document.getElementById('z2h-toolbar');
-  if (toolbar){
-    let stuck=false;
-    const onScroll=()=>{ const add = window.scrollY>12; if(add!==stuck){ toolbar.classList.toggle('is-stuck', add); stuck=add; } };
-    onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
-  }
+  function flashOk(m){ if(window.z2hFlash) z2hFlash(m||'Done.','success'); }
+  function flashErr(m){ if(window.z2hFlash) z2hFlash(m||'Something went wrong.','error'); }
 
-  // ---- Editor logic (unchanged) ----
-  const root   = document.getElementById('z2h-edit-root');
-  const nav    = document.getElementById('z2h-side-nav');
-  const panels = document.querySelectorAll('.z2h-panel');
-  const form   = document.getElementById('z2h-edit-form');
-  const contentJson = document.getElementById('z2h-content-json');
-  const entryId = root?.dataset?.entryId;
-
-  let isDirty = false;
-  const statusDot = document.querySelector('.z2h-dot');
-  const saverTxt  = document.querySelector('.z2h-save-txt');
-  const publishBtn = document.getElementById('z2h-publish-btn');
-
+  let isDirty=false;
   function setDirty(v){
-    isDirty = !!v;
-    if (statusDot) statusDot.style.background = v ? '#f59e0b' : '#16a34a';
-    if (saverTxt)  saverTxt.textContent = v ? 'Unsaved' : 'Saved';
-    if (publishBtn){
-      publishBtn.disabled = v;
-      publishBtn.title = v ? 'Save changes first' : 'Publish';
-    }
+    isDirty=!!v;
+    if(statusDot) statusDot.style.background=v?'#f59e0b':'#16a34a';
+    if(saverTxt) saverTxt.textContent=v?'Unsaved':'Saved';
+    if(publishBtn){ publishBtn.disabled=v; publishBtn.title=v?'Save changes first':'Publish'; }
   }
 
-  // Scroll helper (skip on first render to avoid jumping; fix #1)
-  let firstRender = true;
-  function showPanel(id, opts){ // opts={silent:true}
+  // --- Panel helpers
+  function showPanel(id){
     panels.forEach(p=>p.classList.add('d-none'));
-    const el = document.getElementById(id);
-    if (el){ el.classList.remove('d-none'); el.focus(); }
-    nav.querySelectorAll('.z2h-side-item').forEach(it=>{
-      it.classList.toggle('active', it.getAttribute('data-panel-id')===id);
-    });
-    if (opts && opts.silent) return;
-    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 56;
-    const y = form.getBoundingClientRect().top + window.scrollY - navH - 8;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    const el=document.getElementById(id);
+    if(el){ el.classList.remove('d-none'); el.focus(); }
+    nav.querySelectorAll('.z2h-side-item').forEach(it=>{ it.classList.toggle('active', it.getAttribute('data-panel-id')===id); });
   }
+  showPanel('panel-general');
 
-  // Initial panel (silent to prevent initial jump)
-  showPanel('panel-general', {silent:true});
-
-  // Side-menu click
   nav.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.z2h-side-item'); if(!btn) return;
-    const pid = btn.getAttribute('data-panel-id'); if(pid) showPanel(pid);
+    const btn=e.target.closest('.z2h-side-item'); if(!btn) return;
+    const pid=btn.getAttribute('data-panel-id');
+    if(pid) showPanel(pid);
   });
 
-  // Filter
-  const finder  = document.getElementById('z2h-section-search');
+  // --- Finder
+  const finder=document.getElementById('z2h-section-search');
   function filterNav(){
     const q=(finder.value||'').toLowerCase();
     nav.querySelectorAll('.z2h-side-item').forEach(it=>{
       if(it.dataset.panelId==='panel-general'){ it.classList.remove('d-none'); return; }
-      const txt = it.textContent.toLowerCase();
+      const txt=it.textContent.toLowerCase();
       it.classList.toggle('d-none', !txt.includes(q));
     });
   }
   finder.addEventListener('input', filterNav);
-  window.addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='f'){ finder.focus(); e.preventDefault(); } });
 
-  // Repeaters
+  // --- Legacy repeaters
   function setDeep(obj, path, value){
-    const parts = path.replace(/\]/g,'').split('.');
+    const parts=path.replace(/\]/g,'').split('.');
     let cur=obj;
     for(let i=0;i<parts.length;i++){
       const p=parts[i];
@@ -456,7 +400,7 @@
         }
       }else{
         if(i===parts.length-1){ cur[p]=value; }
-        else{ if(!cur[p]||typeof cur[p]!=='object') cur[p]={}; cur=cur[p]; }
+        else { if(!cur[p]||typeof cur[p]!=='object') cur[p]={}; cur=cur[p]; }
       }
     }
   }
@@ -464,14 +408,17 @@
     const obj={};
     repItem.querySelectorAll('[data-k]').forEach(el=>{
       const k=el.getAttribute('data-k'); let v=el.value;
-      if(k && k.endsWith(']')) setDeep(obj,k,v); else if(k) obj[k]=v;
+      if(k && k.endsWith(']')) setDeep(obj,k,v);
+      else if(k) obj[k]=v;
     });
     return obj;
   }
   function mkRepItem(repeater){
-    const last = repeater.querySelector('.z2h-rep-item:last-of-type'); let node;
-    if(last){ node = last.cloneNode(true); node.querySelectorAll('input,textarea,select').forEach(el=>el.value=''); }
-    else{
+    const last=repeater.querySelector('.z2h-rep-item:last-of-type'); let node;
+    if(last){
+      node=last.cloneNode(true);
+      node.querySelectorAll('input,textarea,select').forEach(el=>el.value='');
+    }else{
       node=document.createElement('div'); node.className='z2h-rep-item card p-2 mb-2';
       node.innerHTML=`<div class="row g-2">
         <div class="col"><input type="text" class="form-control z2h-dirty" data-k="label" placeholder="Label"></div>
@@ -482,45 +429,52 @@
     return node;
   }
   document.addEventListener('click', (e)=>{
-    const addBtn = e.target.closest('.z2h-add');
+    const addBtn=e.target.closest('.z2h-add');
     if(addBtn){
       const name=addBtn.getAttribute('data-repeater');
       const host=addBtn.closest('section').querySelector(`.z2h-repeater[data-repeater="${name}"]`);
       if(host){ host.appendChild(mkRepItem(host)); setDirty(true); }
     }
-    const rmBtn = e.target.closest('.z2h-remove');
-    if(rmBtn){ const item=rmBtn.closest('.z2h-rep-item'); if(item){ item.remove(); setDirty(true); } }
+    const rmBtn=e.target.closest('.z2h-remove');
+    if(rmBtn){
+      const item=rmBtn.closest('.z2h-rep-item');
+      if(item){ item.remove(); setDirty(true); }
+    }
   });
 
-  // Counters
+  // --- Counters
   document.querySelectorAll('.z2h-count').forEach(inp=>{
-    const max=Number(inp.dataset.max||"0"); const meter=document.querySelector(`[data-for="${inp.id}"]`);
-    function upd(){ const n=(inp.value||'').trim().length; if(meter) meter.textContent=n; inp.classList.toggle('is-invalid', max&&n>max); }
+    const max=Number(inp.dataset.max||"0");
+    const meter=document.querySelector(`[data-for="${inp.id}"]`);
+    function upd(){
+      const n=(inp.value||'').trim().length;
+      if(meter) meter.textContent=n;
+      inp.classList.toggle('is-invalid', max&&n>max);
+    }
     inp.addEventListener('input', upd); upd();
   });
 
-  // Delivery button
+  // --- Delivery button + publish visibility
   (function(){
-    const tenant = root?.dataset?.tenant || '';
-    const section = root?.dataset?.sectionKey || '';
-    const slug = root?.dataset?.entrySlug || '';
-    const btn = document.getElementById('z2h-delivery-btn');
-    const publishBtn = document.getElementById('z2h-publish-btn');
-    if(tenant && section && slug){
+    const tenant=root?.dataset?.tenant||'';
+    const section=root?.dataset?.sectionKey||'';
+    const slug=root?.dataset?.entrySlug||'';
+    const btn=document.getElementById('z2h-delivery-btn');
+    const pb=document.getElementById('z2h-publish-btn');
+    const rb=document.getElementById('z2h-restore-btn');
+    if(tenant && section && slug && btn){
       btn.href=`/delivery/v1/tenants/${tenant}/sections/${encodeURIComponent(section)}/entries/${encodeURIComponent(slug)}`;
       btn.classList.remove('d-none');
-      publishBtn && publishBtn.classList.remove('d-none');
+      if(pb) pb.classList.remove('d-none');
+      if(rb) rb.classList.remove('d-none');
     }
   })();
 
-  // Publish flow (fix #3: modal over toolbar because of z-indexes)
+  // --- Publish (non-blocking, no backdrop)
   (function(){
-    const publishBtn = document.getElementById('z2h-publish-btn');
-    const publishModalEl = document.getElementById('z2hPublishModal');
-    const confirmPublish = document.getElementById('z2h-confirm-publish');
-    if (!publishBtn || !publishModalEl || !confirmPublish) return;
+    const publishBtn=document.getElementById('z2h-publish-btn');
+    if(!publishBtn) return;
 
-    let bsModal = null;
     function setStatusChip(v){
       const chip=document.getElementById('z2h-status-chip');
       if(!chip) return;
@@ -529,44 +483,232 @@
       chip.classList.add(v);
     }
 
-    publishBtn.addEventListener('click', ()=>{
-      if (isDirty){
-        alert('You have unsaved changes. Please press Save before publishing.');
-        return;
-      }
-      const hasSections = document.querySelectorAll('[data-section-index]').length > 0;
-      if(!hasSections){
-        alert('This page has no sections. Add content before publishing.');
-        return;
-      }
-      bsModal = new bootstrap.Modal(publishModalEl);
-      bsModal.show();
-    });
-
     async function callPublish(){
       const entryId  = root.dataset.entryId;
-      const res = await fetch(`/admin/pages/${entryId}/publish`, { method: 'POST', headers: { 'X-Requested-With': 'fetch' } });
+      const tenantId = (root.dataset.tenantId||'').trim();
+      const replace  = !!document.getElementById('f-replace')?.checked;
+
+      const res = await fetch(`/admin/pages/${entryId}/publish?tenant_id=${encodeURIComponent(tenantId)}`, {
+        method:'POST',
+        headers:{
+          'X-Requested-With':'fetch',
+          'Content-Type':'application/json'
+        },
+        credentials:'same-origin',
+        body: JSON.stringify({ replace })
+      });
       if(!res.ok){
-        let txt=''; try{ txt = await res.text(); }catch(_){}
-        throw new Error(txt || 'Publish failed');
+        let txt=''; try{ txt=await res.text(); }catch(_){}
+        throw new Error(txt||'Publish failed');
       }
-      return res.json().catch(()=> ({}));
+      return res.json().catch(()=>({}));
     }
 
-    confirmPublish.addEventListener('click', async ()=>{
-      confirmPublish.disabled = true;
+    publishBtn.addEventListener('click', async ()=>{
+      if(isDirty){ alert('You have unsaved changes. Please press Save before publishing.'); return; }
+      const hasSections=document.querySelectorAll('[data-section-index]').length>0;
+      if(!hasSections){ alert('This page has no sections. Add content before publishing.'); return; }
+
+      publishBtn.disabled = true;
+      publishBtn.setAttribute('aria-busy','true');
+      const old = publishBtn.textContent;
+      publishBtn.textContent = 'Publishing…';
       try{
         await callPublish();
         setStatusChip('published');
+        flashOk('Published successfully.');
+        // Cache-bust Delivery link
+        const btn = document.getElementById('z2h-delivery-btn');
+        if(btn && btn.href){
+          const u = new URL(btn.href, window.location.origin);
+          u.searchParams.set('_', Date.now().toString());
+          btn.href = u.toString();
+        }
       }catch(err){
-        alert(err?.message || 'Publish failed');
+        flashErr(err?.message||'Publish failed');
       }finally{
-        confirmPublish.disabled = false;
+        publishBtn.textContent = old;
+        publishBtn.disabled = false;
+        publishBtn.removeAttribute('aria-busy');
       }
     });
   })();
 
-  // Serialize
+  // =========================
+  //  AUTO-FORM (Schema UI)
+  // =========================
+  let SCHEMA_UI=null;
+  (function(){
+    try{
+      const script=document.getElementById('z2h-schema-ui');
+      if(script){ SCHEMA_UI=JSON.parse(script.textContent||'{}'); }
+    }catch(_){}
+  })();
+
+  async function maybeFetchSchemaUI(){
+    if (SCHEMA_UI && Object.keys(SCHEMA_UI).length) return SCHEMA_UI;
+    const sectionId = (root?.dataset?.sectionId || '').trim();
+    const tenantId  = (root?.dataset?.tenantId  || '').trim();
+    if (!sectionId || !tenantId) return null;
+
+    try{
+      // 👇 Fetch the RAW JSON Schema (not the UI contract)
+      const url = `/api/v1/schemas/${encodeURIComponent(sectionId)}/active/raw?tenant_id=${encodeURIComponent(tenantId)}`;
+      const res = await fetch(url, { headers: { 'X-Requested-With':'fetch' } });
+      if (!res.ok) {
+        console.warn('Schema fetch failed:', res.status, url);
+        return null;
+      }
+      const j = await res.json();
+      if (!j || typeof j !== 'object' || !j.properties) {
+        console.warn('Schema does not look like a JSON Schema object:', j);
+        return null;
+      }
+      SCHEMA_UI = j;
+      return SCHEMA_UI;
+    } catch (e){
+      console.warn('Schema fetch error:', e);
+      return null;
+    }
+  }
+  function uiOf(node){ return (node && typeof node==='object' && (node['x-ui']||node['x_ui']||node['ui'])) || {}; }
+  function orderKeys(props, ui){
+    const keys=Object.keys(props||{});
+    const ord=(ui && ui.order)||ui?.['x-order']||[];
+    const ordSet=new Set(ord);
+    const rest=keys.filter(k=>!ordSet.has(k));
+    return [...ord, ...rest];
+  }
+
+  function renderField(path, schema, value, parent){
+    const t=(schema && schema.type)|| (schema?.enum && 'string') || 'object';
+    const ui=uiOf(schema);
+    const label=ui.label || schema.title || path.split('.').slice(-1)[0];
+    const help=ui.help || schema.description || '';
+    const placeholder=ui.placeholder || '';
+
+    const wrap=document.createElement('div'); wrap.className='mb-3';
+    const lab=document.createElement('label'); lab.className='form-label'; lab.textContent=label;
+    const hint=help ? `<div class="form-hint">${help}</div>` : '';
+
+    const NAME=`af:${path}`;
+
+    if(schema.enum && Array.isArray(schema.enum)){
+      const sel=document.createElement('select'); sel.className='form-control z2h-dirty'; sel.name=NAME;
+      schema.enum.forEach(v=>{
+        const opt=document.createElement('option');
+        opt.value=String(v); opt.textContent=String(v);
+        if(String(v)===String(value ?? '')) opt.selected=true;
+        sel.appendChild(opt);
+      });
+      wrap.appendChild(lab); wrap.appendChild(sel); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+    }
+
+    if(t==='string'){
+      const inp=document.createElement('input'); inp.type='text'; inp.className='form-control z2h-dirty'; inp.name=NAME; inp.placeholder=placeholder; if(value!=null) inp.value=String(value);
+      wrap.appendChild(lab); wrap.appendChild(inp); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+    }
+    if(t==='number' || t==='integer'){
+      const inp=document.createElement('input'); inp.type='number'; inp.step=(t==='integer'?'1':'any'); inp.className='form-control z2h-dirty'; inp.name=NAME; if(value!=null) inp.value=String(value);
+      wrap.appendChild(lab); wrap.appendChild(inp); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+    }
+    if(t==='boolean'){
+      const div=document.createElement('div'); div.className='form-check';
+      const chk=document.createElement('input'); chk.type='checkbox'; chk.className='form-check-input z2h-dirty'; chk.name=NAME; chk.checked=!!value;
+      const l2=document.createElement('label'); l2.className='form-check-label'; l2.textContent=label;
+      div.appendChild(chk); div.appendChild(l2); parent.appendChild(div); return;
+    }
+    if(t==='array'){
+      const box=document.createElement('div'); box.className='z2h-array';
+      wrap.appendChild(lab);
+      const list=document.createElement('div'); list.className='d-flex flex-column gap-2';
+      const itemsSchema=schema.items||{};
+      (Array.isArray(value)?value:[]).forEach((v,idx)=>{
+        const row=document.createElement('div'); row.className='card p-2';
+        renderField(`${path}[${idx}]`, itemsSchema, v, row);
+        const rm=document.createElement('button'); rm.type='button'; rm.className='btn btn-outline btn-sm mt-2'; rm.textContent='Remove';
+        rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
+        row.appendChild(rm); list.appendChild(row);
+      });
+      const add=document.createElement('button'); add.type='button'; add.className='btn btn-outline btn-sm mt-2'; add.textContent= (ui.addLabel||'Add');
+      add.addEventListener('click', ()=>{
+        const idx=list.children.length;
+        const row=document.createElement('div'); row.className='card p-2';
+        renderField(`${path}[${idx}]`, itemsSchema, null, row);
+        const rm=document.createElement('button'); rm.type='button'; rm.className='btn btn-outline btn-sm mt-2'; rm.textContent='Remove';
+        rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
+        row.appendChild(rm); list.appendChild(row); setDirty(true);
+      });
+      wrap.appendChild(list); wrap.appendChild(add); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+    }
+    // object
+    const box=document.createElement('div'); box.className='card p-3';
+    const props=schema.properties||{}; const keys=orderKeys(props, ui);
+    wrap.appendChild(lab);
+    keys.forEach(k=>{ renderField(`${path}.${k}`, props[k], (value||{})[k], box); });
+    wrap.appendChild(box); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap);
+  }
+
+  function pickSectionSubschema(schemaUI, sec){
+    const sectionsDef = ((schemaUI?.properties||{}).sections||{}).items || {};
+    const one = sectionsDef.oneOf || sectionsDef.anyOf || [];
+    const t = (sec?.type)||'';
+    if(one && one.length){
+      for(const sub of one){
+        const props=sub?.properties||{};
+        if(props.type?.const && String(props.type.const)===String(t)) return sub;
+        if(Array.isArray(props.type?.enum) && props.type.enum.includes(t)) return sub;
+        const ui=uiOf(sub);
+        if((sub.title && sub.title===t) || (ui.label && ui.label===t)) return sub;
+      }
+      return one[0];
+    }
+    return sectionsDef;
+  }
+
+  function renderSectionAutoForm(panel, schemaUI, secData){
+    const host=panel.querySelector('.z2h-autoform'); if(!host) return;
+    host.innerHTML='';
+    const sub=pickSectionSubschema(schemaUI, secData);
+    if(!sub || !Object.keys(sub).length){ panel.querySelector('.z2h-legacy')?.setAttribute('open',''); return; }
+    const props=sub.properties||{}; const keys=Object.keys(props);
+    if(!keys.length){ panel.querySelector('.z2h-legacy')?.setAttribute('open',''); return; }
+    const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+    keys.forEach(k=>{
+      if(k==='type' && (props[k]?.const || (Array.isArray(props[k]?.enum) && props[k].enum.length===1))) return;
+      renderField(k, props[k], secData ? secData[k] : undefined, host);
+    });
+    panel.querySelector('.z2h-legacy')?.removeAttribute('open');
+  }
+
+  function serializeAutoForm(panel){
+    const obj={};
+    const type = panel.getAttribute('data-section-type') || '';
+    if(type) obj.type = type;
+    panel.querySelectorAll('[name^="af:"]').forEach(inp=>{
+      const path=inp.name.slice(3);
+      let v;
+      if(inp.type==='checkbox') v=inp.checked;
+      else if(inp.type==='number') v=(inp.value===''? null : (inp.step==='1'? parseInt(inp.value,10) : parseFloat(inp.value)));
+      else v=inp.value;
+      setDeep(obj, path.replace(/\./g,'.'), v);
+    });
+    return obj;
+  }
+
+  // =========================
+  //  SERIALIZATION (anti-wipe)
+  // =========================
+  function isPlainObject(o){ return o && typeof o==='object' && !Array.isArray(o); }
+  function isEmptySection(sec){
+    if(!sec) return true;
+    if(typeof sec.type === 'string' && sec.type.trim() !== '') return false;
+    const keys = Object.keys(sec);
+    if(keys.length === 0) return true;
+    if(keys.length === 1 && keys[0] === 'data' && isPlainObject(sec.data) && Object.keys(sec.data).length===0) return true;
+    return false;
+  }
+
   function serialize(){
     const out={
       replace: !!document.getElementById('f-replace')?.checked,
@@ -575,11 +717,15 @@
         description: document.getElementById('f-seo-desc')?.value || ''
       }
     };
+
     const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
-    if (sectionPanels.length > 0){
-      out.sections = [];
-      sectionPanels.forEach(panel=>{
-        const sec={};
+    const acc = [];
+
+    sectionPanels.forEach(panel=>{
+      const hasAuto=panel.querySelector('[name^="af:"]')!=null;
+      let sec = hasAuto ? serializeAutoForm(panel) : {};
+
+      if(!hasAuto){
         panel.querySelectorAll('[data-k]').forEach(el=>{
           const k=el.getAttribute('data-k'); let v=el.value;
           if(k==='schema_version') v=Number(v||1);
@@ -592,28 +738,41 @@
             if(arr.length) sec[rep]=arr;
           }
         });
-        const jsonArea = panel.querySelector('.z2h-json-editor');
+        const jsonArea=panel.querySelector('.z2h-json-editor');
         if(jsonArea){
-          const txt=jsonArea.value.trim()||'{}';
-          try{ const parsed=JSON.parse(txt); if(Object.keys(parsed).length) sec['data']=parsed; jsonArea.classList.remove('is-invalid'); }
-          catch(e){ jsonArea.classList.add('is-invalid'); throw new Error('Invalid JSON in Advanced Data'); }
+          const txt=jsonArea.value.trim();
+          if(txt){
+            try{
+              const parsed=JSON.parse(txt);
+              if(isPlainObject(parsed)) sec['data']=parsed;
+              jsonArea.classList.remove('is-invalid');
+            }catch(e){
+              jsonArea.classList.add('is-invalid'); throw new Error('Invalid JSON in Advanced Data');
+            }
+          }
         }
-        out.sections.push(sec);
-      });
-    }
+      }
+
+      // Anti-wipe: ensure at least {type} if the panel represents a section type
+      const panelType = panel.getAttribute('data-section-type') || '';
+      if(isEmptySection(sec) && panelType){
+        sec = { type: panelType };
+      }
+
+      if(!isEmptySection(sec)) acc.push(sec);
+    });
+
+    out.sections = acc; // always present
+
     contentJson.value = JSON.stringify(out);
     return out;
   }
 
   // Dirty + backup
   let t;
-  function onDirty(){
-    setDirty(true);
-    clearTimeout(t);
-    t=setTimeout(()=>{ const obj=serialize(); try{ localStorage.setItem('z2h-edit-backup-'+entryId, JSON.stringify(obj)); }catch{} }, 250);
-  }
-  document.addEventListener('input', (e)=>{ if(e.target.closest('.z2h-dirty')) onDirty(); });
-  document.addEventListener('change', (e)=>{ if(e.target.closest('.z2h-dirty')) onDirty(); });
+  function onDirty(){ setDirty(true); clearTimeout(t); t=setTimeout(()=>{ const obj=serialize(); try{ localStorage.setItem('z2h-edit-backup-'+entryId, JSON.stringify(obj)); }catch{} }, 250); }
+  document.addEventListener('input', (e)=>{ if(e.target.closest('.z2h-dirty')|| e.target.name?.startsWith('af:')) onDirty(); });
+  document.addEventListener('change', (e)=>{ if(e.target.closest('.z2h-dirty')|| e.target.name?.startsWith('af:')) onDirty(); });
 
   // Shortcuts
   window.addEventListener('keydown', (e)=>{
@@ -623,44 +782,229 @@
 
   // Submit
   document.getElementById('z2h-edit-form').addEventListener('submit', function(ev){
-    try{
-      const obj = serialize();
-      if (!obj.sections && !obj.replace){
-        // no-op
-      }
-    }catch(err){
-      ev.preventDefault(); alert(err.message||'Invalid data'); return;
-    }
+    try{ serialize(); }
+    catch(err){ ev.preventDefault(); flashErr(err.message||'Invalid data'); return; }
     try{ localStorage.removeItem('z2h-edit-backup-'+entryId); }catch{}
     setDirty(false);
+    setTimeout(()=>flashOk('Saved.'), 10);
   });
 
-  // Init
-  serialize();
-  setDirty(false);
+  // --- Restore from Delivery
+  async function fetchDeliveryJSON(){
+    const tenant=root?.dataset?.tenant||'';
+    const section=root?.dataset?.sectionKey||'';
+    const slug=root?.dataset?.entrySlug||'';
+    if(!tenant||!section||!slug) throw new Error('Missing tenant/section/slug');
+
+    const url = `/delivery/v1/tenants/${tenant}/sections/${encodeURIComponent(section)}/entries/${encodeURIComponent(slug)}?_=${Date.now()}`;
+    const res = await fetch(url, { headers:{'X-Requested-With':'fetch'} });
+    if(!res.ok){
+      let txt=''; try{ txt=await res.text(); }catch(_){}
+      throw new Error(txt || 'Delivery fetch failed');
+    }
+    return res.json();
+  }
+
+  function fillLegacyInputsFromSection(panel, sec){
+    // Base
+    const map = {
+      'type':'type',
+      'schema_version':'schema_version',
+      'eyebrow':'eyebrow',
+      'heading':'heading',
+      'subheading':'subheading',
+      'richText':'richText'
+    };
+    Object.entries(map).forEach(([k, dk])=>{
+      const el = panel.querySelector(`[data-k="${dk}"]`);
+      if(!el) return;
+      if(dk==='schema_version'){
+        el.value = (sec.schema_version ?? sec.schemaVersion ?? el.value ?? 1);
+      }else{
+        el.value = (sec[k] ?? sec[dk] ?? '');
+      }
+    });
+
+    // Media
+    const mediaHost = panel.querySelector('.z2h-repeater[data-repeater="media"]');
+    if(mediaHost){
+      mediaHost.innerHTML='';
+      const mediaArr = Array.isArray(sec.media)? sec.media : [];
+      mediaArr.forEach(m=>{
+        const node = document.createElement('div');
+        node.className='z2h-rep-item card p-2 mb-2';
+        node.innerHTML = `
+          <div class="row g-2 align-items-end">
+            <div class="col-3">
+              <label class="form-label small">Type</label>
+              <select class="form-control z2h-dirty" data-k="type">
+                <option value="image"${(m.type||'image')==='image'?' selected':''}>image</option>
+                <option value="video"${(m.type||'image')==='video'?' selected':''}>video</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small">URL</label>
+              <input type="text" class="form-control z2h-dirty" data-k="url" value="${m.url||''}" placeholder="https://...">
+            </div>
+            <div class="col-3">
+              <label class="form-label small">Alt</label>
+              <input type="text" class="form-control z2h-dirty" data-k="alt" value="${m.alt||''}">
+            </div>
+          </div>
+          <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
+        `;
+        mediaHost.appendChild(node);
+      });
+    }
+
+    // Actions
+    const actionsHost = panel.querySelector('.z2h-repeater[data-repeater="actions"]');
+    if(actionsHost){
+      actionsHost.innerHTML='';
+      const actionsArr = Array.isArray(sec.actions)? sec.actions : [];
+      actionsArr.forEach(b=>{
+        const node = document.createElement('div');
+        node.className='z2h-rep-item card p-2 mb-2';
+        node.innerHTML = `
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label small">Label</label>
+              <input type="text" class="form-control z2h-dirty" data-k="label" value="${b.label||''}">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small">Href</label>
+              <input type="text" class="form-control z2h-dirty" data-k="href" value="${b.href||''}">
+            </div>
+          </div>
+          <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-outline-danger z2h-remove">Remove</button></div>
+        `;
+        actionsHost.appendChild(node);
+      });
+    }
+
+    // Advanced JSON
+    const jsonArea=panel.querySelector('.z2h-json-editor');
+    if(jsonArea){
+      try{
+        jsonArea.value = JSON.stringify(sec.data ?? {}, null, 2);
+        jsonArea.classList.remove('is-invalid');
+      }catch(_){
+        jsonArea.value = "{}";
+      }
+    }
+
+    // Update the panel's seed to match Delivery (so re-renders use this)
+    const seed = panel.querySelector('.z2h-sec-json');
+    if(seed){
+      try{ seed.textContent = JSON.stringify(sec || {}); }catch(_){}
+    }
+  }
+
+  async function restoreFromDelivery(){
+    const btn = document.getElementById('z2h-restore-btn');
+    if(!btn) return;
+    btn.disabled = true; const old = btn.textContent; btn.textContent = 'Restoring…';
+    try{
+      const payload = await fetchDeliveryJSON();
+      const sections = payload?.data?.sections || payload?.sections || [];
+      if(!Array.isArray(sections) || sections.length===0){
+        flashErr('No sections found in Delivery payload.');
+        return;
+      }
+
+      // Fill legacy inputs by index and update seeds
+      const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
+      const n = Math.min(sections.length, sectionPanels.length);
+      for(let i=0;i<n;i++){
+        const panel = sectionPanels[i];
+        const sec   = sections[i] || {};
+        if(!sec.type){
+          const panelType = panel.getAttribute('data-section-type') || '';
+          if(panelType) sec.type = panelType;
+        }
+        fillLegacyInputsFromSection(panel, sec);
+      }
+
+      // Re-render autoforms preferring the .z2h-sec-json seed
+      const schema= await maybeFetchSchemaUI() || SCHEMA_UI;
+      if(schema){
+        sectionPanels.forEach((panel)=>{
+          // 1) Prefer JSON seed
+          let secDataLegacy = {};
+          const seed = panel.querySelector('.z2h-sec-json');
+          if (seed) { try { secDataLegacy = JSON.parse(seed.textContent || '{}') || {}; } catch(_) {} }
+
+          // 2) Fallback to legacy controls if missing
+          panel.querySelectorAll('[data-k]').forEach(el=>{
+            const k=el.getAttribute('data-k'); if(!k) return;
+            let v=el.value;
+            if(k==='schema_version') v=Number(v||1);
+            if (secDataLegacy[k] === undefined) secDataLegacy[k]=v;
+          });
+          // 3) Advanced JSON → sec.data if not already set
+          const jsonArea=panel.querySelector('.z2h-json-editor');
+          if(jsonArea){
+            try{
+              const parsed=JSON.parse(jsonArea.value||'{}');
+              if(parsed && typeof parsed==='object' && secDataLegacy.data === undefined) secDataLegacy.data=parsed;
+            }catch(_){}
+          }
+          renderSectionAutoForm(panel, schema, secDataLegacy);
+        });
+      }
+
+      setDirty(true);
+      serialize();
+      flashOk('Restored from Delivery. Review and Save/Publish.');
+    }catch(err){
+      flashErr(err?.message||'Restore failed');
+    }finally{
+      btn.textContent = old; btn.disabled = false;
+    }
+  }
+  restoreBtn?.addEventListener('click', restoreFromDelivery);
+
+  // --- Initial auto-form render (prefer seed)
+  (async function initAutoForms(){
+    const schema = await maybeFetchSchemaUI() || SCHEMA_UI;
+    if(!schema) return;
+    const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
+    sectionPanels.forEach((panel)=>{
+      // 1) Prefer the full JSON seed we injected
+      let secDataLegacy = {};
+      const seed = panel.querySelector('.z2h-sec-json');
+      if (seed) {
+        try { secDataLegacy = JSON.parse(seed.textContent || '{}') || {}; } catch(_) {}
+      }
+
+      // 2) Fall back to legacy inputs while preserving existing keys from seed
+      panel.querySelectorAll('[data-k]').forEach(el=>{
+        const k=el.getAttribute('data-k'); if(!k) return;
+        let v=el.value;
+        if(k==='schema_version') v=Number(v||1);
+        if (secDataLegacy[k] === undefined) secDataLegacy[k]=v;
+      });
+
+      // 3) Advanced JSON -> sec.data if not already present
+      const jsonArea=panel.querySelector('.z2h-json-editor');
+      if(jsonArea){
+        try{
+          const parsed=JSON.parse(jsonArea.value||'{}');
+          if(parsed && typeof parsed==='object' && secDataLegacy.data === undefined) secDataLegacy.data=parsed;
+        }catch(_){}
+      }
+      renderSectionAutoForm(panel, schema, secDataLegacy);
+    });
+  })();
+
+  // --- Init (enable Publish on clean state)
+  try{
+    if (typeof serialize === 'function') { serialize(); }
+    if (typeof setDirty === 'function') { setDirty(false); }
+  }catch(e){ console.error('Init error:', e); }
 })();
 </script>
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

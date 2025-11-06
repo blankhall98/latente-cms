@@ -1,328 +1,310 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Landing v1 (content-only)",
+  "$id": "https://latente.app/schemas/owa/landing_pages/v1.json",
+  "title": "OWA · Landing Page (Home) v1",
   "type": "object",
-  "additionalProperties": false,
+  "x-ui": {
+    "label": "OWA · Home",
+    "help": "Esquema del Home de OWA. Las secciones tienen tamaños fijos cuando se indica.",
+    "order": ["seo", "sections"]
+  },
   "properties": {
-    "replace": { "type": "boolean" },
     "seo": {
       "type": "object",
-      "additionalProperties": false,
+      "x-ui": { "label": "SEO", "help": "Metadatos para buscadores" },
       "properties": {
-        "title": { "type": "string", "maxLength": 70 },
-        "description": { "type": "string", "maxLength": 160 }
-      }
+        "title": { "type": "string", "maxLength": 120, "x-ui": { "label": "SEO Title" } },
+        "description": { "type": "string", "maxLength": 240, "x-ui": { "label": "SEO Description" } }
+      },
+      "required": []
     },
     "sections": {
       "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/section" }
+      "x-ui": { "label": "Secciones" },
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/Navbar" },
+          { "$ref": "#/$defs/Hero" },
+          { "$ref": "#/$defs/Intro" },
+          { "$ref": "#/$defs/Discover" },
+          { "$ref": "#/$defs/Therapies" },
+          { "$ref": "#/$defs/Memberships" },
+          { "$ref": "#/$defs/Hero2" },
+          { "$ref": "#/$defs/FollowUs" },
+          { "$ref": "#/$defs/Contact" }
+        ]
+      }
     }
   },
   "required": ["sections"],
   "$defs": {
-    "button": {
+    "Image": {
       "type": "object",
-      "additionalProperties": false,
+      "x-ui": { "label": "Imagen" },
       "properties": {
-        "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-        "href": { "type": "string", "format": "uri-reference" }
+        "type": { "type": "string", "enum": ["image", "video"], "default": "image", "x-ui": { "label": "Tipo" } },
+        "url":  { "type": "string", "format": "uri", "x-ui": { "label": "URL" } },
+        "alt":  { "type": "string", "x-ui": { "label": "Alt" } }
+      },
+      "required": ["url"]
+    },
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Enlace" },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Texto" } },
+        "href":  { "type": "string", "x-ui": { "label": "URL/Path" } }
       },
       "required": ["label", "href"]
     },
-    "media": {
+    "CardBasic": {
       "type": "object",
-      "additionalProperties": false,
+      "x-ui": { "label": "Tarjeta" },
       "properties": {
-        "type": { "type": "string", "enum": ["image","video"] },
-        "url": { "type": "string", "format": "uri-reference" },
-        "alt": { "type": "string" }
+        "image":       { "$ref": "#/$defs/Image", "x-ui": { "label": "Imagen" } },
+        "title":       { "type": "string", "x-ui": { "label": "Título" } },
+        "buttonText":  { "type": "string", "x-ui": { "label": "Texto del botón" } },
+        "buttonHref":  { "type": "string", "x-ui": { "label": "Link del botón" } },
+        "description": { "type": "string", "x-ui": { "label": "Descripción" } }
       },
-      "required": ["type","url"]
-    },
-    "sectionBase": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "schema_version": { "const": 1 },
-        "type": { "type": "string" },
-        "eyebrow": { "type": "string", "maxLength": 80 },
-        "heading": { "type": "string", "maxLength": 140 },
-        "subheading": { "type": "string", "maxLength": 240 },
-        "richText": { "type": "string", "maxLength": 4000 },
-        "media": { "type": "array", "items": { "$ref": "#/$defs/media" } },
-        "actions": { "type": "array", "items": { "$ref": "#/$defs/button" }, "maxItems": 4 },
-        "data": { "type": "object" }
-      },
-      "required": ["schema_version","type"]
-    },
-    "section": {
-      "allOf": [
-        { "$ref": "#/$defs/sectionBase" },
-        {
-          "oneOf": [
-            { "$ref": "#/$defs/section.NavBar" },
-            { "$ref": "#/$defs/section.Hero" },
-            { "$ref": "#/$defs/section.Intro" },
-            { "$ref": "#/$defs/section.Grid" },
-            { "$ref": "#/$defs/section.FeatureList" },
-            { "$ref": "#/$defs/section.Accordion" },
-            { "$ref": "#/$defs/section.Plans" },
-            { "$ref": "#/$defs/section.HeroOverlay" },
-            { "$ref": "#/$defs/section.SocialGallery" },
-            { "$ref": "#/$defs/section.Footer" }
-          ]
-        }
-      ]
+      "required": ["image", "title", "buttonText", "buttonHref"]
     },
 
-    "section.NavBar": {
+    "Navbar": {
+      "type": "object",
+      "x-ui": { "label": "Navbar", "help": "Links fijos a izquierda (2) y derecha (3)" },
       "properties": {
-        "type": { "const": "NavBar" },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "brand": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "text": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "href": { "type": "string", "format": "uri-reference" }
-              },
-              "required": ["text","href"]
-            },
-            "linksLeft": { "type": "array", "items": { "$ref": "#/$defs/button" } },
-            "linksRight": { "type": "array", "items": { "$ref": "#/$defs/button" } }
-          }
+        "type": { "const": "Navbar", "x-ui": { "label": "Tipo" } },
+        "leftLinks": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "additionalItems": false,
+          "items": { "$ref": "#/$defs/Link" },
+          "x-ui": { "label": "Links Izquierda (2)" }
+        },
+        "rightLinks": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "additionalItems": false,
+          "items": { "$ref": "#/$defs/Link" },
+          "x-ui": { "label": "Links Derecha (3)" }
         }
-      }
+      },
+      "required": ["type", "leftLinks", "rightLinks"],
+      "x-ui:order": ["leftLinks", "rightLinks"]
     },
 
-    "section.Hero": {
+    "Hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero principal" },
       "properties": {
         "type": { "const": "Hero" },
-        "media": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/media" } },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "rotatingWords": { "type": "array", "maxItems": 8, "items": { "type": "string", "maxLength": 24 } }
+        "leftImage":  { "$ref": "#/$defs/Image", "x-ui": { "label": "Imagen izquierda" } },
+        "rightImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Imagen derecha" } },
+        "phrase":     { "type": "string", "x-ui": { "label": "Frase base (p. ej. 'ONE WITH')" } },
+        "loopWords":  {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "x-ui": { "label": "Palabras en loop", "addLabel": "Agregar palabra" }
+        }
+      },
+      "required": ["type", "leftImage", "rightImage", "phrase", "loopWords"]
+    },
+
+    "Intro": {
+      "type": "object",
+      "x-ui": { "label": "Intro" },
+      "properties": {
+        "type": { "const": "Intro" },
+        "title": { "type": "string", "x-ui": { "label": "Título" } },
+        "text":  { "type": "string", "x-ui": { "label": "Texto" } },
+        "leftLink":   { "$ref": "#/$defs/Link", "x-ui": { "label": "Enlace Izquierda" } },
+        "centerLink": { "$ref": "#/$defs/Link", "x-ui": { "label": "Enlace Centro" } },
+        "rightLink":  { "$ref": "#/$defs/Link", "x-ui": { "label": "Enlace Derecha" } }
+      },
+      "required": ["type", "title", "text", "leftLink", "centerLink", "rightLink"]
+    },
+
+    "Discover": {
+      "type": "object",
+      "x-ui": { "label": "Discover OWA", "help": "4 tarjetas fijas" },
+      "properties": {
+        "type": { "const": "Discover" },
+        "title": { "type": "string", "x-ui": { "label": "Título" } },
+        "text":  { "type": "string", "x-ui": { "label": "Texto" } },
+        "cards": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "additionalItems": false,
+          "items": { "$ref": "#/$defs/CardBasic" },
+          "x-ui": { "label": "Tarjetas (4)", "addLabel": "Agregar tarjeta" }
+        }
+      },
+      "required": ["type", "title", "text", "cards"]
+    },
+
+    "Therapies": {
+      "type": "object",
+      "x-ui": { "label": "Therapies", "help": "6 servicios fijos" },
+      "properties": {
+        "type": { "const": "Therapies" },
+        "title": { "type": "string", "x-ui": { "label": "Título" } },
+        "text":  { "type": "string", "x-ui": { "label": "Texto" } },
+        "services": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "additionalItems": false,
+          "items": {
+            "type": "object",
+            "x-ui": { "label": "Servicio" },
+            "properties": {
+              "title": { "type": "string", "x-ui": { "label": "Título" } },
+              "description": { "type": "string", "x-ui": { "label": "Descripción" } },
+              "benefits": { "type": "array", "items": { "type": "string" }, "x-ui": { "label": "Beneficios", "addLabel": "Agregar beneficio" } },
+              "buttonText": { "type": "string", "x-ui": { "label": "Texto del botón" } },
+              "buttonHref": { "type": "string", "x-ui": { "label": "Link del botón" } },
+              "image": { "$ref": "#/$defs/Image", "x-ui": { "label": "Imagen" } }
+            },
+            "required": ["title", "description", "buttonText", "buttonHref", "image"]
+          }
+        },
+        "bottomText": { "type": "string", "x-ui": { "label": "Texto inferior (opcional)" } },
+        "bottomButton": { "$ref": "#/$defs/Link", "x-ui": { "label": "Botón inferior (opcional)" } }
+      },
+      "required": ["type", "title", "text", "services"]
+    },
+
+    "Memberships": {
+      "type": "object",
+      "x-ui": { "label": "Memberships", "help": "3 tarjetas fijas" },
+      "properties": {
+        "type": { "const": "Memberships" },
+        "title": { "type": "string" },
+        "text":  { "type": "string" },
+        "cards": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "additionalItems": false,
+          "items": { "$ref": "#/$defs/CardBasic" },
+          "x-ui": { "label": "Tarjetas (3)" }
+        }
+      },
+      "required": ["type", "title", "text", "cards"]
+    },
+
+    "Hero2": {
+      "type": "object",
+      "x-ui": { "label": "Hero secundario" },
+      "properties": {
+        "type": { "const": "Hero2" },
+        "background": { "$ref": "#/$defs/Image", "x-ui": { "label": "Imagen de fondo" } },
+        "phrase":  { "type": "string", "x-ui": { "label": "Frase base" } },
+        "loopWords": { "type": "array", "items": { "type": "string" }, "minItems": 1, "x-ui": { "label": "Palabras (loop)" } }
+      },
+      "required": ["type", "background", "phrase", "loopWords"]
+    },
+
+    "FollowUs": {
+      "type": "object",
+      "x-ui": { "label": "Follow Us", "help": "4 ítems fijos" },
+      "properties": {
+        "type": { "const": "FollowUs" },
+        "title": { "type": "string", "x-ui": { "label": "Título" } },
+        "account": { "type": "string", "x-ui": { "label": "Cuenta social" } },
+        "items": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "additionalItems": false,
+          "items": {
+            "type": "object",
+            "x-ui": { "label": "Ítem" },
+            "properties": {
+              "image": { "$ref": "#/$defs/Image", "x-ui": { "label": "Imagen" } },
+              "link":  { "$ref": "#/$defs/Link", "x-ui": { "label": "Enlace" } }
+            },
+            "required": ["image", "link"]
           }
         }
       },
-      "required": ["media"]
+      "required": ["type", "title", "account", "items"]
     },
 
-    "section.Intro": {
+    "Contact": {
+      "type": "object",
+      "x-ui": { "label": "Contact" },
       "properties": {
-        "type": { "const": "Intro" }
-      }
-    },
-
-    "section.Grid": {
-      "properties": {
-        "type": { "const": "Grid" },
-        "data": {
+        "type": { "const": "Contact" },
+        "title": { "type": "string", "x-ui": { "label": "Título" } },
+        "getInTouch": {
           "type": "object",
-          "additionalProperties": false,
+          "x-ui": { "label": "GET IN TOUCH" },
           "properties": {
-            "items": {
+            "heading": { "type": "string", "default": "GET IN TOUCH" },
+            "address": { "type": "string" },
+            "email":   { "type": "string" },
+            "phone":   { "type": "string" }
+          },
+          "required": ["heading"]
+        },
+        "explore": {
+          "type": "object",
+          "x-ui": { "label": "EXPLORE" },
+          "properties": {
+            "heading": { "type": "string", "default": "EXPLORE" },
+            "links": {
               "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "title": { "type": "string", "maxLength": 60 },
-                  "description": { "type": "string", "maxLength": 600 },
-                  "image": { "type": "string", "format": "uri-reference" },
-                  "imageAlt": { "type": "string" },
-                  "media": { "type": "array", "items": { "$ref": "#/$defs/media" } },
-                  "badge": { "type": "string", "maxLength": 10 },
-                  "actions": { "type": "array", "items": { "$ref": "#/$defs/button" }, "maxItems": 2 }
-                },
-                "required": ["title"]
-              }
+              "minItems": 4,
+              "maxItems": 4,
+              "additionalItems": false,
+              "items": { "$ref": "#/$defs/Link" }
             }
           },
-          "required": ["items"]
-        }
-      }
-    },
-
-    "section.FeatureList": {
-      "properties": {
-        "type": { "const": "FeatureList" },
-        "data": {
+          "required": ["heading", "links"]
+        },
+        "connect": {
           "type": "object",
-          "additionalProperties": false,
+          "x-ui": { "label": "CONNECT" },
           "properties": {
-            "items": {
+            "heading": { "type": "string", "default": "CONNECT" },
+            "instagram": { "$ref": "#/$defs/Link" },
+            "spotify":   { "$ref": "#/$defs/Link" },
+            "careers":   { "$ref": "#/$defs/Link" }
+          },
+          "required": ["heading"]
+        },
+        "book": {
+          "type": "object",
+          "x-ui": { "label": "BOOK" },
+          "properties": {
+            "heading": { "type": "string", "default": "BOOK" },
+            "links": {
               "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "icon": { "type": "string" },
-                  "title": { "type": "string" },
-                  "body": { "type": "string" }
-                },
-                "required": ["title","body"]
-              }
+              "minItems": 4,
+              "maxItems": 4,
+              "additionalItems": false,
+              "items": { "$ref": "#/$defs/Link" }
             }
           },
-          "required": ["items"]
-        }
-      }
-    },
-
-    "section.Accordion": {
-      "properties": {
-        "type": { "const": "Accordion" },
-        "data": {
+          "required": ["heading", "links"]
+        },
+        "stayInTheLoop": {
           "type": "object",
-          "additionalProperties": false,
+          "x-ui": { "label": "STAY IN THE LOOP" },
           "properties": {
-            "sideImage": { "$ref": "#/$defs/media" },
-            "items": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "title": { "type": "string" },
-                  "description": { "type": "string" },
-                  "bullets": { "type": "array", "items": { "type": "string" } },
-                  "actions": { "type": "array", "items": { "$ref": "#/$defs/button" }, "maxItems": 1 }
-                },
-                "required": ["title","description"]
-              }
-            }
+            "heading": { "type": "string", "default": "STAY IN THE LOOP" },
+            "text": { "type": "string" }
           },
-          "required": ["items"]
-        }
-      }
-    },
-
-    "section.Plans": {
-      "properties": {
-        "type": { "const": "Plans" },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "items": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "badge": { "type": "string", "maxLength": 10 },
-                  "title": { "type": "string" },
-                  "description": { "type": "string" },
-                  "image": { "type": "string", "format": "uri-reference" },
-                  "imageAlt": { "type": "string" },
-                  "actions": { "type": "array", "items": { "$ref": "#/$defs/button" }, "maxItems": 1 }
-                },
-                "required": ["title","description"]
-              }
-            }
-          },
-          "required": ["items"]
-        }
-      }
-    },
-
-    "section.HeroOverlay": {
-      "properties": {
-        "type": { "const": "HeroOverlay" },
-        "media": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/media" } },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "rotatingWords": { "type": "array", "maxItems": 8, "items": { "type": "string", "maxLength": 24 } }
-          }
+          "required": ["heading"]
         }
       },
-      "required": ["media"]
-    },
-
-    "section.SocialGallery": {
-      "properties": {
-        "type": { "const": "SocialGallery" },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "heading": { "type": "string" },
-            "handle": { "type": "string" },
-            "profileUrl": { "type": "string", "format": "uri-reference" },
-            "source": { "type": "string", "enum": ["manual","instagram","cms"] },
-            "images": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/media" } }
-          }
-        }
-      }
-    },
-
-    "section.Footer": {
-      "properties": {
-        "type": { "const": "Footer" },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "title": { "type": "string" },
-            "contact": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "heading": { "type": "string" },
-                "addressLines": { "type": "array", "items": { "type": "string" } },
-                "email": { "type": "string" },
-                "emailHref": { "type": "string", "format": "uri-reference" },
-                "phone": { "type": "string" },
-                "phoneHref": { "type": "string", "format": "uri-reference" }
-              }
-            },
-            "groups": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "heading": { "type": "string" },
-                  "links": { "type": "array", "items": { "$ref": "#/$defs/button" } }
-                }
-              }
-            },
-            "newsletter": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "heading": { "type": "string" },
-                "subtext": { "type": "string" },
-                "action": { "type": "string" },
-                "placeholder": { "type": "string" },
-                "submitHref": { "type": "string", "format": "uri-reference" }
-              }
-            },
-            "bottomBar": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "leftNote": { "type": "string" },
-                "legalLinks": { "type": "array", "items": { "$ref": "#/$defs/button" } },
-                "copyright": { "type": "string", "maxLength": 160 }
-              }
-            }
-          }
-        }
-      }
+      "required": ["type", "title", "getInTouch", "explore", "connect", "book", "stayInTheLoop"]
     }
   }
 }
