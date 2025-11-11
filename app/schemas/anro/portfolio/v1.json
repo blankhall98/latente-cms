@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/portfolio/v1.json",
+  "title": "ANRO · Portfolio v1",
+  "type": "object",
+  "x-ui": {
+    "label": "ANRO · Portfolio",
+    "help": "A very light Portfolio page. Subtitle-only intro and (optionally) a small CTA.",
+    "order": ["seo", "sections"]
+  },
+  "properties": {
+    "seo": {
+      "type": "object",
+      "x-ui": { "label": "SEO" },
+      "properties": {
+        "title": { "type": "string", "maxLength": 120, "x-ui": { "label": "SEO Title" } },
+        "description": { "type": "string", "maxLength": 240, "x-ui": { "label": "SEO Description" } }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "x-ui": { "label": "Sections" },
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/PortfolioIntro" },
+          { "$ref": "#/$defs/ContactCTA" }
+        ]
+      }
+    }
+  },
+  "required": ["sections"],
+  "$defs": {
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link" },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Text" } },
+        "href":  { "type": "string", "x-ui": { "label": "URL/Path" } }
+      },
+      "required": ["label", "href"]
+    },
+
+    "PortfolioIntro": {
+      "type": "object",
+      "x-ui": { "label": "Portfolio · Intro" },
+      "properties": {
+        "type": { "const": "PortfolioIntro" },
+        "title": { "type": "string", "default": "Portfolio", "x-ui": { "label": "Title" } },
+        "subtitle": { "type": "string", "x-ui": { "label": "Subtitle" } }
+      },
+      "required": ["type", "subtitle"]
+    },
+
+    "ContactCTA": {
+      "type": "object",
+      "x-ui": { "label": "Contact CTA (optional)" },
+      "properties": {
+        "type": { "const": "ContactCTA" },
+        "title": { "type": "string", "default": "Work with us", "x-ui": { "label": "Title" } },
+        "text": { "type": "string", "x-ui": { "label": "Text" } },
+        "button": { "$ref": "#/$defs/Link", "x-ui": { "label": "Button" } }
+      },
+      "required": ["type"]
+    }
+  }
+}
