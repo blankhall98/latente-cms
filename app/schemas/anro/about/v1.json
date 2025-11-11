@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/about/v1.json",
+  "title": "ANRO · About v1",
+  "type": "object",
+  "x-ui": {
+    "label": "ANRO · About",
+    "help": "About page composed of sections.",
+    "order": ["seo", "sections"]
+  },
+  "properties": {
+    "seo": {
+      "type": "object",
+      "x-ui": { "label": "SEO", "help": "Page meta for search engines" },
+      "properties": {
+        "title": { "type": "string", "maxLength": 120, "x-ui": { "label": "SEO Title" } },
+        "description": { "type": "string", "maxLength": 240, "x-ui": { "label": "SEO Description" } }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "x-ui": { "label": "Sections" },
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/Intro" },
+          { "$ref": "#/$defs/OurTeam" },
+          { "$ref": "#/$defs/ShapedByStory" }
+        ]
+      }
+    }
+  },
+  "required": ["sections"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "type": { "type": "string", "enum": ["image", "video"], "default": "image", "x-ui": { "label": "Type" } },
+        "url":  { "type": "string", "format": "uri", "x-ui": { "label": "URL" } },
+        "alt":  { "type": "string", "x-ui": { "label": "Alt" } }
+      },
+      "required": ["url"]
+    },
+
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link" },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Text" } },
+        "href":  { "type": "string", "x-ui": { "label": "URL/Path" } }
+      },
+      "required": ["label", "href"]
+    },
+
+    "StaffMember": {
+      "type": "object",
+      "x-ui": { "label": "Staff Member" },
+      "properties": {
+        "picture":     { "$ref": "#/$defs/Image", "x-ui": { "label": "Picture" } },
+        "firstName":   { "type": "string", "x-ui": { "label": "First Name" } },
+        "lastName":    { "type": "string", "x-ui": { "label": "Last Name" } },
+        "role":        { "type": "string", "x-ui": { "label": "Role" } },
+        "description": { "type": "string", "x-ui": { "label": "Short Bio" } }
+      },
+      "required": ["picture", "firstName", "lastName", "role", "description"]
+    },
+
+    "Intro": {
+      "type": "object",
+      "x-ui": { "label": "Intro" },
+      "properties": {
+        "type":        { "const": "Intro" },
+        "text":        { "type": "string", "x-ui": { "label": "Intro Text" } },
+        "image":       { "$ref": "#/$defs/Image", "x-ui": { "label": "Intro Image" } },
+        "getInTouch":  { "$ref": "#/$defs/Link", "x-ui": { "label": "GET IN TOUCH" } }
+      },
+      "required": ["type", "text", "image", "getInTouch"]
+    },
+
+    "OurTeam": {
+      "type": "object",
+      "x-ui": { "label": "Our Team", "help": "Team text and a list of staff members" },
+      "properties": {
+        "type": { "const": "OurTeam" },
+        "teamText": { "type": "string", "x-ui": { "label": "Team Text" } },
+        "members": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/StaffMember" },
+          "x-ui": { "label": "Staff Members", "addLabel": "Add member" }
+        }
+      },
+      "required": ["type", "teamText", "members"]
+    },
+
+    "ShapedByStory": {
+      "type": "object",
+      "x-ui": { "label": "Shaped by Story" },
+      "properties": {
+        "type":          { "const": "ShapedByStory" },
+        "subtitle":      { "type": "string", "x-ui": { "label": "Story Subtitle" } },
+        "text":          { "type": "string", "x-ui": { "label": "Story Text" } },
+        "primaryImage":  { "$ref": "#/$defs/Image", "x-ui": { "label": "Primary Image" } },
+        "secondaryImage":{ "$ref": "#/$defs/Image", "x-ui": { "label": "Secondary Image" } },
+        "cta":           { "$ref": "#/$defs/Link", "x-ui": { "label": "VIEW OUR WORK (CTA)" } }
+      },
+      "required": ["type", "subtitle", "text", "primaryImage", "secondaryImage", "cta"]
+    }
+  }
+}

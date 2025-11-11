@@ -1,0 +1,42 @@
+{
+  "seo": {
+    "title": "About · ANRO",
+    "description": "Weaving together architectural intent, execution, and care."
+  },
+  "sections": [
+    {
+      "type": "Intro",
+      "text": "Weaving together architectural intent, masterful execution, and a deep sense of care — for team, craft, and client.",
+      "image": { "url": "https://example.com/media/intro_image.png", "alt": "Studio intro" },
+      "getInTouch": { "label": "GET IN TOUCH", "href": "/contact" }
+    },
+    {
+      "type": "OurTeam",
+      "teamText": "We are a multidisciplinary firm based in Texas offering architecture and construction services. Led by a close-knit team of experienced professionals, ANRO provides end-to-end project delivery for high-end residential homes and legacy builds — combining creative vision with precise execution.",
+      "members": [
+        {
+          "picture": { "url": "https://example.com/media/staff_1.png", "alt": "Staff 1" },
+          "firstName": "Alex",
+          "lastName": "R.",
+          "role": "Principal",
+          "description": "Architect and builder leading integrated delivery."
+        },
+        {
+          "picture": { "url": "https://example.com/media/staff_2.png", "alt": "Staff 2" },
+          "firstName": "Noa",
+          "lastName": "S.",
+          "role": "Design Lead",
+          "description": "Guides conceptual development and detailing."
+        }
+      ]
+    },
+    {
+      "type": "ShapedByStory",
+      "subtitle": "By honoring the integrity of every collaborator and fostering a culture of excellence, we create spaces that are not only architecturally exceptional but emotionally grounded.",
+      "text": "We believe strong projects are the result of strong relationships. That's why we work closely with clients, builders, and artisans from day one.",
+      "primaryImage":   { "url": "https://example.com/media/shaped_story_primary.png",   "alt": "Primary" },
+      "secondaryImage": { "url": "https://example.com/media/shaped_story_secondary.png", "alt": "Secondary" },
+      "cta": { "label": "VIEW OUR WORK", "href": "/work" }
+    }
+  ]
+}
