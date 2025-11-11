@@ -1,4 +1,3 @@
-# app/services/ui_schema_service.py
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple, Set
 
@@ -164,13 +163,9 @@ def _apply_xui_overlays_to_jsonschema(schema: dict, field_overrides: Dict[str, D
 
 # -------------------- $ref resolver (local: #/$defs/...) --------------------
 def _resolve_local_ref(root: dict, ref: str) -> Optional[dict]:
-    """
-    Very small resolver for local refs like '#/$defs/Foo' or '#/properties/x/...'
-    Returns a deep copy of the target node or None if not found.
-    """
     if not isinstance(ref, str) or not ref.startswith("#/"):
         return None
-    parts = ref[2:].split("/")  # skip "#/"
+    parts = ref[2:].split("/")
     node: Any = root
     for p in parts:
         if isinstance(node, dict) and p in node:
@@ -181,10 +176,6 @@ def _resolve_local_ref(root: dict, ref: str) -> Optional[dict]:
 
 
 def _deref_inplace(node: Any, root: dict, seen: Set[int]) -> Any:
-    """
-    Recursively replace {"$ref": "..."} with the referenced dict (deep copy).
-    Keeps other keys next to $ref (spec allows it), with $ref taking precedence.
-    """
     if isinstance(node, dict):
         node_id = id(node)
         if node_id in seen:
@@ -194,12 +185,10 @@ def _deref_inplace(node: Any, root: dict, seen: Set[int]) -> Any:
         if "$ref" in node and isinstance(node["$ref"], str):
             target = _resolve_local_ref(root, node["$ref"])
             if target is not None:
-                # merge: referenced content first, then keep sibling keys (except $ref)
                 siblings = {k: v for k, v in node.items() if k != "$ref"}
                 node.clear()
                 node.update(target)
                 node.update(siblings)
-        # now recurse
         for k, v in list(node.items()):
             node[k] = _deref_inplace(v, root, seen)
         return node
@@ -213,10 +202,6 @@ def _deref_inplace(node: Any, root: dict, seen: Set[int]) -> Any:
 
 
 def _deref_schema(root_schema: dict) -> dict:
-    """
-    Returns a deep-copied, dereferenced schema (local $ref only).
-    Good enough for sections.items.oneOf/anyOf and nested defs.
-    """
     cp = copy.deepcopy(root_schema or {})
     return _deref_inplace(cp, cp, set())
 
@@ -249,30 +234,17 @@ def build_ui_contract(db: Session, *, tenant_id: int, section_id: int) -> Dict[s
 
 # -------------------- JSON SCHEMA enriquecido con x-ui (lo que usa el editor) ---------
 def build_ui_jsonschema_for_active_section(db: Session, *, tenant_id: int, section_id: int) -> Dict[str, Any]:
-    """
-    Returns the effective JSON Schema with:
-      • local $ref expanded (so the editor can inspect oneOf/anyOf properties)
-      • registry UI hints applied as x-ui
-      • $version guaranteed
-    """
     ss = get_effective_schema(db, tenant_id=tenant_id, section_id=section_id)
     if not ss:
         raise LookupError("No active schema found for this section.")
-
-    # 1) Clone + dereference local $ref (key step to fix empty auto-form)
     schema: Dict[str, Any] = _deref_schema(ss.schema or {})
-
-    # 2) Apply UI overrides from registry into the JSON Schema (x-ui)
     reg = get_registry_for_section(db, section_id=section_id, tenant_id=tenant_id) or {}
     ui_meta = (reg.get("ui") or {})
     field_overrides: Dict[str, Dict[str, Any]] = ui_meta.get("fields") or {}
     if field_overrides:
         _apply_xui_overlays_to_jsonschema(schema, field_overrides)
-
-    # 3) Ensure "$version"
     if "$version" not in schema:
         schema["$version"] = ss.version
-
     return schema
 
 
@@ -281,3 +253,41 @@ def build_ui_contract_for_active_schema(db: Session, *, section_id: int, tenant_
     if tenant_id is None:
         raise ValueError("build_ui_contract_for_active_schema requires tenant_id for correctness.")
     return build_ui_jsonschema_for_active_section(db, tenant_id=tenant_id, section_id=section_id)
+
+
+# -------------------- Fallback for object-style pages (ANRO) --------------------
+_ANRO_LABELS = {
+    "navbar": "Navbar",
+    "hero": "Hero",
+    "intro": "Intro",
+    "approach": "Approach",
+    "featuredProjects": "Featured Projects",
+    "footer": "Footer",
+}
+
+_ANRO_ORDER = ["navbar", "hero", "intro", "approach", "featuredProjects", "footer"]
+
+def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Converts an object-style page (top-level keys) into the sections_ui structure
+    expected by templates/admin/page_edit.html.
+    """
+    sections_ui: List[Dict[str, Any]] = []
+    if not isinstance(data, dict):
+        return sections_ui
+
+    known = [k for k in _ANRO_ORDER if k in data]
+    extras = [k for k in data.keys() if k not in _ANRO_ORDER and k not in ("seo", "replace", "__draft")]
+    keys = known + extras
+
+    for idx, key in enumerate(keys):
+        sec = data.get(key) or {}
+        if isinstance(sec, dict) and "type" not in sec:
+            sec = {"type": _ANRO_LABELS.get(key, key), **sec}
+        label = _ANRO_LABELS.get(key, key.title())
+        sections_ui.append({
+            "index": idx,
+            "label": f"{idx+1:02d} · {label}",
+            "sec": sec,
+        })
+    return sections_ui

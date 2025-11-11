@@ -1,4 +1,3 @@
-# app/web/admin/router.py
 from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
@@ -16,8 +15,12 @@ from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
 
 # Enriched JSON Schema (with x-ui) for the auto-form
-from app.services.ui_schema_service import build_ui_jsonschema_for_active_section
+from app.services.ui_schema_service import (
+    build_ui_jsonschema_for_active_section,
+    build_sections_ui_fallback_for_object_page,  # NEW
+)
 
+# Optional server-side schema validation toggle
 ENABLE_SERVER_VALIDATION = False
 
 templates = Jinja2Templates(directory="app/templates")
@@ -180,6 +183,7 @@ def _build_form_model_from_active_schema(json_schema: dict, entry_data: dict) ->
 def _validate_against_schema(json_schema: dict, data_obj: dict) -> list[str]:
     if not ENABLE_SERVER_VALIDATION:
         return []
+    # Hook: integrate Draft 2020-12 if you want strict server-side validation
     return []
 
 
@@ -572,15 +576,15 @@ def page_edit_get(
 
     raw_sections = form_model.get("sections") or []
     sections_ui = []
-    for i, sec in enumerate(raw_sections):
-        t = (sec or {}).get("type") or "Block"
-        heading = (sec or {}).get("heading") or ""
-        label = f"{i+1:02d} · {t}" + (f" — {heading}" if heading else "")
-        sections_ui.append({
-            "index": i,
-            "label": label,
-            "sec": sec,
-        })
+    if isinstance(raw_sections, list) and raw_sections:
+        for i, sec in enumerate(raw_sections):
+            t = (sec or {}).get("type") or "Block"
+            heading = (sec or {}).get("heading") or ""
+            label = f"{i+1:02d} · {t}" + (f" — {heading}" if heading else "")
+            sections_ui.append({"index": i, "label": label, "sec": sec})
+    else:
+        # Fallback for object-style pages (ANRO)
+        sections_ui = build_sections_ui_fallback_for_object_page(form_model)
 
     return templates.TemplateResponse(
         "admin/page_edit.html",
@@ -645,11 +649,15 @@ def page_edit_post(
     except Exception as e:
         data = entry.data or {}
         sections = data.get("sections") or []
-        sections_ui = [{
-            "index": i,
-            "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-            "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
-        } for i, blk in enumerate(sections)]
+        sections_ui = []
+        if sections:
+            sections_ui = [{
+                "index": i,
+                "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+                "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+            } for i, blk in enumerate(sections)]
+        else:
+            sections_ui = build_sections_ui_fallback_for_object_page(data)
 
         return templates.TemplateResponse(
             "admin/page_edit.html",
@@ -683,11 +691,15 @@ def page_edit_post(
     errors = _validate_against_schema(json_schema, parsed)
     if errors:
         sections = parsed.get("sections") or []
-        sections_ui = [{
-            "index": i,
-            "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-            "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
-        } for i, blk in enumerate(sections)]
+        sections_ui = []
+        if sections:
+            sections_ui = [{
+                "index": i,
+                "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+                "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+            } for i, blk in enumerate(sections)]
+        else:
+            sections_ui = build_sections_ui_fallback_for_object_page(parsed)
 
         return templates.TemplateResponse(
             "admin/page_edit.html",
@@ -725,6 +737,13 @@ def page_edit_post(
     incoming_sections = payload.get("sections", None)
     replace_flag = bool(payload.get("replace", False))
     if incoming_has_sections_key and isinstance(incoming_sections, list) and len(incoming_sections) == 0 and not replace_flag:
+        # Build UI list from either sections[] or object-style
+        sections_ui = [{
+            "index": i,
+            "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+            "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+        } for i, blk in enumerate(base_data.get("sections") or [])] or build_sections_ui_fallback_for_object_page(base_data)
+
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
@@ -745,11 +764,7 @@ def page_edit_post(
                 "replace_val": replace_flag,
                 "seo_title": (payload.get("seo") or {}).get("title", (base_data.get("seo") or {}).get("title", "")),
                 "seo_desc": (payload.get("seo") or {}).get("description", (base_data.get("seo") or {}).get("description", "")),
-                "sections_ui": [{
-                    "index": i,
-                    "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-                    "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
-                } for i, blk in enumerate(base_data.get("sections") or [])],
+                "sections_ui": sections_ui,
                 "schema_ui_json": schema_ui_json,
                 "error": "Cannot clear sections without replace=true.",
                 "ok_message": None,
@@ -786,7 +801,7 @@ def page_edit_post(
         "index": i,
         "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
         "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
-    } for i, blk in enumerate(sections)]
+    } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after)
 
     return templates.TemplateResponse(
         "admin/page_edit.html",
@@ -839,9 +854,12 @@ def admin_publish_page(
     working = data_now.get("__draft") if isinstance(data_now.get("__draft"), dict) else None
     candidate = (working or data_now)
 
-    # Do not publish pages without sections
-    if not (isinstance(candidate, dict) and isinstance(candidate.get("sections"), list) and len(candidate["sections"]) > 0):
-        raise HTTPException(status_code=409, detail="Cannot publish an empty page (no sections). Save content first.")
+    # Allow publish if either sections[] has content OR object-style has meaningful blocks
+    has_sections = isinstance(candidate.get("sections"), list) and len(candidate["sections"]) > 0
+    object_keys = [k for k in candidate.keys() if k not in ("seo", "replace", "__draft")]
+    has_object_blocks = any(isinstance(candidate.get(k), dict) for k in object_keys)
+    if not (has_sections or has_object_blocks):
+        raise HTTPException(status_code=409, detail="Cannot publish an empty page. Save content first.")
 
     now = datetime.now(timezone.utc)
 

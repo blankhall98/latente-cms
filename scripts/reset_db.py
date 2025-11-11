@@ -11,3 +11,4 @@ with engine.begin() as conn:
     # Extensiones útiles si las usas
     conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto;"))
 print("[OK] public schema dropped & recreated")
+

@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/home/v1.json",
+  "title": "ANRO · Home v1",
+  "type": "object",
+  "x-ui": { "label": "ANRO · Home", "help": "Homepage blocks as a sections array", "order": ["seo","sections"] },
+  "properties": {
+    "seo": {
+      "type": "object",
+      "x-ui": { "label": "SEO", "help": "Page meta for search engines" },
+      "properties": {
+        "title": { "type": "string", "maxLength": 120, "x-ui": { "label": "SEO Title" } },
+        "description": { "type": "string", "maxLength": 240, "x-ui": { "label": "SEO Description" } }
+      },
+      "required": []
+    },
+    "sections": {
+      "type": "array",
+      "x-ui": { "label": "Sections" },
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/Navbar" },
+          { "$ref": "#/$defs/Hero" },
+          { "$ref": "#/$defs/Intro" },
+          { "$ref": "#/$defs/FeaturedProjects" },
+          { "$ref": "#/$defs/Approach" },
+          { "$ref": "#/$defs/Footer" }
+        ]
+      }
+    }
+  },
+  "required": ["sections"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "type": { "type": "string", "enum": ["image", "video"], "default": "image", "x-ui": { "label": "Type" } },
+        "url":  { "type": "string", "format": "uri", "x-ui": { "label": "URL" } },
+        "alt":  { "type": "string", "x-ui": { "label": "Alt" } }
+      },
+      "required": ["url"]
+    },
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link" },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Text" } },
+        "href":  { "type": "string", "x-ui": { "label": "URL/Path" } }
+      },
+      "required": ["label", "href"]
+    },
+
+    "Navbar": {
+      "type": "object",
+      "x-ui": { "label": "Navbar", "help": "Three fixed links" },
+      "properties": {
+        "type":   { "const": "Navbar" },
+        "left":   { "$ref": "#/$defs/Link", "x-ui": { "label": "Left Link" } },
+        "center": { "$ref": "#/$defs/Link", "x-ui": { "label": "Center Link" } },
+        "right":  { "$ref": "#/$defs/Link", "x-ui": { "label": "Right Link" } }
+      },
+      "required": ["type", "left", "center", "right"],
+      "x-ui:order": ["left","center","right"]
+    },
+
+    "Hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "help": "Background image + text" },
+      "properties": {
+        "type": { "const": "Hero" },
+        "background": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background" } },
+        "text": { "type": "string", "x-ui": { "label": "Hero Text", "placeholder": "THE WAY WE BUILD IS THE WAY WE LIVE" } }
+      },
+      "required": ["type","background","text"]
+    },
+
+    "Intro": {
+      "type": "object",
+      "x-ui": { "label": "Intro", "help": "Short statement below hero" },
+      "properties": {
+        "type": { "const": "Intro" },
+        "text": { "type": "string", "x-ui": { "label": "Intro Text" } }
+      },
+      "required": ["type","text"]
+    },
+
+    "Project": {
+      "type": "object",
+      "x-ui": {
+        "label": "Project",
+        "order": ["title","type","location","mainImage","secondaryImage","collaboration","area","client","team","structuralDesign","landscaping","illuminationDesign","awards","press"]
+      },
+      "properties": {
+        "title": { "type": "string", "x-ui": { "label": "Project Title" } },
+        "type": { "type": "string", "enum": ["Residential", "Commercial"], "x-ui": { "label": "Type" } },
+        "location": { "type": "string", "x-ui": { "label": "Location" } },
+        "mainImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Main Image" } },
+        "secondaryImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Secondary Image" } },
+        "collaboration": { "type": "string", "x-ui": { "label": "In collaboration with" } },
+        "area": { "type": "string", "x-ui": { "label": "Area" } },
+        "client": { "type": "string", "x-ui": { "label": "Client" } },
+        "team": { "type": "string", "x-ui": { "label": "Team" } },
+        "structuralDesign": { "type": "string", "x-ui": { "label": "Structural Design" } },
+        "landscaping": { "type": "string", "x-ui": { "label": "Landscaping" } },
+        "illuminationDesign": { "type": "string", "x-ui": { "label": "Illumination Design" } },
+        "awards": { "type": "array", "items": { "type": "string" }, "x-ui": { "label": "Selected awards", "addLabel": "Add award" } },
+        "press":  { "type": "array", "items": { "type": "string" }, "x-ui": { "label": "Selected press", "addLabel": "Add press item" } }
+      },
+      "required": ["title","type","location","mainImage","secondaryImage","collaboration","area","client","team","structuralDesign","landscaping","illuminationDesign"]
+    },
+
+    "FeaturedProjects": {
+      "type": "object",
+      "x-ui": { "label": "Featured Projects", "order": ["projects"] },
+      "properties": {
+        "type": { "const": "FeaturedProjects" },
+        "projects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Project" },
+          "x-ui": { "label": "Projects", "addLabel": "Add project" }
+        }
+      },
+      "required": ["type","projects"]
+    },
+
+    "Approach": {
+      "type": "object",
+      "x-ui": { "label": "Approach", "help": "Exactly 3 approaches" },
+      "properties": {
+        "type": { "const": "Approach" },
+        "subtitle": { "type": "string", "x-ui": { "label": "Subtitle" } },
+        "description": { "type": "string", "x-ui": { "label": "Description" } },
+        "motto": { "type": "string", "x-ui": { "label": "Motto" } },
+        "items": {
+          "type": "array",
+          "minItems": 3, "maxItems": 3, "additionalItems": false,
+          "items": {
+            "type": "object",
+            "x-ui": { "label": "Approach" },
+            "properties": {
+              "title": { "type": "string", "x-ui": { "label": "Title" } },
+              "description": { "type": "string", "x-ui": { "label": "Description" } },
+              "image": { "$ref": "#/$defs/Image", "x-ui": { "label": "Image" } }
+            },
+            "required": ["title","description","image"]
+          },
+          "x-ui": { "label": "Approaches (3 fixed)" }
+        }
+      },
+      "required": ["type","subtitle","description","motto","items"]
+    },
+
+    "Footer": {
+      "type": "object",
+      "x-ui": { "label": "Footer" },
+      "properties": {
+        "type": { "const": "Footer" },
+        "mainText": { "type": "string", "x-ui": { "label": "Footer Main Text" } },
+        "getInTouch": {
+          "type": "object",
+          "x-ui": { "label": "GET IN TOUCH" },
+          "properties": {
+            "telephone": { "type": "string", "x-ui": { "label": "Telephone", "formatHint": "phone" } },
+            "mail": { "type": "string", "format": "email", "x-ui": { "label": "Email" } },
+            "address": { "type": "string", "x-ui": { "label": "Address" } }
+          },
+          "required": ["telephone","mail","address"]
+        },
+        "letsConnect": {
+          "type": "object",
+          "x-ui": { "label": "LET’S CONNECT" },
+          "properties": {
+            "linkedIn": { "type": "string", "format": "uri", "x-ui": { "label": "LinkedIn URL" } },
+            "instagram": { "type": "string", "format": "uri", "x-ui": { "label": "Instagram URL" } }
+          },
+          "required": ["linkedIn","instagram"]
+        },
+        "copyright": { "type": "string", "x-ui": { "label": "Copyright" } },
+        "privacyPolicy": { "type": "string", "format": "uri", "x-ui": { "label": "Privacy Policy URL" } }
+      },
+      "required": ["type","mainText","getInTouch","letsConnect","copyright","privacyPolicy"]
+    }
+  }
+}
+

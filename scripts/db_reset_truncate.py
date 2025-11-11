@@ -18,7 +18,7 @@ TABLES = [
     "users",
 ]
 
-def run():
+def run() -> None:
     db = SessionLocal()
     try:
         db.execute(text("SET session_replication_role = 'replica';"))

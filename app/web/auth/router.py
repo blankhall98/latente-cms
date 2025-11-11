@@ -1,7 +1,7 @@
 # app/web/auth/router.py
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, and_
@@ -34,11 +34,12 @@ def _active_status_value() -> str | object:
 
 
 @router.get("/login")
-def login_get(request: Request):
-    # If already logged in, go to /admin
-    if (request.session or {}).get(SESSION_USER_KEY):
-        return RedirectResponse(url="/admin", status_code=302)
-    return templates.TemplateResponse("auth/login.html", {"request": request})
+def login_get(request: Request, next: str | None = Query(default=None)):
+    # If already logged in, go to /admin (or ?next=)
+    session = request.session or {}
+    if session.get(SESSION_USER_KEY):
+        return RedirectResponse(url=(next or "/admin"), status_code=302)
+    return templates.TemplateResponse("auth/login.html", {"request": request, "next": next or ""})
 
 
 @router.post("/login")
@@ -46,20 +47,31 @@ def login_post(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
+    next: str | None = Form(default=None),
     db: Session = Depends(get_db),
 ):
-    # 1) Validate user/password against DB (same as API)
-    user = db.scalar(select(User).where(User.email == email))
-    if not user or not verify_password(password, user.hashed_password or "") or not user.is_active:
-        ctx = {"request": request, "error": "Invalid credentials or inactive user."}
+    # 1) Normalize & validate credentials
+    email_norm = (email or "").strip().lower()
+    user = db.scalar(select(User).where(User.email == email_norm))
+    if not user or not verify_password(password or "", user.hashed_password or "") or not bool(user.is_active):
+        ctx = {
+            "request": request,
+            "error": "Invalid credentials or inactive user.",
+            "next": next or "",
+        }
         return templates.TemplateResponse("auth/login.html", ctx, status_code=401)
+
+    # Ensure session dict exists
+    if request.session is None:
+        # Starlette's SessionMiddleware guarantees a dict, but guard anyway
+        request.scope["session"] = {}
 
     # 2) Store a compact web-session user
     request.session[SESSION_USER_KEY] = {
         "id": int(user.id),
         "email": user.email,
-        "is_superadmin": bool(user.is_superadmin),
-        "full_name": user.full_name or "",
+        "is_superadmin": bool(getattr(user, "is_superadmin", False)),
+        "full_name": getattr(user, "full_name", "") or "",
     }
 
     # 3) If user has exactly one active project, set it as active_tenant
@@ -85,17 +97,21 @@ def login_post(
             "name": t.name,
         }
 
-    # 4) Go to dashboard
-    return RedirectResponse(url="/admin", status_code=302)
+    # 4) Redirect to next (sanitized) or dashboard
+    # Basic safety: only allow relative paths
+    target = next or "/admin"
+    if not target.startswith("/"):
+        target = "/admin"
+    return RedirectResponse(url=target, status_code=302)
 
 
 @router.post("/logout")
 def logout_post(request: Request):
-    request.session.clear()
+    (request.session or {}).clear()
     return RedirectResponse(url="/login", status_code=302)
 
 
 @router.get("/logout")
 def logout_get(request: Request):
-    request.session.clear()
+    (request.session or {}).clear()
     return RedirectResponse(url="/login", status_code=302)

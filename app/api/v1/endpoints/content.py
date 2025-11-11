@@ -844,14 +844,14 @@ def restore_entry_version_endpoint(
     entry.status = snap.status or "draft"
     entry.schema_version = snap.schema_version or entry.schema_version
 
-    from app.services.versioning_service import create_snapshot_for_entry
-    create_snapshot_for_entry(db, entry=entry, reason="restore", created_by=current_user_id)
+    # Snapshot after restore
+    create_entry_snapshot(db, entry=entry, reason="restore", created_by=current_user_id)
 
     audit_entry_action(
         db,
         tenant_id=tenant_id,
         entry=entry,
-        action=ContentAction.UPDATE,  # o ContentAction.RESTORE si lo usas
+        action=ContentAction.RESTORE,
         user_id=current_user_id,
         details={
             "reason": "restore",
@@ -865,4 +865,5 @@ def restore_entry_version_endpoint(
     db.commit()
     db.refresh(entry)
     return entry
+
 

@@ -1,15 +1,22 @@
-# app/content_registry.py
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, Any, Optional
+
+from dataclasses import dataclass, field
+from typing import Dict, Any, Optional, Literal
+
+
+EvolutionMode = Literal["additive_only", "free"]
+
 
 @dataclass
 class SectionMeta:
     key: str
     label: str
-    evolution_mode: str = "additive_only"  # additive_only | free
+    # "additive_only": solo cambios compatibles (agregar campos, marcar opcionales, etc.)
+    # "free": se permiten cambios que rompen compatibilidad (para fases de encaje)
+    evolution_mode: EvolutionMode = "additive_only"
     allow_breaking: bool = False
-    ui: Dict[str, Any] = None  # hints/widgets por tipo de campo
+    # Hints/widgets por tipo de campo o secciones. Usar default_factory para evitar dicts compartidos.
+    ui: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -20,27 +27,33 @@ class SectionMeta:
             "ui": self.ui or {},
         }
 
+
 def build_registry_for_tenant(tenant_id: Optional[int]) -> Dict[str, Dict[str, Any]]:
     """
-    Registry por tenant. Para OWA/LandingPages v2 habilitamos, temporalmente,
-    allow_breaking=True para facilitar el encaje del contenido real.
+    Registry por tenant.
+    Para OWA/LandingPages podemos permitir temporalmente allow_breaking=True mientras
+    normalizamos componentes y contenido real. En producción estable, volver a False.
     """
-    # Puedes especializar por tenant_id si lo deseas.
     owa_landing = SectionMeta(
         key="LandingPages",
         label="OWA Landing Pages",
         evolution_mode="additive_only",
-        allow_breaking=True,  # <- temporal mientras normalizamos los componentes
+        allow_breaking=True,  # ← temporal; revertir a False cuando el schema se congele
         ui={
+            # Campo de resumen para listados del Admin (breadcrumbs, grids, etc.)
             "summary_field": "seo.title",
+            # Preferencias de UI para el editor schema-driven
             "widgets": {
-                "sections": {"component_mode": "cards"},
+                "sections": {"component_mode": "cards"},  # UX de bloques como tarjetas
             },
         },
     )
 
-    # Devuelve un diccionario con meta por sección
+    # Nota: Si en el futuro diferenciamos por tenant_id, podemos ramificar aquí.
+    # p.ej. if tenant_id == TENANT_ANRO_ID: return {...} con metas específicas.
+
     return {
         "LandingPages": owa_landing.to_dict(),
     }
+
 

@@ -10,14 +10,15 @@ from app.db.session import get_db
 from app.models.auth import User
 from app.schemas.admin import UserCreate, UserUpdate, UserOut
 from app.deps.auth import get_current_user
-
 from app.services.passwords import get_password_hash
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+
 def _ensure_superadmin(current_user: User):
-    if not current_user.is_superadmin:
+    if not getattr(current_user, "is_superadmin", False):
         raise HTTPException(status_code=403, detail="Superadmin only")
+
 
 @router.get("", response_model=List[UserOut])
 def list_users(
@@ -28,11 +29,15 @@ def list_users(
     offset: int = Query(0, ge=0),
 ):
     _ensure_superadmin(current_user)
+
     stmt = select(User).order_by(User.id.asc())
     if q:
-        stmt = stmt.where(User.email.ilike(f"%{q}%"))
+        term = f"%{q.strip()}%"
+        stmt = stmt.where(User.email.ilike(term))
+
     users = db.execute(stmt.limit(limit).offset(offset)).scalars().all()
     return users
+
 
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(
@@ -46,27 +51,31 @@ def get_user(
         raise HTTPException(status_code=404, detail="User not found")
     return u
 
-@router.post("", response_model=UserOut, status_code=201)
+
+@router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     _ensure_superadmin(current_user)
-    if db.scalar(select(User).where(User.email == payload.email)):
+
+    email = payload.email.lower().strip()
+    if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=400, detail="Email already exists")
 
     u = User(
-        email=payload.email,
+        email=email,
         full_name=payload.full_name,
         is_active=payload.is_active,
-        is_superadmin=payload.is_superadmin or False,
+        is_superadmin=bool(payload.is_superadmin),
         hashed_password=get_password_hash(payload.password),
     )
     db.add(u)
     db.commit()
     db.refresh(u)
     return u
+
 
 @router.patch("/{user_id}", response_model=UserOut)
 def update_user(
@@ -87,8 +96,9 @@ def update_user(
     if patch.password:
         u.hashed_password = get_password_hash(patch.password)
     if patch.is_superadmin is not None:
-        u.is_superadmin = patch.is_superadmin
+        u.is_superadmin = bool(patch.is_superadmin)
 
     db.commit()
     db.refresh(u)
     return u
+

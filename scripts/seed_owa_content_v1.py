@@ -1,20 +1,22 @@
 # scripts/seed_owa_content_v1.py
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
+
 from app.db.session import SessionLocal
 from app.models.auth import Tenant
 from app.models.content import Section, Entry
 
 CONTENT_PATH = Path("content/owa/home_v1.json")
 
-def now_utc():
+def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
-def run(tenant_slug: str = "owa"):
+def run(tenant_slug: str = "owa") -> None:
     db: Session = SessionLocal()
     try:
         tenant = db.scalar(select(Tenant).where(Tenant.slug == tenant_slug))

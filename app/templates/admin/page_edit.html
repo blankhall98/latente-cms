@@ -5,13 +5,13 @@
 {% block content %}
 <section class="container my-4"
          id="z2h-edit-root"
-         data-tenant="{{ active_tenant.slug if active_tenant else '' }}"
-         data-tenant-id="{{ active_tenant.id if active_tenant else '' }}"
-         data-user-id="{{ user.id if user else '' }}"
-         data-section-key="{{ page.section_key if page.section_key else '' }}"
-         data-entry-id="{{ page.id }}"
-         data-entry-slug="{{ page.slug }}"
-         data-section-id="{{ page.section_id if page.section_id is defined else '' }}">
+         data-tenant="{{ active_tenant.slug|default('') }}"
+         data-tenant-id="{{ active_tenant.id|default('') }}"
+         data-user-id="{{ user.id|default('') }}"
+         data-section-key="{{ page.section_key|default('') }}"
+         data-entry-id="{{ page.id|default('') }}"
+         data-entry-slug="{{ page.slug|default('') }}"
+         data-section-id="{{ page.section_id|default('') }}">
 
   {% if schema_ui_json is defined and schema_ui_json %}
     <!-- 👇 Already JSON-serialized; don't tojson -->
@@ -26,9 +26,9 @@
         <div class="z2h-meta row gx-2 gy-1 mt-1">
           <div class="col-auto"><code class="z2h-chip code">/{{ page.slug }}</code></div>
           <div class="col-auto"><span class="z2h-chip">Section: <strong>{{ page.section_name }}</strong></span></div>
-          {% set s=(page.status or '').lower() %}
+          {% set s=(page.status or '')|lower %}
           <div class="col-auto">
-            <span id="z2h-status-chip" class="z2h-chip z2h-chip-status {{ s }}">{{ s }}</span>
+            <span id="z2h-status-chip" class="z2h-chip z2h-chip-status {{ s }}">{{ s or 'draft' }}</span>
           </div>
           <div class="col-auto"><span class="z2h-chip">Schema v{{ page.schema_version }}</span></div>
           <div class="col-auto d-none d-sm-inline"><span class="z2h-dot"></span><span class="z2h-save-txt">Saved</span></div>
@@ -64,7 +64,7 @@
         {% if sections_ui and sections_ui|length > 0 %}
           {% for it in sections_ui %}
             {% set _type = (it.get('sec') or {}).get('type', 'Block') %}
-            <button type="button" class="z2h-side-item" data-panel-id="panel-section-{{ it.index }}">
+            <button type="button" class="z2h-side-item" data-panel-id="panel-section-{{ it.index if it.index is defined else loop.index0 }}">
               <span class="z2h-side-label">{{ it.label }}</span>
               <span class="chip chip-type">{{ _type }}</span>
             </button>
@@ -114,9 +114,9 @@
         <!-- Panels per section -->
         {% for it in sections_ui %}
         {% set S = it.get('sec') or {} %}
-        <section id="panel-section-{{ it.index }}"
+        <section id="panel-section-{{ it.index if it.index is defined else loop.index0 }}"
                  class="z2h-panel d-none"
-                 data-section-index="{{ it.index }}"
+                 data-section-index="{{ it.index if it.index is defined else loop.index0 }}"
                  data-section-type="{{ S.type or '' }}"
                  tabindex="-1">
 
@@ -126,7 +126,7 @@
           </div>
 
           <!-- Seed the full section JSON for this panel -->
-          <script type="application/json" class="z2h-sec-json">{{ S | tojson }}</script>
+          <script type="application/json" class="z2h-sec-json">{{ S|tojson }}</script>
 
           <!-- Auto-Form (if schema UI exists) -->
           <div class="card p-3 mb-3">
@@ -256,10 +256,7 @@
 </section>
 
 <style>
-  /* Navbar merge helpers */
-  :root{
-    --nav-height: 64px; /* adjust to your navbar height */
-  }
+  :root{ --nav-height: 64px; }
 
   .z2h-chip{ display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .5rem; border-radius:999px;
              background:#faf8f5; border:1px solid var(--border); color:var(--text-2); font-size:.78rem; }
@@ -272,13 +269,20 @@
 
   .z2h-editor-grid-simple{ display:grid; grid-template-columns: 300px minmax(0,1fr); gap:16px; }
   @media (max-width: 991.98px){ .z2h-editor-grid-simple{ grid-template-columns: 1fr; } }
+
   .z2h-editor-sidebar{
     position:sticky;
-    top: calc(var(--nav-height) + 16px); /* sits right under a sticky navbar */
+    top: calc(var(--nav-height) + 16px);
     align-self:start; z-index: 1;
   }
 
-  .z2h-side-list{ border:1px solid var(--border); }
+  /* NEW: keep the side list scrollable & stable */
+  .z2h-side-list{
+    border:1px solid var(--border);
+    max-height: calc(100vh - var(--nav-height) - 16px - 74px); /* viewport minus header/search */
+    overflow: auto;
+  }
+
   .z2h-side-item{
     display:grid; grid-template-columns: 1fr auto; align-items:center;
     gap:.5rem; padding:.58rem .7rem; border:0; width:100%; background:transparent;
@@ -286,7 +290,7 @@
     transition: background-color .25s ease, color .25s ease;
   }
   .z2h-side-item.active{ background:var(--surface-2); color:var(--text-1); font-weight:700; }
-  .z2h-side-item:hover{ background:#f8f7f4; color:var(--text-1); }
+  .z2h-side-item:hover{ background:#f8f7f4; color: var(--text-1); } /* ← fixed typo */
 
   .chip{ font-size:.72rem; border-radius:999px; padding:.05rem .55rem; border:1px solid var(--border); background:#fff; color:#2f5fa8; }
   .chip-type{ min-width:88px; text-align:center; }
@@ -356,13 +360,40 @@
   }
 
   // --- Panel helpers
-  function showPanel(id){
+  function setActiveButtonById(panelId){
+    nav.querySelectorAll('.z2h-side-item').forEach(it=>{
+      const active = it.getAttribute('data-panel-id')===panelId;
+      it.classList.toggle('active', active);
+      if(active){
+        // keep the active item visible when the list is long
+        it.scrollIntoView({block:'nearest', inline:'nearest'});
+      }
+    });
+  }
+
+  function showPanel(id, {pushHash=true}={}){
     panels.forEach(p=>p.classList.add('d-none'));
     const el=document.getElementById(id);
-    if(el){ el.classList.remove('d-none'); el.focus(); }
-    nav.querySelectorAll('.z2h-side-item').forEach(it=>{ it.classList.toggle('active', it.getAttribute('data-panel-id')===id); });
+    if(el){
+      el.classList.remove('d-none');
+      // Focus without scrolling the whole page
+      try{ el.focus({preventScroll:true}); }catch(_){}
+      // Smooth scroll main to panel head
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+      setActiveButtonById(id);
+      if(pushHash){
+        // update hash so reload keeps the same panel
+        history.replaceState(null, '', '#'+id);
+      }
+    }
   }
-  showPanel('panel-general');
+
+  // Initial open: respect hash if present
+  (function initPanelFromHash(){
+    const hash = (location.hash||'').replace('#','');
+    const target = hash && document.getElementById(hash) ? hash : 'panel-general';
+    showPanel(target, {pushHash:false});
+  })();
 
   nav.addEventListener('click', (e)=>{
     const btn=e.target.closest('.z2h-side-item'); if(!btn) return;
@@ -370,19 +401,33 @@
     if(pid) showPanel(pid);
   });
 
-  // --- Finder
+  // --- Finder (won't hide active item)
   const finder=document.getElementById('z2h-section-search');
   function filterNav(){
     const q=(finder.value||'').toLowerCase();
+    const activeId = (nav.querySelector('.z2h-side-item.active')||{}).getAttribute?.('data-panel-id');
     nav.querySelectorAll('.z2h-side-item').forEach(it=>{
-      if(it.dataset.panelId==='panel-general'){ it.classList.remove('d-none'); return; }
+      const id = it.getAttribute('data-panel-id');
+      if(id==='panel-general'){ it.classList.remove('d-none'); return; }
       const txt=it.textContent.toLowerCase();
-      it.classList.toggle('d-none', !txt.includes(q));
+      const match = txt.includes(q);
+      // don't hide the active item even if it doesn't match
+      it.classList.toggle('d-none', !(match || id===activeId));
     });
   }
   finder.addEventListener('input', filterNav);
 
-  // --- Legacy repeaters
+  // Keyboard nav for sidebar (↑/↓ + Enter)
+  nav.addEventListener('keydown', (e)=>{
+    const items = Array.from(nav.querySelectorAll('.z2h-side-item:not(.d-none)'));
+    const current = document.activeElement.closest('.z2h-side-item');
+    const idx = items.indexOf(current);
+    if(e.key==='ArrowDown'){ e.preventDefault(); (items[idx+1]||items[0])?.focus(); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); (items[idx-1]||items[items.length-1])?.focus(); }
+    if(e.key==='Enter'){ e.preventDefault(); current?.click(); }
+  });
+
+  // --- Legacy repeaters (unchanged)
   function setDeep(obj, path, value){
     const parts=path.replace(/\]/g,'').split('.');
     let cur=obj;
@@ -470,7 +515,7 @@
     }
   })();
 
-  // --- Publish (non-blocking, no backdrop)
+  // --- Publish
   (function(){
     const publishBtn=document.getElementById('z2h-publish-btn');
     if(!publishBtn) return;
@@ -490,10 +535,7 @@
 
       const res = await fetch(`/admin/pages/${entryId}/publish?tenant_id=${encodeURIComponent(tenantId)}`, {
         method:'POST',
-        headers:{
-          'X-Requested-With':'fetch',
-          'Content-Type':'application/json'
-        },
+        headers:{ 'X-Requested-With':'fetch', 'Content-Type':'application/json' },
         credentials:'same-origin',
         body: JSON.stringify({ replace })
       });
@@ -517,7 +559,6 @@
         await callPublish();
         setStatusChip('published');
         flashOk('Published successfully.');
-        // Cache-bust Delivery link
         const btn = document.getElementById('z2h-delivery-btn');
         if(btn && btn.href){
           const u = new URL(btn.href, window.location.origin);
@@ -552,25 +593,17 @@
     if (!sectionId || !tenantId) return null;
 
     try{
-      // 👇 Fetch the RAW JSON Schema (not the UI contract)
       const url = `/api/v1/schemas/${encodeURIComponent(sectionId)}/active/raw?tenant_id=${encodeURIComponent(tenantId)}`;
       const res = await fetch(url, { headers: { 'X-Requested-With':'fetch' } });
-      if (!res.ok) {
-        console.warn('Schema fetch failed:', res.status, url);
-        return null;
-      }
+      if (!res.ok) { console.warn('Schema fetch failed:', res.status, url); return null; }
       const j = await res.json();
-      if (!j || typeof j !== 'object' || !j.properties) {
-        console.warn('Schema does not look like a JSON Schema object:', j);
-        return null;
-      }
+      if (!j || typeof j !== 'object' || !j.properties) { console.warn('Schema not JSON Schema-like:', j); return null; }
       SCHEMA_UI = j;
       return SCHEMA_UI;
-    } catch (e){
-      console.warn('Schema fetch error:', e);
-      return null;
-    }
+    } catch (e){ console.warn('Schema fetch error:', e); return null; }
   }
+
+  function canonical(x){ return (x ?? '').toString().trim().toLowerCase(); }
   function uiOf(node){ return (node && typeof node==='object' && (node['x-ui']||node['x_ui']||node['ui'])) || {}; }
   function orderKeys(props, ui){
     const keys=Object.keys(props||{});
@@ -578,6 +611,64 @@
     const ordSet=new Set(ord);
     const rest=keys.filter(k=>!ordSet.has(k));
     return [...ord, ...rest];
+  }
+  function hasUsefulProps(sub){
+    const props = (sub && sub.properties) || {};
+    const keys = Object.keys(props);
+    if (!keys.length) return false;
+    if (keys.length > 1) return true;
+    if (props.data && typeof props.data === 'object') return true;
+    return false;
+  }
+  function getSectionsRoot(schemaUI){
+    const props = (schemaUI && schemaUI.properties) || {};
+    const candidates = ['sections','blocks'];
+    for(const k of candidates){
+      if (props[k] && (props[k].type==='array' || props[k].items)) {
+        return { key:k, node: props[k] };
+      }
+    }
+    for(const [k,v] of Object.entries(props)){
+      if (v && (v.type==='array' || v.items)) {
+        const items = v.items || {};
+        if (Array.isArray(items.oneOf) && items.oneOf.length) return { key:k, node:v };
+        if (Array.isArray(items.anyOf) && items.anyOf.length) return { key:k, node:v };
+      }
+    }
+    return { key:'sections', node: props.sections || {} };
+  }
+
+  function pickSectionSubschema(schemaUI, sec){
+    const { node } = getSectionsRoot(schemaUI);
+    const sectionsDef = (node && node.items) || {};
+    const variants = sectionsDef.oneOf || sectionsDef.anyOf || [];
+    const t = canonical(sec?.type);
+
+    if (Array.isArray(variants) && variants.length){
+      let firstUseful=null;
+      for (const sub of variants){
+        const props=(sub && sub.properties) || {};
+        const ui = uiOf(sub);
+        const tConst = canonical(props?.type?.const);
+        const tEnums = Array.isArray(props?.type?.enum) ? props.type.enum.map(canonical) : [];
+        const tTitle = canonical(sub?.title);
+        const tLabel = canonical(ui?.label);
+        const tAlias = ui?.alias;
+        const aliasList = Array.isArray(tAlias) ? tAlias.map(canonical) : (tAlias ? [canonical(tAlias)] : []);
+
+        const matches =
+          (t && tConst && t===tConst) ||
+          (t && tEnums.includes(t)) ||
+          (t && tTitle===t) ||
+          (t && tLabel===t) ||
+          (t && aliasList.includes(t));
+
+        if (matches) return sub;
+        if (!firstUseful && hasUsefulProps(sub)) firstUseful=sub;
+      }
+      return firstUseful || variants[0];
+    }
+    return sectionsDef;
   }
 
   function renderField(path, schema, value, parent){
@@ -649,29 +740,12 @@
     wrap.appendChild(box); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap);
   }
 
-  function pickSectionSubschema(schemaUI, sec){
-    const sectionsDef = ((schemaUI?.properties||{}).sections||{}).items || {};
-    const one = sectionsDef.oneOf || sectionsDef.anyOf || [];
-    const t = (sec?.type)||'';
-    if(one && one.length){
-      for(const sub of one){
-        const props=sub?.properties||{};
-        if(props.type?.const && String(props.type.const)===String(t)) return sub;
-        if(Array.isArray(props.type?.enum) && props.type.enum.includes(t)) return sub;
-        const ui=uiOf(sub);
-        if((sub.title && sub.title===t) || (ui.label && ui.label===t)) return sub;
-      }
-      return one[0];
-    }
-    return sectionsDef;
-  }
-
   function renderSectionAutoForm(panel, schemaUI, secData){
     const host=panel.querySelector('.z2h-autoform'); if(!host) return;
     host.innerHTML='';
     const sub=pickSectionSubschema(schemaUI, secData);
-    if(!sub || !Object.keys(sub).length){ panel.querySelector('.z2h-legacy')?.setAttribute('open',''); return; }
-    const props=sub.properties||{}; const keys=Object.keys(props);
+    const props=sub && sub.properties ? sub.properties : {};
+    const keys=Object.keys(props||{});
     if(!keys.length){ panel.querySelector('.z2h-legacy')?.setAttribute('open',''); return; }
     const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
     keys.forEach(k=>{
@@ -753,17 +827,14 @@
         }
       }
 
-      // Anti-wipe: ensure at least {type} if the panel represents a section type
+      // Anti-wipe: ensure at least {type}
       const panelType = panel.getAttribute('data-section-type') || '';
-      if(isEmptySection(sec) && panelType){
-        sec = { type: panelType };
-      }
+      if(isEmptySection(sec) && panelType){ sec = { type: panelType }; }
 
       if(!isEmptySection(sec)) acc.push(sec);
     });
 
-    out.sections = acc; // always present
-
+    out.sections = acc;
     contentJson.value = JSON.stringify(out);
     return out;
   }
@@ -789,7 +860,7 @@
     setTimeout(()=>flashOk('Saved.'), 10);
   });
 
-  // --- Restore from Delivery
+  // --- Restore from Delivery (unchanged core)
   async function fetchDeliveryJSON(){
     const tenant=root?.dataset?.tenant||'';
     const section=root?.dataset?.sectionKey||'';
@@ -806,26 +877,17 @@
   }
 
   function fillLegacyInputsFromSection(panel, sec){
-    // Base
     const map = {
-      'type':'type',
-      'schema_version':'schema_version',
-      'eyebrow':'eyebrow',
-      'heading':'heading',
-      'subheading':'subheading',
-      'richText':'richText'
+      'type':'type','schema_version':'schema_version','eyebrow':'eyebrow',
+      'heading':'heading','subheading':'subheading','richText':'richText'
     };
     Object.entries(map).forEach(([k, dk])=>{
       const el = panel.querySelector(`[data-k="${dk}"]`);
       if(!el) return;
-      if(dk==='schema_version'){
-        el.value = (sec.schema_version ?? sec.schemaVersion ?? el.value ?? 1);
-      }else{
-        el.value = (sec[k] ?? sec[dk] ?? '');
-      }
+      if(dk==='schema_version'){ el.value = (sec.schema_version ?? sec.schemaVersion ?? el.value ?? 1); }
+      else{ el.value = (sec[k] ?? sec[dk] ?? ''); }
     });
 
-    // Media
     const mediaHost = panel.querySelector('.z2h-repeater[data-repeater="media"]');
     if(mediaHost){
       mediaHost.innerHTML='';
@@ -857,7 +919,6 @@
       });
     }
 
-    // Actions
     const actionsHost = panel.querySelector('.z2h-repeater[data-repeater="actions"]');
     if(actionsHost){
       actionsHost.innerHTML='';
@@ -882,22 +943,14 @@
       });
     }
 
-    // Advanced JSON
     const jsonArea=panel.querySelector('.z2h-json-editor');
     if(jsonArea){
-      try{
-        jsonArea.value = JSON.stringify(sec.data ?? {}, null, 2);
-        jsonArea.classList.remove('is-invalid');
-      }catch(_){
-        jsonArea.value = "{}";
-      }
+      try{ jsonArea.value = JSON.stringify(sec.data ?? {}, null, 2); jsonArea.classList.remove('is-invalid'); }
+      catch(_){ jsonArea.value = "{}"; }
     }
 
-    // Update the panel's seed to match Delivery (so re-renders use this)
     const seed = panel.querySelector('.z2h-sec-json');
-    if(seed){
-      try{ seed.textContent = JSON.stringify(sec || {}); }catch(_){}
-    }
+    if(seed){ try{ seed.textContent = JSON.stringify(sec || {}); }catch(_){ } }
   }
 
   async function restoreFromDelivery(){
@@ -907,12 +960,8 @@
     try{
       const payload = await fetchDeliveryJSON();
       const sections = payload?.data?.sections || payload?.sections || [];
-      if(!Array.isArray(sections) || sections.length===0){
-        flashErr('No sections found in Delivery payload.');
-        return;
-      }
+      if(!Array.isArray(sections) || sections.length===0){ flashErr('No sections found in Delivery payload.'); return; }
 
-      // Fill legacy inputs by index and update seeds
       const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
       const n = Math.min(sections.length, sectionPanels.length);
       for(let i=0;i<n;i++){
@@ -925,23 +974,18 @@
         fillLegacyInputsFromSection(panel, sec);
       }
 
-      // Re-render autoforms preferring the .z2h-sec-json seed
       const schema= await maybeFetchSchemaUI() || SCHEMA_UI;
       if(schema){
         sectionPanels.forEach((panel)=>{
-          // 1) Prefer JSON seed
           let secDataLegacy = {};
           const seed = panel.querySelector('.z2h-sec-json');
           if (seed) { try { secDataLegacy = JSON.parse(seed.textContent || '{}') || {}; } catch(_) {} }
-
-          // 2) Fallback to legacy controls if missing
           panel.querySelectorAll('[data-k]').forEach(el=>{
             const k=el.getAttribute('data-k'); if(!k) return;
             let v=el.value;
             if(k==='schema_version') v=Number(v||1);
             if (secDataLegacy[k] === undefined) secDataLegacy[k]=v;
           });
-          // 3) Advanced JSON → sec.data if not already set
           const jsonArea=panel.querySelector('.z2h-json-editor');
           if(jsonArea){
             try{
@@ -970,22 +1014,15 @@
     if(!schema) return;
     const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
     sectionPanels.forEach((panel)=>{
-      // 1) Prefer the full JSON seed we injected
       let secDataLegacy = {};
       const seed = panel.querySelector('.z2h-sec-json');
-      if (seed) {
-        try { secDataLegacy = JSON.parse(seed.textContent || '{}') || {}; } catch(_) {}
-      }
-
-      // 2) Fall back to legacy inputs while preserving existing keys from seed
+      if (seed) { try { secDataLegacy = JSON.parse(seed.textContent || '{}') || {}; } catch(_) {} }
       panel.querySelectorAll('[data-k]').forEach(el=>{
         const k=el.getAttribute('data-k'); if(!k) return;
         let v=el.value;
         if(k==='schema_version') v=Number(v||1);
         if (secDataLegacy[k] === undefined) secDataLegacy[k]=v;
       });
-
-      // 3) Advanced JSON -> sec.data if not already present
       const jsonArea=panel.querySelector('.z2h-json-editor');
       if(jsonArea){
         try{
@@ -1005,6 +1042,9 @@
 })();
 </script>
 {% endblock %}
+
+
+
 
 
 

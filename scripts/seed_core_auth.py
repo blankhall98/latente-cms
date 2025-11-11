@@ -1,5 +1,6 @@
 # scripts/seed_core_auth.py
 from __future__ import annotations
+
 from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,7 +9,8 @@ from app.db.session import SessionLocal
 from app.models.auth import User, Role, Permission, RolePermission
 from app.services.passwords import hash_password
 
-def now(): return datetime.now(timezone.utc)
+def now() -> datetime:
+    return datetime.now(timezone.utc)
 
 def get_or_create(db: Session, model, where: dict, create: dict | None = None):
     obj = db.scalar(select(model).filter_by(**where))
@@ -19,7 +21,7 @@ def get_or_create(db: Session, model, where: dict, create: dict | None = None):
     db.flush()
     return obj, True
 
-def run():
+def run() -> None:
     db: Session = SessionLocal()
     try:
         # Roles
@@ -30,19 +32,20 @@ def run():
             ("author", "Author"),
             ("viewer", "Viewer"),
         ]
-        role_map = {}
+        role_map: dict[str, Role] = {}
         for key, label in role_keys:
             r, _ = get_or_create(db, Role, {"key": key}, {"label": label, "is_system": True})
             role_map[key] = r
 
-        # Permisos
-        perm_keys = [
+        # Permisos (⬅️ añadimos org:members:manage porque lo usa /members)
+        perm_defs = [
             ("content:read", "Leer"),
             ("content:write", "Escribir"),
             ("content:publish", "Publicar"),
+            ("org:members:manage", "Gestionar miembros del tenant"),
         ]
-        perm_map = {}
-        for key, desc in perm_keys:
+        perm_map: dict[str, Permission] = {}
+        for key, desc in perm_defs:
             p, _ = get_or_create(db, Permission, {"key": key}, {"description": desc})
             perm_map[key] = p
 
@@ -51,12 +54,17 @@ def run():
             "viewer": ["content:read"],
             "author": ["content:read", "content:write"],
             "editor": ["content:read", "content:write", "content:publish"],
-            "tenant_admin": ["content:read", "content:write", "content:publish"],
-            "super_admin": ["content:read", "content:write", "content:publish"],
+            "tenant_admin": ["content:read", "content:write", "content:publish", "org:members:manage"],
+            "super_admin": ["content:read", "content:write", "content:publish", "org:members:manage"],
         }
         for rk, pks in matrix.items():
             for pk in pks:
-                get_or_create(db, RolePermission, {"role_id": role_map[rk].id, "permission_id": perm_map[pk].id}, {})
+                get_or_create(
+                    db,
+                    RolePermission,
+                    {"role_id": role_map[rk].id, "permission_id": perm_map[pk].id},
+                    {},
+                )
 
         # Superadmins (con hash real)
         for email, name, pwd in [
@@ -76,11 +84,12 @@ def run():
                     "updated_at": now(),
                 },
             )
-            if not created and not u.hashed_password:
+            # Si existía pero sin password (o vacío), setearlo
+            if not created and not getattr(u, "hashed_password", None):
                 u.hashed_password = hash_password(pwd)
 
         db.commit()
-        print("[OK] Roles, permisos y superadmins sembrados.")
+        print("[OK] Roles, permisos (incl. org:members:manage) y superadmins sembrados.")
     except Exception:
         db.rollback()
         raise
@@ -89,3 +98,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+

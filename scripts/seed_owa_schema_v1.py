@@ -1,9 +1,11 @@
 # scripts/seed_owa_schema_v1.py
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+
 from app.db.session import SessionLocal
 from app.models.auth import Tenant
 from app.models.content import Section, SectionSchema
@@ -19,7 +21,7 @@ def _get_or_create(db: Session, model, where: dict, create: dict | None = None):
     db.flush()
     return obj, True
 
-def run(tenant_slug: str = "owa"):
+def run(tenant_slug: str = "owa") -> None:
     db: Session = SessionLocal()
     try:
         tenant = db.scalar(select(Tenant).where(Tenant.slug == tenant_slug))
@@ -27,9 +29,10 @@ def run(tenant_slug: str = "owa"):
             raise RuntimeError(f"Tenant '{tenant_slug}' no existe. Crea primero el tenant.")
 
         section, _ = _get_or_create(
-            db, Section,
+            db,
+            Section,
             {"tenant_id": tenant.id, "key": "LandingPages"},
-            {"name": "Landing Pages", "description": "Página de inicio OWA (content-only v1)"}
+            {"name": "Landing Pages", "description": "Página de inicio OWA (content-only v1)"},
         )
 
         if not SCHEMA_PATH.exists():
@@ -37,9 +40,10 @@ def run(tenant_slug: str = "owa"):
         schema_v1 = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 
         ss, _ = _get_or_create(
-            db, SectionSchema,
+            db,
+            SectionSchema,
             {"tenant_id": tenant.id, "section_id": section.id, "version": 1},
-            {"title": "OWA Landing v1 (content-only)", "schema": schema_v1, "is_active": True}
+            {"title": "OWA Landing v1 (content-only)", "schema": schema_v1, "is_active": True},
         )
         ss.is_active = True  # asegurar activo
         db.commit()
