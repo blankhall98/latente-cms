@@ -1,3 +1,4 @@
+# app/web/admin/router.py
 from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
@@ -654,7 +655,7 @@ def page_edit_post(
             sections_ui = [{
                 "index": i,
                 "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-                "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+                "sec": (blk or {}),
             } for i, blk in enumerate(sections)]
         else:
             sections_ui = build_sections_ui_fallback_for_object_page(data)
@@ -696,7 +697,7 @@ def page_edit_post(
             sections_ui = [{
                 "index": i,
                 "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-                "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+                "sec": (blk or {}),
             } for i, blk in enumerate(sections)]
         else:
             sections_ui = build_sections_ui_fallback_for_object_page(parsed)
@@ -741,7 +742,7 @@ def page_edit_post(
         sections_ui = [{
             "index": i,
             "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-            "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+            "sec": (blk or {}),
         } for i, blk in enumerate(base_data.get("sections") or [])] or build_sections_ui_fallback_for_object_page(base_data)
 
         return templates.TemplateResponse(
@@ -800,7 +801,7 @@ def page_edit_post(
     sections_ui = [{
         "index": i,
         "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-        "json_str": json.dumps(blk or {}, ensure_ascii=False, indent=2),
+        "sec": (blk or {}),
     } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after)
 
     return templates.TemplateResponse(
@@ -910,5 +911,3 @@ def sections_json(
 
     data = [{"id": int(i), "key": k, "name": n} for (i, k, n) in rows]
     return JSONResponse({"sections": data})
-
-
