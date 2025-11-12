@@ -47,6 +47,23 @@ class Settings(BaseSettings):
     # ================== DB ==================
     DATABASE_URL: str
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _normalize_db_url(cls, v: str) -> str:
+        """
+        Heroku suele proveer DATABASE_URL como:
+          - postgres://user:pass@host/db
+        Para SQLAlchemy + psycopg3 queremos:
+          - postgresql+psycopg://user:pass@host/db
+        """
+        if not v:
+            return v
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+psycopg://", 1)
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
+
     # ================= CORS =================
     BACKEND_CORS_ORIGINS: List[Union[str, AnyHttpUrl]] = []
 
@@ -107,4 +124,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

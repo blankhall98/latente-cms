@@ -140,26 +140,20 @@ def main() -> None:
     # 7) Default editors
     add_member(
         email="hello@owawellness.com",
-        password="owa123",
+        password="owa_password",
         full_name="OWA Editor",
         tenant_slug="owa",
         role_key="editor",
     )
     add_member(
         email="studio@anro.com",
-        password="anro123",
+        password="anro_password",
         full_name="ANRO Editor",
         tenant_slug="anro",
         role_key="editor",
     )
 
     print("\n✅ All done.")
-    print("• Superadmins: zero2hero@demo.com / latente@demo.com (admin123)")
-    print("• OWA editor:  hello@owawellness.com / owa123")
-    print("• ANRO editor: studio@anro.com / anro123")
-    print("\nDelivery examples (once content exists):")
-    print("  /delivery/v1/tenants/owa/sections/landing_pages/entries/home")
-    print("  /delivery/v1/tenants/anro/sections/home/entries/home")
 
 
 if __name__ == "__main__":

@@ -14,10 +14,13 @@ from app.core.config import create_app
 from app.core.logging import configure_logging
 from app.core.settings import settings
 
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
 
 app = create_app()
 configure_logging()
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 def _inject_bearer_security(app):
     """
