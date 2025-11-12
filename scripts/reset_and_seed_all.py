@@ -1,18 +1,17 @@
-# scripts/reset_and_seed_all.py
 from __future__ import annotations
 
 """
-One-shot local bootstrap:
+One-shot local bootstrap (DESTRUCTIVE):
 
 1) Drop & recreate the public schema
 2) Run Alembic migrations to head (via Alembic API)
 3) Seed core auth (roles/permissions + superadmins)
 4) Create tenants: OWA and ANRO
 5) Load JSON Schemas from app/schemas/<tenant>/<section>/vX.json (activates highest version per section)
-6) Seed content for each tenant if content JSON exists
+6) Seed content for each tenant if content JSON exists (OWA: home; ANRO: home/about/legacy_court/portfolio)
 7) Create default tenant members (editors) for OWA and ANRO
 
-Run:
+Run locally:
     python -m scripts.reset_and_seed_all
 """
 
@@ -53,8 +52,6 @@ def alembic_upgrade_head() -> None:
     # Ensure we point to the repo's alembic.ini
     ini_path = (ROOT / "alembic.ini").as_posix()
     cfg = Config(ini_path)
-    # If your alembic.ini doesn't set script_location, uncomment:
-    # cfg.set_main_option("script_location", "migrations")
     command.upgrade(cfg, "head")
     print("🔼 Alembic upgrade head OK")
 
@@ -122,20 +119,17 @@ def main() -> None:
     # 6) Seed content
     _maybe_seed_content(
         tenant="owa",
-        section_key="landing_pages",  # ✅ match section key created by schema loader
+        section_key="landing_pages",  # must match the section key created by schema loader
         slug="home",
         content_path="content/owa/home_v1.json",
         schema_version=None,
         publish=True,
     )
-    _maybe_seed_content(
-        tenant="anro",
-        section_key="home",
-        slug="home",
-        content_path="content/anro/home_v1.json",
-        schema_version=None,
-        publish=True,
-    )
+    # ANRO: seed ALL pages if files exist
+    _maybe_seed_content("anro", "home",         "home",          "content/anro/home_v1.json",         publish=True)
+    _maybe_seed_content("anro", "about",        "about",         "content/anro/about_v1.json",        publish=True)
+    _maybe_seed_content("anro", "legacy_court", "legacy-court",  "content/anro/legacy_court_v1.json", publish=True)
+    _maybe_seed_content("anro", "portfolio",    "portfolio",     "content/anro/portfolio_v1.json",    publish=True)
 
     # 7) Default editors
     add_member(
@@ -153,11 +147,17 @@ def main() -> None:
         role_key="editor",
     )
 
-    print("\n✅ All done.")
+    print("\n✅ All done (local reset). Delivery samples:")
+    print("  /delivery/v1/tenants/owa/sections/landing_pages/entries/home")
+    print("  /delivery/v1/tenants/anro/sections/home/entries/home")
+    print("  /delivery/v1/tenants/anro/sections/about/entries/about")
+    print("  /delivery/v1/tenants/anro/sections/legacy_court/entries/legacy-court")
+    print("  /delivery/v1/tenants/anro/sections/portfolio/entries/portfolio")
 
 
 if __name__ == "__main__":
     main()
+
 
 
 
