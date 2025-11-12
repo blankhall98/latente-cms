@@ -28,7 +28,6 @@ class Settings(BaseSettings):
     # Helpers de expiración normalizados
     @property
     def ACCESS_MIN(self) -> int:
-        # si definiste el viejo nombre, úsalo; si no, el nuevo
         return int(self.JWT_ACCESS_EXPIRE_MIN or self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
 
     @property
@@ -47,22 +46,24 @@ class Settings(BaseSettings):
     # ================== DB ==================
     DATABASE_URL: str
 
-    @field_validator("DATABASE_URL", mode="before")
-    @classmethod
-    def _normalize_db_url(cls, v: str) -> str:
+    @property
+    def SQLALCHEMY_DATABASE_URL(self) -> str:
         """
-        Heroku suele proveer DATABASE_URL como:
+        Normalize URLs for SQLAlchemy using psycopg2 driver on Heroku.
+        Heroku commonly provides:
           - postgres://user:pass@host/db
-        Para SQLAlchemy + psycopg3 queremos:
-          - postgresql+psycopg://user:pass@host/db
+        We want:
+          - postgresql+psycopg2://user:pass@host/db
+        Also coerce any psycopg v3 slug to psycopg2.
         """
-        if not v:
-            return v
-        if v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql+psycopg://", 1)
-        if v.startswith("postgresql://"):
-            return v.replace("postgresql://", "postgresql+psycopg://", 1)
-        return v
+        url = self.DATABASE_URL or ""
+        if url.startswith("postgres://"):
+            return url.replace("postgres://", "postgresql+psycopg2://", 1)
+        if url.startswith("postgresql://"):
+            return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        if url.startswith("postgresql+psycopg://"):
+            return url.replace("postgresql+psycopg://", "postgresql+psycopg2://", 1)
+        return url
 
     # ================= CORS =================
     BACKEND_CORS_ORIGINS: List[Union[str, AnyHttpUrl]] = []
@@ -70,6 +71,7 @@ class Settings(BaseSettings):
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def _parse_cors(cls, v):
+        # Accept JSON list or comma-separated string or empty
         if v in (None, "", []):
             return []
         if isinstance(v, (list, tuple)):
@@ -105,8 +107,36 @@ class Settings(BaseSettings):
     WEBHOOKS_MAX_RETRIES: int = int(os.getenv("WEBHOOKS_MAX_RETRIES", "3"))
     WEBHOOKS_BACKOFF_SECONDS: float = float(os.getenv("WEBHOOKS_BACKOFF_SECONDS", "0.5"))
     WEBHOOKS_SYNC_FOR_TEST: bool = os.getenv("WEBHOOKS_SYNC_FOR_TEST", "false").lower() == "true"
-    WEBHOOKS_DEFAULT_EVENTS: List[str] = Field(default_factory=lambda: ["content.published","content.unpublished","content.archived"])
+    WEBHOOKS_DEFAULT_EVENTS: List[str] = Field(
+        default_factory=lambda: ["content.published", "content.unpublished", "content.archived"]
+    )
     WEBHOOKS_SIGNING_ALG: str = "HMAC-SHA256"
+
+    @field_validator("WEBHOOKS_DEFAULT_EVENTS", mode="before")
+    @classmethod
+    def _parse_webhook_events(cls, v):
+        """
+        Accept JSON list (preferred) or bracket/comma string like:
+        ["a","b"]  or  [a,b]  or  a,b
+        """
+        if v in (None, "", []):
+            return ["content.published", "content.unpublished", "content.archived"]
+        if isinstance(v, (list, tuple)):
+            return [str(x) for x in v]
+        if isinstance(v, str):
+            s = v.strip()
+            if s.startswith("[") and s.endswith("]"):
+                # try strict JSON first
+                try:
+                    parsed = json.loads(s)
+                    if isinstance(parsed, list):
+                        return [str(x) for x in parsed]
+                except Exception:
+                    # fallback: strip brackets and split
+                    s = s[1:-1]
+            # comma-separated fallback
+            return [item.strip().strip('"').strip("'") for item in s.split(",") if item.strip()]
+        return v
 
     # ======== Cookies de sesión (UI admin) ========
     SESSION_COOKIE_NAME: str = "latente_session"
@@ -124,3 +154,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
