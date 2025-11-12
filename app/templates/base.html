@@ -24,43 +24,80 @@
     #main-content { flex:1 0 auto; }
     .z2h-footer { flex-shrink:0; }
 
-    /* ---------- Botón logout: estilo + efecto ---------- */
-    .z2h-logout{
-      position:relative;
-      overflow:hidden;
-      background:#fff; color:var(--text-1);
-      border:1px solid var(--border); border-radius:12px;
-      transition: color .2s ease, border-color .2s ease, background-color .2s ease, transform .06s ease;
-      will-change: transform;
-      --shine: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.6) 50%, transparent 100%);
+    /* ---------- Logout button: replicate login CTA effect (red palette) ---------- */
+    :root{
+      /* lighter static base + darker fill for logout */
+      --grad-logout-base: linear-gradient(135deg, #ffd9d9 0%, #ffe9e9 100%);
+      --grad-logout-fill: linear-gradient(135deg, #ef6666 0%, #e94d4d 100%);
     }
-    .z2h-logout:hover{ color:#222; border-color: var(--border); background:#fff; }
-    .z2h-logout:active{ transform: translateY(1px); }
 
-    /* Shine sweep */
+    .z2h-logout{
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+
+      /* look & sizing to fit navbar */
+      padding: .42rem .75rem;
+      font-size: .82rem;
+      line-height: 1;
+
+      /* base like login CTA (but red) */
+      background: var(--grad-logout-base);
+      border: 1px solid #f3b2b2;
+      color: #3d0f0f;
+
+      box-shadow: 0 10px 22px rgba(233, 77, 77, .10);
+      transition: color .36s ease, box-shadow .48s ease;
+    }
+    .z2h-logout > span { position: relative; z-index: 2; }
+
+    /* Layer 1: darker fill slides in from left (slow, like login) */
     .z2h-logout::before{
       content:"";
-      position:absolute; top:0; left:-150%;
-      width:120%; height:100%;
-      background: var(--shine);
-      transform: skewX(-15deg);
-      opacity:.0; pointer-events:none;
-    }
-    .z2h-logout:hover::before{
-      animation: z2hShine .9s ease forwards;
-      opacity:.9;
-    }
-    @keyframes z2hShine{
-      0%{ left:-150%; opacity:.0; }
-      10%{ opacity:.35; }
-      100%{ left:130%; opacity:0; }
-    }
-    @media (prefers-reduced-motion: reduce){
-      .z2h-logout{ transition:none; }
-      .z2h-logout:hover::before{ animation:none; opacity:0; }
+      position:absolute; inset:0;
+      background: var(--grad-logout-fill);
+      transform: translateX(-100%);
+      transition: transform 2.2s cubic-bezier(.22,.61,.36,1);
+      z-index:1;
     }
 
-    /* Ripple circle (se pinta vía JS con <span>) */
+    /* Layer 2: soft wave edge (also slow) */
+    .z2h-logout::after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(28px 12px at 24px 50%, rgba(255,255,255,.26) 48%, transparent 52%) repeat-x,
+        radial-gradient(28px 12px at 12px 50%, rgba(255,255,255,.16) 48%, transparent 52%) repeat-x;
+      background-size: 56px 100%, 56px 100%;
+      background-position: 0 0, 0 0;
+      opacity: .28;
+      transform: translateX(-100%);
+      transition: transform 2.7s cubic-bezier(.22,.61,.36,1);
+      z-index:1;
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+    }
+
+    .z2h-logout:hover{
+      box-shadow: 0 12px 26px rgba(233, 77, 77, .14);
+    }
+    .z2h-logout:hover::before{ transform: translateX(0); }
+    .z2h-logout:hover::after{ transform: translateX(0); }
+    .z2h-logout:active{ transform: none; } /* no bounce */
+
+    @media (prefers-reduced-motion: reduce){
+      .z2h-logout::before,
+      .z2h-logout::after{
+        transition: none !important;
+        transform: none !important;
+      }
+      .z2h-logout{ transition: none !important; }
+    }
+
+    /* Ripple circle (drawn via JS with <span>) */
     .z2h-ripple{
       position:absolute; border-radius:50%;
       transform: scale(0); pointer-events:none;
@@ -114,8 +151,10 @@
            {% if is_projects %}aria-current="page"{% endif %}>Projects</a>
 
         <form action="/logout" method="post" class="ms-2" aria-label="Sign out">
-          <!-- efecto restaurado -->
-          <button class="btn btn-outline btn-sm z2h-logout" type="submit" id="z2h-logout-btn" data-ripple>Log out</button>
+          <!-- Same effect as login CTA, in red -->
+          <button class="btn btn-sm z2h-logout" type="submit" id="z2h-logout-btn">
+            <span>Log out</span>
+          </button>
         </form>
       </div>
     </div>
@@ -167,7 +206,7 @@
       }catch(_){}
     };
 
-    // Ripple click para el botón de logout (restaurado)
+    // Ripple click para el botón de logout
     (function(){
       const btn = document.getElementById('z2h-logout-btn');
       if(!btn) return;
@@ -191,11 +230,3 @@
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
-
-
-
-
-
-
-
-

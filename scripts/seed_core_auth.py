@@ -68,8 +68,8 @@ def run() -> None:
 
         # Superadmins (con hash real)
         for email, name, pwd in [
-            ("zero2hero@demo.com", "Zero2Hero Admin", "admin123"),
-            ("latente@demo.com", "Latente Admin", "admin123"),
+            ("zero2hero@admin.com", "Zero2Hero Admin", "zero2hero_admin"),
+            ("hola@latentestudio.com", "Latente Admin", "Latente.Crud25"),
         ]:
             u, created = get_or_create(
                 db,

@@ -35,14 +35,43 @@
           </div>
         </div>
 
-        <div class="d-flex flex-wrap gap-2">
-          <!-- Siempre en el DOM; se muestra con JS cuando hay tenant/section/slug -->
-          <a class="btn btn-outline d-none d-md-inline" id="z2h-delivery-btn" target="_blank" rel="noopener">Delivery JSON</a>
-          <button type="button" class="btn btn-outline d-none d-md-inline" id="z2h-restore-btn" title="Load from published Delivery JSON">Recover</button>
-          <button type="button" class="btn btn-outline d-none d-md-inline" id="z2h-publish-btn" title="Save changes first">Publish</button>
-          <a class="btn btn-outline" href="/admin/pages">Cancel</a>
-          <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
+        <!-- Polished actions bar (behaviour unchanged) -->
+        <div class="btn-toolbar z2h-actions gap-2" role="toolbar" aria-label="Primary & advanced actions">
+          <div class="btn-group me-1" role="group" aria-label="Primary actions">
+            <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
+            <button type="button" class="btn btn-outline" id="z2h-publish-btn" title="Save changes first">Publish</button>
+            <a class="btn btn-outline" href="/admin/pages">Cancel</a>
+          </div>
+
+          <!-- Advanced Actions dropdown (contains Delivery JSON + Recover) -->
+          <div class="btn-group" role="group">
+            <button type="button"
+                    class="btn btn-outline dropdown-toggle z2h-adv-toggle"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-haspopup="true">
+              Advanced Actions
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow z2h-adv-menu" role="menu" aria-label="Advanced actions">
+              <li role="none">
+                <a role="menuitem"
+                   class="dropdown-item d-none"
+                   id="z2h-delivery-btn"
+                   target="_blank"
+                   rel="noopener">Delivery JSON</a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li role="none">
+                <button role="menuitem"
+                        type="button"
+                        class="dropdown-item d-none"
+                        id="z2h-restore-btn"
+                        title="Load from published Delivery JSON">Recover</button>
+              </li>
+            </ul>
+          </div>
         </div>
+        <!-- /actions -->
       </div>
     </div>
   </header>
@@ -55,20 +84,22 @@
 
   <!-- Editor layout -->
   <form id="z2h-edit-form" class="z2h-editor" method="post" action="" novalidate>
-    <!-- Sidebar (fijo) -->
+    <!-- Sidebar (fixed style; NOT scrollable inside) -->
     <aside class="z2h-sections-nav" aria-label="Section navigator">
       <div class="mb-2">
         <label class="form-label small mb-1" for="z2h-section-search">Find section</label>
         <input type="search" id="z2h-section-search" class="form-control" placeholder="Type to filter…">
       </div>
 
-      <nav id="z2h-side-nav" class="d-flex flex-column gap-1 z2h-side-list" role="tablist" aria-orientation="vertical">
+      <nav id="z2h-side-nav" class="z2h-side-list" role="tablist" aria-orientation="vertical">
+        <!-- Item -->
         <button type="button" class="z2h-side-item active" data-panel-id="panel-general" aria-controls="panel-general" role="tab" aria-selected="true">
-          <span class="z2h-side-label">General</span><span class="chip chip-type chip-lg"><span class="chip-dot"></span>SEO</span>
+          <span class="z2h-side-deco" aria-hidden="true"></span>
+          <span class="z2h-side-label">General</span>
         </button>
+
         {% if sections_ui and sections_ui|length > 0 %}
           {% for it in sections_ui %}
-            {% set _type = (it.get('sec') or {}).get('type', 'Block') %}
             {% set _pid  = 'panel-section-' ~ (it.index if it.index is defined else loop.index0) %}
             <button type="button"
                     class="z2h-side-item"
@@ -76,8 +107,8 @@
                     aria-controls="{{ _pid }}"
                     role="tab"
                     aria-selected="false">
+              <span class="z2h-side-deco" aria-hidden="true"></span>
               <span class="z2h-side-label">{{ it.label }}</span>
-              <span class="chip chip-type chip-lg"><span class="chip-dot"></span>{{ _type }}</span>
             </button>
           {% endfor %}
         {% else %}
@@ -128,7 +159,7 @@
 
           <div class="z2h-panel-head d-flex align-items-center justify-content-between mb-2">
             <h2 class="z2h-panel-title text-uppercase small fw-bold m-0">{{ it.label }}</h2>
-            <span class="z2h-panel-sub text-muted">Block editor</span>
+            <span class="text-muted">Block editor</span>
           </div>
 
           <!-- Seed the full section JSON for this panel -->
@@ -263,14 +294,27 @@
       </div>
     </main>
   </form>
+
+  <!-- Back to Top -->
+  <button id="z2h-back-top" class="z2h-back-top" type="button" aria-label="Back to top">↑ Top</button>
 </section>
 
 <!-- Component-scoped helpers (small) -->
 <style>
-  :root{ --nav-height: 64px; }
+  :root{
+    --nav-height: 64px;
+  }
 
   /* Toolbar */
   .z2h-toolbar{ background:#fff; }
+
+  /* Actions bar polish */
+  .z2h-actions .btn{ border-radius: 10px; }
+  .z2h-adv-toggle{ position: relative; }
+  .z2h-adv-toggle::after{ transform: translateY(2px); }
+  .z2h-adv-menu{ min-width: 220px; border-radius: 12px; border:1px solid var(--border); }
+  .z2h-adv-menu .dropdown-item{ font-weight: 600; }
+  .z2h-adv-menu .dropdown-item:hover{ background: #f3f6ff; }
 
   /* Soft divider (gradiente) */
   .z2h-soft-divider{
@@ -278,7 +322,7 @@
     background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.08), rgba(0,0,0,0));
   }
 
-  /* Chips y estado (ahora con variante grande) */
+  /* Chips (header only) */
   .z2h-chip{ display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .5rem; border-radius:999px;
              background:#faf8f5; border:1px solid var(--border); color:var(--text-2); font-size:.78rem; }
   .z2h-chip--lg{ padding:.28rem .65rem; font-size:.86rem; }
@@ -299,6 +343,7 @@
     .z2h-editor{ grid-template-columns: 1fr; }
   }
 
+  /* ======= Side menu (modern, no chips, no inner scroll) ======= */
   .z2h-sections-nav{
     position:sticky;
     top: calc(var(--nav-height) + 16px);
@@ -307,29 +352,44 @@
   }
   .z2h-side-list{
     border:1px solid var(--border);
-    max-height: calc(100vh - var(--nav-height) - 16px - 74px);
-    overflow:auto;
-    background:#fff;
-    border-radius:.9rem;
+    background:
+      radial-gradient(600px 240px at 10% -10%, rgba(110,158,230,.05), transparent 60%),
+      #fff;
+    border-radius:14px;
     padding:.6rem;
+    box-shadow: 0 10px 26px rgba(0,0,0,.05);
   }
-
   .z2h-side-item{
-    display:grid; grid-template-columns:1fr auto; align-items:center;
-    gap:.6rem; padding:.68rem .8rem; border:1px solid transparent; width:100%; background:transparent;
-    text-align:left; border-radius:10px; margin:.14rem 0; cursor:pointer; color:var(--text-2);
-    transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+    position: relative;
+    display:flex; align-items:center;
+    gap:.8rem; padding:.78rem .9rem; border:1px solid transparent; width:100%; background:transparent;
+    text-align:left; border-radius:12px; margin:.12rem 0; cursor:pointer; color:var(--text-2);
+    transition: background-color .22s ease, color .22s ease, border-color .22s ease, transform .18s ease;
   }
-  .z2h-side-item:hover{ background:#f8f7f4; color: var(--text-1); border-color:#eee6dc; }
-  .z2h-side-item.active{ background:var(--surface-2); color:#14233f; font-weight:700; border-color:#eadfce; }
-
-  .chip{ font-size:.78rem; border-radius:999px; padding:.12rem .6rem; border:1px solid var(--border); background:#fff; color:#2f5fa8; }
-  .chip-lg{ font-size:.85rem; padding:.18rem .68rem; }
-  .chip-type{ min-width:96px; text-align:center; }
-  .chip-type .chip-dot{
-    display:inline-block; width:.45rem; height:.45rem; border-radius:999px; background:rgba(110,158,230,.9); margin-right:.25rem; vertical-align:middle;
+  .z2h-side-item .z2h-side-deco{
+    width:6px; height:18px; border-radius:6px;
+    background: #e8eefc;
+    transition: box-shadow .2s ease, background .2s ease;
   }
-  .z2h-side-item.active .chip-type{ background:#f2f7ff; border-color:#dbe8ff; color:#244d8a; }
+  .z2h-side-item:hover{
+    background:#f8f7f4; color: var(--text-1); border-color:#eee6dc;
+    transform: translateX(1px);
+  }
+  .z2h-side-item.active{
+    background:linear-gradient(90deg, #f5f8ff 0%, #ffffff 70%);
+    color:#132c55; font-weight:750; border-color:#dbe7ff;
+    box-shadow: inset 0 0 0 1px #e9f0ff, 0 4px 10px rgba(37,74,147,.06);
+  }
+  .z2h-side-item.active .z2h-side-deco{
+    background: linear-gradient(180deg, #6e9ee6, #89c2d9);
+    box-shadow: 0 0 0 6px rgba(110,158,230,.14);
+  }
+  .z2h-side-label{
+    font-size:.95rem;
+    letter-spacing:.01em;
+    font-weight:600;
+  }
+  .z2h-side-empty{ padding:.6rem .9rem; color:var(--text-2); }
 
   /* Panels / forms */
   .z2h-panel{ outline:none; }
@@ -350,6 +410,30 @@
 
   /* Invalid */
   .is-invalid{ border-color:#ef4444 !important; box-shadow:0 0 0 .18rem rgba(239,68,68,.16) !important; }
+
+  /* Back to Top */
+  .z2h-back-top{
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 999px;
+    padding: .55rem .9rem;
+    box-shadow: 0 8px 22px rgba(0,0,0,.08);
+    font-weight: 700;
+    font-size: .85rem;
+    color: #244d8a;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    transform: translateY(8px);
+  }
+  .z2h-back-top.show{
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
 </style>
 
 {% endblock %}
@@ -393,6 +477,8 @@
   const saverTxt=document.querySelector('.z2h-save-txt');
   const publishBtn=document.getElementById('z2h-publish-btn');
   const restoreBtn=document.getElementById('z2h-restore-btn');
+  const backTop=document.getElementById('z2h-back-top');
+  const searchBox=document.getElementById('z2h-section-search');
 
   function flashOk(m){ if(window.z2hFlash) z2hFlash(m||'Done.','success'); }
   function flashErr(m){ if(window.z2hFlash) z2hFlash(m||'Something went wrong.','error'); }
@@ -419,7 +505,7 @@
     if(el){
       el.classList.remove('d-none');
       try{ el.focus({preventScroll:true}); }catch(_){}
-      el.scrollIntoView({behavior:'smooth', block:'start'});
+      /* Removed element scroll; we handle page scroll-to-top on menu click */
       setActiveButtonById(id);
       if(pushHash){ history.replaceState(null, '', '#'+id); }
     }
@@ -429,11 +515,31 @@
     const target = hash && document.getElementById(hash) ? hash : 'panel-general';
     showPanel(target, {pushHash:false});
   })();
+
+  /* ✅ FIX 1: Side-menu filter restored (keeps "General" visible) */
+  function applySideFilter(q){
+    const query=(q||'').trim().toLowerCase();
+    const items=[...nav.querySelectorAll('.z2h-side-item')];
+    items.forEach(btn=>{
+      const pid = btn.getAttribute('data-panel-id')||'';
+      const label = (btn.querySelector('.z2h-side-label')?.textContent||'').toLowerCase();
+      const isGeneral = pid === 'panel-general';
+      const match = !query || isGeneral || label.includes(query);
+      btn.classList.toggle('d-none', !match);
+    });
+  }
+  searchBox?.addEventListener('input', (e)=>applySideFilter(e.target.value));
+
+  /* ✅ FIX 2: Smooth scroll to top when selecting from side-menu */
   nav.addEventListener('click', (e)=>{
     const btn=e.target.closest('.z2h-side-item'); if(!btn) return;
     const pid=btn.getAttribute('data-panel-id');
-    if(pid) showPanel(pid);
+    if(pid){
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showPanel(pid);
+    }
   });
+
   nav.addEventListener('keydown', (e)=>{
     const items = Array.from(nav.querySelectorAll('.z2h-side-item:not(.d-none)'));
     const current = document.activeElement.closest('.z2h-side-item');
@@ -683,11 +789,11 @@
     return sectionsDef;
   }
 
-  /* ===== Autoform: renderField con soporte widget image/video y hidden ===== */
+  /* ===== Autoform: renderField with image/video & hidden support ===== */
   function renderField(path, schema, value, parent){
     const t=(schema && schema.type)|| (schema?.enum && 'string') || 'object';
     const ui=uiOf(schema);
-    if (ui.hidden) return; /* soporta x-ui.hidden */
+    if (ui.hidden) return;
 
     const label=ui.label || schema.title || path.split('.').slice(-1)[0];
     const help=ui.help || schema.description || '';
@@ -701,7 +807,6 @@
 
     const NAME=`af:${path}`;
 
-    /* Enums → select */
     if(schema.enum && Array.isArray(schema.enum)){
       const sel=document.createElement('select'); sel.className='form-control z2h-dirty'; sel.name=NAME; if(readOnly) sel.disabled=true;
       schema.enum.forEach(v=>{
@@ -713,7 +818,6 @@
       wrap.appendChild(lab); wrap.appendChild(sel); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
-    /* STRING con widget image/video */
     if(t==='string' && (widget==='image' || widget==='video')){
       const row = document.createElement('div'); row.className='d-flex gap-2';
       const url = document.createElement('input');
@@ -737,7 +841,6 @@
       wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
-    /* STRING (textarea o input) */
     if(t==='string'){
       const isTextarea = !!ui.textarea;
       if(isTextarea){
@@ -750,13 +853,11 @@
       wrap.appendChild(lab); wrap.appendChild(inp); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
-    /* NUMBER/INTEGER */
     if(t==='number' || t==='integer'){
       const inp=document.createElement('input'); inp.type='number'; inp.step=(t==='integer'?'1':'any'); inp.className='form-control z2h-dirty'; inp.name=NAME; if(value!=null) inp.value=String(value); if(readOnly) inp.readOnly=true;
       wrap.appendChild(lab); wrap.appendChild(inp); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
-    /* BOOLEAN */
     if(t==='boolean'){
       const div=document.createElement('div'); div.className='form-check';
       const chk=document.createElement('input'); chk.type='checkbox'; chk.className='form-check-input z2h-dirty'; chk.name=NAME; chk.checked=!!value; if(readOnly) chk.disabled=true;
@@ -764,7 +865,6 @@
       div.appendChild(chk); div.appendChild(l2); parent.appendChild(div); return;
     }
 
-    /* ARRAY */
     if(t==='array'){
       const box=document.createElement('div'); box.className='z2h-repeater';
       wrap.appendChild(lab);
@@ -789,7 +889,6 @@
       wrap.appendChild(list); wrap.appendChild(add); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
-    /* OBJECT */
     const box=document.createElement('div'); box.className='card p-3';
     const props=schema.properties||{}; const keys=orderKeys(props, ui);
     wrap.appendChild(lab);
@@ -1104,6 +1203,20 @@
     });
   })();
 
+  /* Back to Top show/hide + smooth scroll */
+  (function(){
+    const btn = document.getElementById('z2h-back-top');
+    if(!btn) return;
+    const showAt = 600;
+    function onScroll(){
+      if(window.scrollY > showAt) btn.classList.add('show');
+      else btn.classList.remove('show');
+    }
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+    btn.addEventListener('click', ()=>window.scrollTo({top:0, behavior:'smooth'}));
+  })();
+
   try{
     if (typeof serialize === 'function') { serialize(); }
     if (typeof setDirty === 'function') { setDirty(false); }
@@ -1111,14 +1224,4 @@
 })();
 </script>
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
 

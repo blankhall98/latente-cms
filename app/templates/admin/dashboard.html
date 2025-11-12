@@ -4,7 +4,7 @@
 {% block extra_head %}
 <style>
   /* ---------------------------
-     Dashboard — calm, pastel, no-code look (REFINED)
+     Dashboard — calm, pastel, no-code look (REFINED v2)
      --------------------------- */
 
   /* Hero: more space, softer gradient, clearer hierarchy */
@@ -20,14 +20,13 @@
     position: relative;
     overflow: hidden;
   }
-  /* subtle bottom hairline for structure */
   .z2h-hero::after{
     content:""; position:absolute; left:16px; right:16px; bottom:0; height:1px;
     background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.08), rgba(0,0,0,0));
     opacity:.6;
   }
   .z2h-hero-title{
-    letter-spacing:.12em;
+    letter-spacing:.11em;
     text-transform: uppercase;
     margin: .25rem 0 0 0;
     font-size: clamp(1.05rem, 1.4vw, 1.15rem);
@@ -36,7 +35,7 @@
     margin-top:.55rem; color: rgba(0,0,0,.66);
   }
 
-  /* Active project pill — a bit larger, premium feel */
+  /* Active project pill */
   .z2h-project-pill{
     display:inline-flex; align-items:center; gap:.6rem;
     padding:.42rem .9rem;
@@ -53,7 +52,7 @@
     box-shadow: 0 0 0 6px rgba(110,158,230,.12);
   }
 
-  /* Cards — steady, no hover pop */
+  /* Cards */
   .card{
     background: var(--surface);
     border: 1px solid var(--border);
@@ -61,59 +60,122 @@
     box-shadow: var(--shadow-sm);
     transition: background-color .28s ease, border-color .28s ease;
   }
-  .card:hover{ box-shadow: var(--shadow-sm); }
 
   /* Section headers */
   .z2h-section-head{
     display:flex; align-items:center; justify-content:space-between; gap:.75rem;
   }
 
-  /* Pages list — neutral on hover (no paint), tiny text opacity cue */
-  .z2h-card-list{ display:flex; flex-direction:column; gap:.5rem; }
-  .z2h-list-item{
-    position: relative;
-    display:grid; grid-template-columns:1fr auto; align-items:center; gap:1rem;
-    padding:.8rem .5rem .8rem 0;
-    border-top:1px dashed var(--border);
-    background: transparent;
-    transition: color .28s ease, border-color .28s ease;
+  /* ====== Project Pages — table-specific styles (scoped) ====== */
+  .z2h-table-wrap{
+    --row-pad-y: .72rem;
+    --row-pad-x: .9rem;
+    --row-radius: 12px;
+    --head-bg: #faf9f7;
+    --head-border: var(--border);
+    --row-border: #efe6da;
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
   }
-  .z2h-list-item:first-child{ border-top:0; }
+  .z2h-table{
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .z2h-table thead th{
+    position: sticky; top: 0;
+    background: var(--head-bg);
+    border-bottom: 1px solid var(--head-border);
+    padding: .7rem var(--row-pad-x);
+    font-size: .78rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+  .z2h-table tbody tr{
+    border-top: 1px solid var(--row-border);
+  }
+  .z2h-table tbody tr:first-child{ border-top: none; }
 
-  /* Removed left guideline & any row background fill */
+  /* No hover paint on rows (as requested) */
+  .z2h-table tbody tr:hover{ background: transparent; }
 
-  .z2h-list-title{ font-weight:800; color:var(--text-1); transition: opacity .28s ease; }
-  .z2h-list-sub{ font-size:.92rem; color:var(--text-2); transition: opacity .28s ease; }
-  .z2h-list-item:hover .z2h-list-title{ opacity: .96; }
-  .z2h-list-item:hover .z2h-list-sub{ opacity: .9; }
+  /* Subtle zebra for readability */
+  .zebra tbody tr:nth-child(even){ background: #fafaf8; }
+  .zebra tbody tr:nth-child(even) td{ border-color: transparent; }
 
-  /* Make "OPEN" match the "Switch project" outline style */
-  /* (use the same outline behavior as header: transparent base, soft pastel hover) */
-  .z2h-card-list .btn-outline{
+  .z2h-table td{
+    padding: var(--row-pad-y) var(--row-pad-x);
+    vertical-align: middle;
+  }
+
+  /* Page cell: strong title + fine metadata rhythm */
+  .cell-title{
+    font-weight: 800; color: var(--text-1);
+    line-height: 1.15;
+    margin-bottom: .12rem;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Description: improved readability (2-line clamp) */
+  .cell-sub{
+    font-size: .93rem; color: var(--text-2);
+    line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; text-overflow: ellipsis;
+    max-width: 56ch;
+  }
+
+  .cell-actions{ text-align: right; white-space: nowrap; }
+
+  /* Mobile: stack rows into cards */
+  @media (max-width: 640px){
+    .z2h-table thead{ display: none; }
+    .z2h-table, .z2h-table tbody, .z2h-table tr, .z2h-table td{ display:block; width:100%; }
+    .z2h-table tbody tr{
+      border: 1px solid var(--head-border);
+      border-radius: var(--row-radius);
+      padding: .4rem .2rem;
+      margin-bottom: .7rem;
+      background: #fff; /* keep neutral */
+    }
+    .z2h-table td{ padding: .55rem .85rem; }
+    .z2h-table td[data-th]::before{
+      content: attr(data-th);
+      display:block;
+      font-size: .72rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      margin-bottom: .15rem;
+    }
+    .cell-actions{ text-align: left; margin-top: .2rem; }
+  }
+
+  /* Links / buttons inside the table */
+  .z2h-table a{ text-decoration: none; color: var(--text-1); }
+  .z2h-table a:hover{ opacity: .9; }
+  .z2h-table .btn-outline{
     background: transparent !important;
     border-color: var(--border) !important;
     color: var(--text-1) !important;
     box-shadow: none !important;
-    transition: background-color .28s ease, border-color .28s ease, color .28s ease;
   }
-  .z2h-card-list .btn-outline:hover{
+  .z2h-table .btn-outline:hover{
     background: var(--accent-soft) !important;
     border-color: var(--accent-soft) !important;
     color: var(--text-1) !important;
   }
-
-  /* Keep links neutral inside rows */
-  .z2h-card-list .z2h-list-item a{
-    color: var(--text-1) !important;
-    text-decoration: none;
-    transition: opacity .28s ease;
-  }
-  .z2h-card-list .z2h-list-item a:hover{ opacity: .9; }
 </style>
 {% endblock %}
 
 {% block content %}
-  <!-- HERO (spacious, clean, active project emphasized) -->
+  <!-- HERO -->
   <section class="z2h-hero mb-4">
     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3 w-100">
       <div class="flex-grow-1">
@@ -140,7 +202,6 @@
           Manage <strong>Projects</strong>, organize <strong>Pages</strong>, and edit <strong>Sections</strong> with preview and controlled publishing.
         </p>
       </div>
-      {# No header buttons (already present in the navbar). #}
     </div>
   </section>
 
@@ -150,7 +211,7 @@
     <div class="col-lg-8">
       <div class="card p-3 p-md-4 z2h-card">
         <div class="z2h-section-head">
-          <h2 class="h6 text-uppercase fw-bold mb-0">Project pages</h2>
+          <h2 class="h6 text-uppercase fw-bold mb-0">Project Pages</h2>
         </div>
 
         <div class="mt-3">
@@ -162,36 +223,51 @@
               </div>
             </div>
           {% else %}
-            <div class="z2h-card-list">
-              {% for it in recent_entries %}
-                <div class="z2h-list-item">
-                  <div>
-                    <div class="z2h-list-title">{{ it.title }}</div>
-                    <div class="z2h-list-sub">{{ it.sub }}</div>
-                  </div>
-                  <div>
-                    {% if it.id %}
-                      <a href="/admin/pages/{{ it.id }}/edit" class="btn btn-outline btn-sm">Open</a>
-                    {% else %}
-                      <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
-                    {% endif %}
-                  </div>
+            {% if recent_entries and recent_entries|length > 0 %}
+              <div class="z2h-table-wrap">
+                <table class="z2h-table z2h-table-pages zebra" aria-label="Project pages">
+                  <thead>
+                    <tr>
+                      <th scope="col">Page</th>
+                      <th scope="col">Description</th>
+                      <th scope="col" class="text-end">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for it in recent_entries %}
+                    <tr>
+                      <td data-th="Page">
+                        <div class="cell-title" title="{{ it.title }}">{{ it.title }}</div>
+                      </td>
+                      <td data-th="Description">
+                        <div class="cell-sub" title="{{ it.sub }}">{{ it.sub }}</div>
+                      </td>
+                      <td data-th="Action" class="cell-actions">
+                        {% if it.id %}
+                          <a href="/admin/pages/{{ it.id }}/edit" class="btn btn-outline btn-sm">Open</a>
+                        {% else %}
+                          <a href="/admin/pages" class="btn btn-outline btn-sm">Open</a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="z2h-empty">
+                No pages yet for <strong>{{ current_tenant.name }}</strong>.
+                <div class="mt-2">
+                  <a class="btn btn-outline btn-sm" href="/admin/pages">Go to Pages</a>
                 </div>
-              {% else %}
-                <div class="z2h-empty">
-                  No pages yet for <strong>{{ current_tenant.name }}</strong>.
-                  <div class="mt-2">
-                    <a class="btn btn-outline btn-sm" href="/admin/pages">Go to Pages</a>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
+              </div>
+            {% endif %}
           {% endif %}
         </div>
       </div>
     </div>
 
-    <!-- Active project summary (with switch button) -->
+    <!-- Active project summary -->
     <div class="col-lg-4">
       <div class="card p-3 p-md-4 z2h-card">
         <div class="d-flex align-items-center justify-content-between mb-2">
@@ -221,6 +297,9 @@
     </div>
   </div>
 {% endblock %}
+
+
+
 
 
 
