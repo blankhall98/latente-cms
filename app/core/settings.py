@@ -71,24 +71,46 @@ class Settings(BaseSettings):
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def _parse_cors(cls, v):
-        # Accept JSON list or comma-separated string or empty
-        if v in (None, "", []):
+        """
+        Acepta:
+        - JSON list válido: '["https://a","http://b"]'
+        - Lista malformada con corchetes sin comillas: [https://a,http://b]
+        - CSV sin corchetes: 'https://a,http://b'
+        - Vacío / None -> []
+        """
+        if v in (None, "", [], ()):
             return []
         if isinstance(v, (list, tuple)):
             return list(v)
+
         if isinstance(v, str):
             s = v.strip()
             if not s:
                 return []
-            if s.startswith("["):
+
+            # Caso JSON bien formado
+            if s.startswith("[") and s.endswith("]"):
                 try:
                     parsed = json.loads(s)
                     if isinstance(parsed, list):
                         return parsed
                 except Exception:
-                    pass
+                    # Fallback: quitar corchetes y tratar como CSV
+                    inner = s[1:-1].strip()
+                    if not inner:
+                        return []
+                    return [item.strip().strip('"').strip("'") for item in inner.split(",") if item.strip()]
+
+            # Caso CSV plano
             return [item.strip() for item in s.split(",") if item.strip()]
+
+        # Cualquier otro tipo: lo entregamos y dejamos que Pydantic lo procese
         return v
+
+    @property
+    def CORS_ORIGINS(self) -> List[str]:
+        # Siempre devuelve List[str] (convirtiendo AnyHttpUrl a str)
+        return [str(x) for x in (self.BACKEND_CORS_ORIGINS or [])]
 
     # ====== Rate limit / tamaño / idempot ======
     RATELIMIT_ENABLED: bool = os.getenv("RATELIMIT_ENABLED", "false").lower() == "true"
