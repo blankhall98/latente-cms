@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit Page · {{ page.title }} · Latente CMS{% endblock %}
+{% block title %}Edit Page - {{ page.title }} - Latente CMS{% endblock %}
 
 {% block content %}
 <section class="container my-4"
@@ -13,7 +13,7 @@
          data-section-id="{{ page.section_id|default('') }}">
 
   {% if schema_ui_json is defined and schema_ui_json %}
-    <!-- 👇 Already JSON-serialized; don't tojson -->
+    <!-- Already JSON-serialized; don't tojson -->
     <script id="z2h-schema-ui" type="application/json">{{ schema_ui_json | safe }}</script>
   {% endif %}
 
@@ -88,7 +88,7 @@
     <aside class="z2h-sections-nav" aria-label="Section navigator">
       <div class="mb-2">
         <label class="form-label small mb-1" for="z2h-section-search">Find section</label>
-        <input type="search" id="z2h-section-search" class="form-control" placeholder="Type to filter…">
+        <input type="search" id="z2h-section-search" class="form-control" placeholder="Type to filter">
       </div>
 
       <nav id="z2h-side-nav" class="z2h-side-list" role="tablist" aria-orientation="vertical">
@@ -131,13 +131,13 @@
           <div class="card z2h-roomy">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label" for="f-seo-title">SEO Title <span class="text-muted small">(≤70)</span></label>
+                <label class="form-label" for="f-seo-title">SEO Title <span class="text-muted small">(~70)</span></label>
                 <input type="text" id="f-seo-title" class="form-control z2h-input-lg z2h-dirty z2h-count" maxlength="120"
                        value="{{ seo_title|default('') }}" placeholder="Up to ~70 chars" data-max="70" autocomplete="off">
                 <div class="form-hint"><span data-for="f-seo-title">0</span>/70</div>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="f-seo-desc">SEO Description <span class="text-muted small">(≤160)</span></label>
+                <label class="form-label" for="f-seo-desc">SEO Description <span class="text-muted small">(~160)</span></label>
                 <input type="text" id="f-seo-desc" class="form-control z2h-input-lg z2h-dirty z2h-count" maxlength="240"
                        value="{{ seo_desc|default('') }}" placeholder="Up to ~160 chars" data-max="160" autocomplete="off">
                 <div class="form-hint"><span data-for="f-seo-desc">0</span>/160</div>
@@ -148,14 +148,15 @@
 
         <!-- Panels per section -->
         {% for it in sections_ui %}
-        {% set S = it.get('sec') or {} %}
+        {% set S = it.sec|default({}, true) %}
         {% set PID = 'panel-section-' ~ (it.index if it.index is defined else loop.index0) %}
         <section id="{{ PID }}"
                  class="z2h-panel d-none"
                  role="tabpanel"
                  tabindex="-1"
                  data-section-index="{{ it.index if it.index is defined else loop.index0 }}"
-                 data-section-type="{{ S.type or '' }}">
+                 data-section-type="{{ S.type or '' }}"
+                 data-section-key="{{ it.key if it.key is defined else '' }}">
 
           <div class="z2h-panel-head d-flex align-items-center justify-content-between mb-2">
             <h2 class="z2h-panel-title text-uppercase small fw-bold m-0">{{ it.label }}</h2>
@@ -172,114 +173,6 @@
               This form is generated from the active JSON Schema.
             </div>
           </div>
-
-          <!-- Divisor suave -->
-          <div class="z2h-soft-divider my-2" aria-hidden="true"></div>
-
-          <!-- Legacy (fallback) -->
-          <details class="card z2h-roomy z2h-legacy" open>
-            <summary class="small text-muted mb-2">Legacy editor (fallback)</summary>
-
-            <!-- Base -->
-            <div class="card z2h-roomy mb-3">
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label class="form-label">Type</label>
-                  <input type="text" class="form-control" data-k="type" value="{{ S.type or '' }}" readonly>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Schema Version</label>
-                  <input type="number" class="form-control z2h-dirty" data-k="schema_version" value="{{ S.schema_version or 1 }}" min="1">
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Eyebrow</label>
-                  <input type="text" class="form-control z2h-dirty" data-k="eyebrow" value="{{ S.eyebrow or '' }}">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Heading</label>
-                  <input type="text" class="form-control z2h-dirty" data-k="heading" value="{{ S.heading or '' }}">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Subheading</label>
-                  <input type="text" class="form-control z2h-dirty" data-k="subheading" value="{{ S.subheading or '' }}">
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Rich Text</label>
-                  <textarea rows="6" class="form-control z2h-dirty textarea-xl" data-k="richText" placeholder="Markdown/HTML later">{{ S.richText or '' }}</textarea>
-                </div>
-              </div>
-            </div>
-
-            <!-- Media -->
-            <div class="card z2h-roomy mb-3">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <h3 class="h6 m-0">Media</h3>
-                <button type="button" class="btn btn-soft-success btn-sm z2h-add" data-repeater="media">Add media</button>
-              </div>
-              <div class="z2h-repeater mt-2" data-repeater="media">
-                {% for m in (S.media or []) %}
-                <div class="z2h-rep-item card p-3 mb-2">
-                  <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                      <label class="form-label small">Type</label>
-                      <select class="form-control z2h-dirty" data-k="type">
-                        {% set _t = m.type or 'image' %}
-                        <option value="image" {{ 'selected' if _t=='image' else '' }}>image</option>
-                        <option value="video" {{ 'selected' if _t=='video' else '' }}>video</option>
-                      </select>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label small">URL</label>
-                      <input type="text" class="form-control z2h-dirty" data-k="url" value="{{ m.url or '' }}" placeholder="https://...">
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label small">Alt</label>
-                      <input type="text" class="form-control z2h-dirty" data-k="alt" value="{{ m.alt or '' }}">
-                    </div>
-                  </div>
-                  <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-soft-danger z2h-remove">Remove</button></div>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="card z2h-roomy mb-3">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <h3 class="h6 m-0">Actions</h3>
-                <button type="button" class="btn btn-soft-success btn-sm z2h-add" data-repeater="actions">Add action</button>
-              </div>
-              <div class="z2h-repeater mt-2" data-repeater="actions">
-                {% for b in (S.actions or []) %}
-                <div class="z2h-rep-item card p-3 mb-2">
-                  <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                      <label class="form-label small">Label</label>
-                      <input type="text" class="form-control z2h-dirty" data-k="label" value="{{ b.label or '' }}">
-                    </div>
-                    <div class="col-md-8">
-                      <label class="form-label small">Href</label>
-                      <input type="text" class="form-control z2h-dirty" data-k="href" value="{{ b.href or '' }}">
-                    </div>
-                  </div>
-                  <div class="text-end mt-2"><button type="button" class="btn btn-sm btn-soft-danger z2h-remove">Remove</button></div>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-
-            <!-- Advanced Data (JSON) -->
-            <div class="card z2h-roomy mb-1">
-              <div class="d-flex align-items-center justify-content-between">
-                <h3 class="h6 m-0">Advanced Data (JSON)</h3>
-                <small class="text-muted">Edits <code>section.data</code></small>
-              </div>
-              <textarea class="form-control z2h-dirty z2h-json-editor textarea-xl"
-                        rows="10"
-                        data-data-json="true">{{ (S.data | tojson(indent=2)) if S.data else "{}" }}</textarea>
-              <div class="form-hint">Must be valid JSON.</div>
-            </div>
-          </details>
         </section>
         {% endfor %}
 
@@ -296,7 +189,7 @@
   </form>
 
   <!-- Back to Top -->
-  <button id="z2h-back-top" class="z2h-back-top" type="button" aria-label="Back to top">↑ Top</button>
+  <button id="z2h-back-top" class="z2h-back-top" type="button" aria-label="Back to top">Back to Top</button>
 </section>
 
 <!-- Component-scoped helpers (small) -->
@@ -516,7 +409,7 @@
     showPanel(target, {pushHash:false});
   })();
 
-  /* ✅ FIX 1: Side-menu filter restored (keeps "General" visible) */
+  /* FIX 1: Side-menu filter restored (keeps "General" visible) */
   function applySideFilter(q){
     const query=(q||'').trim().toLowerCase();
     const items=[...nav.querySelectorAll('.z2h-side-item')];
@@ -530,7 +423,7 @@
   }
   searchBox?.addEventListener('input', (e)=>applySideFilter(e.target.value));
 
-  /* ✅ FIX 2: Smooth scroll to top when selecting from side-menu */
+  /* FIX 2: Smooth scroll to top when selecting from side-menu */
   nav.addEventListener('click', (e)=>{
     const btn=e.target.closest('.z2h-side-item'); if(!btn) return;
     const pid=btn.getAttribute('data-panel-id');
@@ -550,23 +443,39 @@
   });
 
   function setDeep(obj, path, value){
-    const parts=path.replace(/\]/g,'').split('.');
-    let cur=obj;
+    const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.').filter(Boolean);
+    let cur = obj;
+    let parent = null;
+    let parentKey = null;
     for(let i=0;i<parts.length;i++){
-      const p=parts[i];
-      if(p.includes('[')){
-        const name=p.split('[')[0];
-        const idx=(p.match(/\[(\d+)\]$/)||[])[1];
-        if(!cur[name]) cur[name]=[];
-        if(idx!==undefined){
-          const n=parseInt(idx,10); if(!cur[name][n]) cur[name][n]={};
-          if(i===parts.length-1) cur[name][n]=value; else cur=cur[name][n];
+      const key = parts[i];
+      const isLast = (i === parts.length - 1);
+      const isIndex = /^\d+$/.test(key);
+      const nextIsIndex = /^\d+$/.test(parts[i+1] || '');
+
+      if(isIndex){
+        const idx = parseInt(key, 10);
+        if(!Array.isArray(cur)) {
+          if(parent && parentKey !== null){
+            parent[parentKey] = [];
+            cur = parent[parentKey];
+          }else{
+            cur = [];
+          }
+        }
+        if(isLast){
+          cur[idx] = value;
         }else{
-          if(i===parts.length-1) cur[name].push(value); else cur=cur[name];
+          if(cur[idx] == null || typeof cur[idx] !== 'object') cur[idx] = nextIsIndex ? [] : {};
+          parent = cur; parentKey = idx; cur = cur[idx];
         }
       }else{
-        if(i===parts.length-1){ cur[p]=value; }
-        else { if(!cur[p]||typeof cur[p]!=='object') cur[p]={}; cur=cur[p]; }
+        if(isLast){
+          cur[key] = value;
+        }else{
+          if(cur[key] == null || typeof cur[key] !== 'object') cur[key] = nextIsIndex ? [] : {};
+          parent = cur; parentKey = key; cur = cur[key];
+        }
       }
     }
   }
@@ -676,7 +585,7 @@
       publishBtn.disabled = true;
       publishBtn.setAttribute('aria-busy','true');
       const old = publishBtn.textContent;
-      publishBtn.textContent = 'Publishing…';
+      publishBtn.textContent = 'Publishing...';
       try{
         await callPublish();
         setStatusChip('published');
@@ -819,18 +728,37 @@
     }
 
     if(t==='string' && (widget==='image' || widget==='video')){
-      const row = document.createElement('div'); row.className='d-flex gap-2';
+      const row = document.createElement('div'); row.className='d-flex gap-2 align-items-center flex-wrap';
       const url = document.createElement('input');
-      url.type='text'; url.className='form-control z2h-dirty'; url.name=NAME; url.placeholder=placeholder || (widget==='image'?'https://… (image)':'https://… (video)');
+      url.type='text'; url.className='form-control z2h-dirty'; url.name=NAME; url.placeholder=placeholder || (widget==='image'?'Upload or paste image URL':'Upload or paste video URL');
       if(value!=null) url.value=String(value);
       if(readOnly) url.readOnly=true;
 
-      const up = document.createElement('button');
-      up.type='button'; up.className='btn btn-outline';
-      up.textContent = (ui.uploadLabel || 'Upload');
-      up.addEventListener('click', ()=>{ alert('Uploader pendiente de conectar'); });
+      const fileInput = document.createElement('input');
+      fileInput.type='file';
+      fileInput.accept = widget==='image' ? 'image/*' : 'video/*';
+      fileInput.className='d-none';
+      const uploadBtn = document.createElement('button');
+      uploadBtn.type='button';
+      uploadBtn.className='btn btn-outline-secondary';
+      uploadBtn.textContent = widget==='image' ? 'Upload image' : 'Upload media';
+      if(readOnly){ uploadBtn.disabled=true; }
+      uploadBtn.addEventListener('click', ()=> fileInput.click());
+      fileInput.addEventListener('change', ()=>{
+        const f = fileInput.files && fileInput.files[0];
+        if(!f) return;
+        const r=new FileReader();
+        r.onload = ev=>{
+          const res = ev.target?.result;
+          if(typeof res === 'string'){
+            url.value = res;
+            url.dispatchEvent(new Event('input',{bubbles:true}));
+          }
+        };
+        r.readAsDataURL(f);
+      });
 
-      wrap.appendChild(lab); row.appendChild(url); row.appendChild(up); wrap.appendChild(row);
+      wrap.appendChild(lab); row.appendChild(url); row.appendChild(uploadBtn); row.appendChild(fileInput); wrap.appendChild(row);
 
       if (ui.preview && url.value) {
         const prev = document.createElement(widget==='image'?'img':'video');
@@ -870,21 +798,90 @@
       wrap.appendChild(lab);
       const list=document.createElement('div'); list.className='repeater-grid';
       const itemsSchema=schema.items||{};
+      const itemUi = uiOf(itemsSchema);
+
+      // Special case: featured projects picker (array of strings with widget=project-select)
+      if(itemUi.widget === 'project-select'){
+        const chips=document.createElement('div'); chips.className='d-flex flex-wrap gap-2 mb-2';
+        const select=document.createElement('select'); select.className='form-select form-select-sm'; select.name=NAME + '::select';
+        const btn=document.createElement('button'); btn.type='button'; btn.className='btn btn-soft-success btn-sm'; btn.textContent='Add project';
+
+        const current = Array.isArray(value)? [...value] : [];
+        const hiddenHost=document.createElement('div');
+        const syncHidden=()=>{
+          hiddenHost.innerHTML='';
+          current.forEach((v,idx)=>{
+            const h=document.createElement('input'); h.type='hidden'; h.name=`${NAME}[${idx}]`; h.value=v; hiddenHost.appendChild(h);
+          });
+        };
+        const renderChips=()=>{
+          chips.innerHTML='';
+          current.forEach((slug,idx)=>{
+            const chip=document.createElement('span'); chip.className='badge bg-secondary d-flex align-items-center gap-1';
+            chip.textContent = slug;
+            const x=document.createElement('button'); x.type='button'; x.className='btn-close btn-close-white btn-sm'; x.style.filter='invert(1)';
+            x.addEventListener('click',()=>{ current.splice(idx,1); renderChips(); syncHidden(); setDirty(true); });
+            chip.appendChild(x); chips.appendChild(chip);
+          });
+        };
+        renderChips(); syncHidden();
+
+        btn.addEventListener('click', ()=>{
+          const selVal = select.value;
+          if(selVal && !current.includes(selVal)){
+            current.push(selVal);
+            renderChips(); syncHidden(); setDirty(true);
+          }
+        });
+
+        (async ()=>{
+          try{
+            const opts = await getProjectsOptions();
+            select.innerHTML='';
+            opts.forEach(o=>{
+              const opt=document.createElement('option'); opt.value=o.value; opt.textContent=o.label; select.appendChild(opt);
+            });
+          }catch(_){}
+        })();
+
+        wrap.appendChild(chips);
+        wrap.appendChild(select);
+        wrap.appendChild(btn);
+        wrap.appendChild(hiddenHost);
+        wrap.insertAdjacentHTML('beforeend', hint);
+        parent.appendChild(wrap);
+        return;
+      }
+
+      // Default repeater with collapsible items
       (Array.isArray(value)?value:[]).forEach((v,idx)=>{
-        const row=document.createElement('div'); row.className='repeater-item';
-        renderField(`${path}[${idx}]`, itemsSchema, v, row);
+        const row=document.createElement('div'); row.className='repeater-item card p-3 mb-2';
+        const hdr=document.createElement('div'); hdr.className='d-flex justify-content-between align-items-center mb-2';
+        const title=document.createElement('div'); title.className='fw-semibold';
+        title.textContent = (v && (v.title||v.name||v.label)) ? (v.title||v.name||v.label) : `${lab.textContent || 'Item'} ${idx+1}`;
+        const toggle=document.createElement('button'); toggle.type='button'; toggle.className='btn btn-sm btn-outline'; toggle.textContent='Expand/Collapse';
+        const body=document.createElement('div'); body.className='repeater-body d-none';
+        toggle.addEventListener('click', ()=>{ body.classList.toggle('d-none'); });
+        hdr.appendChild(title); hdr.appendChild(toggle); row.appendChild(hdr);
+        renderField(`${path}[${idx}]`, itemsSchema, v, body);
         const rm=document.createElement('button'); rm.type='button'; rm.className='btn btn-soft-danger btn-sm mt-2'; rm.textContent='Remove';
         rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
-        row.appendChild(rm); list.appendChild(row);
+        body.appendChild(rm); row.appendChild(body); list.appendChild(row);
       });
       const add=document.createElement('button'); add.type='button'; add.className='btn btn-soft-success btn-sm mt-2'; add.textContent= (ui.addLabel||'Add');
       add.addEventListener('click', ()=>{
         const idx=list.querySelectorAll('.repeater-item').length;
-        const row=document.createElement('div'); row.className='repeater-item';
-        renderField(`${path}[${idx}]`, itemsSchema, null, row);
+        const row=document.createElement('div'); row.className='repeater-item card p-3 mb-2';
+        const hdr=document.createElement('div'); hdr.className='d-flex justify-content-between align-items-center mb-2';
+        const title=document.createElement('div'); title.className='fw-semibold'; title.textContent=`${lab.textContent||'Item'} ${idx+1}`;
+        const toggle=document.createElement('button'); toggle.type='button'; toggle.className='btn btn-sm btn-outline'; toggle.textContent='Expand/Collapse';
+        const body=document.createElement('div'); body.className='repeater-body d-none';
+        toggle.addEventListener('click', ()=>{ body.classList.toggle('d-none'); });
+        hdr.appendChild(title); hdr.appendChild(toggle); row.appendChild(hdr);
+        renderField(`${path}[${idx}]`, itemsSchema, null, body);
         const rm=document.createElement('button'); rm.type='button'; rm.className='btn btn-soft-danger btn-sm mt-2'; rm.textContent='Remove';
         rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
-        row.appendChild(rm); list.appendChild(row); setDirty(true);
+        body.appendChild(rm); row.appendChild(body); list.appendChild(row); setDirty(true);
       });
       wrap.appendChild(list); wrap.appendChild(add); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
@@ -896,19 +893,85 @@
     wrap.appendChild(box); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap);
   }
 
+  function inferSchemaFromData(data){
+    if(Array.isArray(data)){
+      const first = data.find(v=>v!=null);
+      if(first && typeof first === 'object' && !Array.isArray(first)){
+        const props={};
+        Object.keys(first).forEach(k=>{
+          const v=first[k];
+          props[k]={type:(typeof v==='number'?'number': typeof v==='boolean'?'boolean':'string'), 'x-ui':{label:k}};
+        });
+        return {type:'array', items:{type:'object', properties:props}};
+      }
+      return {type:'array', items:{type: typeof first==='number'?'number':'string'}};
+    }
+    if(data && typeof data==='object'){
+      const props={};
+      Object.keys(data).forEach(k=>{
+        const v=data[k];
+        if(v && typeof v==='object' && !Array.isArray(v)){
+          props[k]={type:'object', properties: inferSchemaFromData(v).properties||{}};
+        }else if(Array.isArray(v)){
+          props[k]=inferSchemaFromData(v);
+        }else{
+          props[k]={type: typeof v==='number'?'number': typeof v==='boolean'?'boolean':'string'};
+        }
+        props[k]['x-ui']={label:k};
+      });
+      return {type:'object', properties:props};
+    }
+    return {type:'object', properties:{}};
+  }
+
   function renderSectionAutoForm(panel, schemaUI, secData){
     const host=panel.querySelector('.z2h-autoform'); if(!host) return;
     host.innerHTML='';
-    const sub=pickSectionSubschema(schemaUI, secData);
+    const panelKey=(panel.getAttribute('data-section-key')||'').trim();
+    let sub=null;
+    const isArrayData = Array.isArray(secData);
+    if(panelKey && schemaUI?.properties && schemaUI.properties[panelKey]){
+      sub = schemaUI.properties[panelKey];
+      // If this node is an empty ref, fallback to variant pick
+      if(!sub.properties && !sub.items){
+        sub = pickSectionSubschema(schemaUI, secData);
+      }
+      // Explicit array handling when schema is present
+      if((sub && (sub.type==='array' || sub.items)) && isArrayData){
+        renderField(panelKey, sub, secData ?? [], host);
+        const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+        return;
+      }
+    }else{
+      sub = pickSectionSubschema(schemaUI, secData);
+    }
+    if(!sub && secData!==undefined){
+      sub = inferSchemaFromData(secData);
+    }
+    // If we still don't have items for an array data, synthesize a minimal array schema
+    if(isArrayData && (!sub || (!sub.items && !sub.oneOf && !sub.anyOf))){
+      sub = sub || {};
+      sub.type = 'array';
+      sub.items = sub.items || { type: 'object', properties: {} };
+      const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+      renderField(panelKey || 'section', sub, secData ?? [], host);
+      return;
+    }
     const props=sub && sub.properties ? sub.properties : {};
-    const keys=Object.keys(props||{});
-    if(!keys.length){ panel.querySelector('.z2h-legacy')?.setAttribute('open',''); return; }
     const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+
+    // If this node is an array (e.g., projects list), render directly
+    if(sub && (sub.type==='array' || sub.items)){
+      renderField(panelKey || 'section', sub, secData, host);
+      return;
+    }
+
+    const keys=Object.keys(props||{});
+    if(!keys.length){ host.innerHTML='<div class="text-muted">No schema fields available.</div>'; return; }
     keys.forEach(k=>{
       if(k==='type' && (props[k]?.const || (Array.isArray(props[k]?.enum) && props[k].enum.length===1))) return;
       renderField(k, props[k], secData ? secData[k] : undefined, host);
     });
-    panel.querySelector('.z2h-legacy')?.removeAttribute('open');
   }
 
   function serializeAutoForm(panel){
@@ -963,6 +1026,8 @@
 
     const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
     const acc = [];
+    const keyed = {};
+    const schemaUI = window.SCHEMA_UI || {};
 
     sectionPanels.forEach(panel=>{
       let prev = {};
@@ -1004,11 +1069,23 @@
       const panelType = panel.getAttribute('data-section-type') || '';
       if((!merged.type || String(merged.type).trim()==='') && panelType){ merged.type = panelType; }
 
-      if(!isEmptySection(merged)) acc.push(merged);
+      if(!isEmptySection(merged)){
+        const key = (panel.getAttribute('data-section-key')||'').trim();
+        if(key){
+          keyed[key] = merged;
+        }else{
+          acc.push(merged);
+        }
+      }
       if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged); }catch{} }
     });
 
-    out.sections = acc;
+    if(acc.length){
+      out.sections = acc;
+    }
+    if(Object.keys(keyed).length){
+      Object.assign(out, keyed);
+    }
     contentJson.value = JSON.stringify(out);
     return out;
   }
@@ -1126,7 +1203,7 @@
   async function restoreFromDelivery(){
     const btn = document.getElementById('z2h-restore-btn');
     if(!btn) return;
-    btn.disabled = true; const old = btn.textContent; btn.textContent = 'Recovering…';
+    btn.disabled = true; const old = btn.textContent; btn.textContent = 'Recovering...';
     try{
       const payload = await fetchDeliveryJSON();
       const sections = payload?.data?.sections || payload?.sections || [];

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/projects/v1.json",
+  "title": "ANRO - Projects v1",
+  "type": "object",
+  "x-ui": { "label": "Projects", "order": ["projects"] },
+  "properties": {
+    "projects": {
+      "type": "array",
+      "x-ui": { "label": "Projects", "addLabel": "Add project" },
+      "items": { "$ref": "#/$defs/Project" }
+    }
+  },
+  "required": ["projects"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": { "type": "string", "format": "uri", "x-ui": { "label": "URL" } },
+        "alt": { "type": "string", "x-ui": { "label": "Alt text" } }
+      },
+      "required": ["url"]
+    },
+    "Project": {
+      "type": "object",
+      "x-ui": { "label": "Project", "order": ["title", "inCollaborationWith", "area", "client", "team", "structuralDesign", "landscaping", "illuminationDesign", "selectedAwards", "selectedPress", "gallery", "type"] },
+      "properties": {
+        "title": { "type": "string", "x-ui": { "label": "Project Title" } },
+        "inCollaborationWith": { "type": "string", "x-ui": { "label": "In collaboration with" } },
+        "area": { "type": "integer", "x-ui": { "label": "Area (numeric)" } },
+        "client": { "type": "string", "x-ui": { "label": "Client" } },
+        "team": {
+          "type": "array",
+          "x-ui": { "label": "Team", "addLabel": "Add team member" },
+          "items": { "type": "string", "x-ui": { "label": "Member" } }
+        },
+        "structuralDesign": { "type": "string", "x-ui": { "label": "Structural Design" } },
+        "landscaping": { "type": "string", "x-ui": { "label": "Landscaping" } },
+        "illuminationDesign": { "type": "string", "x-ui": { "label": "Illumination Design" } },
+        "selectedAwards": {
+          "type": "array",
+          "x-ui": { "label": "Selected awards", "addLabel": "Add award" },
+          "items": { "type": "string", "x-ui": { "label": "Award" } }
+        },
+        "selectedPress": {
+          "type": "array",
+          "x-ui": { "label": "Selected press", "addLabel": "Add press item" },
+          "items": { "type": "string", "x-ui": { "label": "Press" } }
+        },
+        "gallery": {
+          "type": "array",
+          "x-ui": { "label": "Gallery images", "addLabel": "Add image" },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Residential", "Commercial"],
+          "x-ui": { "label": "Type", "widget": "select" }
+        }
+      },
+      "required": ["title", "inCollaborationWith", "area", "client", "team", "structuralDesign", "landscaping", "illuminationDesign", "selectedAwards", "selectedPress", "gallery", "type"]
+    }
+  }
+}

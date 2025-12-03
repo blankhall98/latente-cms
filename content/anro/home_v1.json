@@ -1,71 +1,29 @@
 {
-  "seo": {
-    "title": "ANRO — Home",
-    "description": "Unified architecture and construction rooted in trust, craftsmanship, and collaboration."
+  "hero": {
+    "text": "THE WAY WE BUILD IS THE WAY WE LIVE",
+    "image": { "url": "https://cdn.example.com/anro/home/hero.jpg", "alt": "ANRO hero image" }
   },
-  "sections": [
-    {
-      "type": "Navbar",
-      "left":   { "href": "/about",        "label": "ABOUT" },
-      "center": { "href": "/portfolio",    "label": "PORTFOLIO" },
-      "right":  { "href": "/work_with_us", "label": "WORK WITH US" }
+  "introduction": {
+    "text": "We are a unified architecture and construction firm rooted in trust, craftsmanship, and collaboration. With fully integrated services, we transform visions into deeply personal, beautifully built spaces - guided by care, shaped by story, and made to last."
+  },
+  "featuredProjects": [],
+  "approach": {
+    "approachText": "At ANRO we lead with a different ethos - one that centers not just on the finished product, but on the people, talent, and process that bring it to life.",
+    "approachMotto": "We believe strong projects are the result of strong relationships",
+    "approachTop": {
+      "title": "CRAFTSMANSHIP AND INTEGRITY",
+      "text": "A diverse group committed to excellence in every project.",
+      "image": { "url": "https://cdn.example.com/anro/approach-top.jpg", "alt": "Craftsmanship and integrity" }
     },
-    {
-      "type": "Hero",
-      "text": "THE WAY WE BUILD IS THE WAY WE LIVE",
-      "background": { "alt": "ANRO hero background", "url": "/img/anro/hero_background.png" }
+    "approachMiddle": {
+      "title": "RELATIONSHIP DRIVEN PROCESS",
+      "text": "Building lasting partnerships through collaborative communication and shared vision.",
+      "image": { "url": "https://cdn.example.com/anro/approach-middle.jpg", "alt": "Relationship driven process" }
     },
-    {
-      "type": "Intro",
-      "text": "We are a unified architecture and construction firm rooted in trust, craftsmanship, and collaboration. With fully integrated services, we transform visions into deeply personal, beautifully built spaces — guided by care, shaped by story, and made to last."
-    },
-    {
-      "type": "FeaturedProjects",
-      "projects": [
-        {
-          "area": "520 m²",
-          "team": "ANRO Architecture & Construction",
-          "type": "Residential",
-          "press": ["Design Review — Issue 71","ArchDaily MX — Residencial destacado"],
-          "title": "Casa Ladera",
-          "awards": ["Arquine Selection 2025","Bienal Regional de Arquitectura 2024"],
-          "client": "Privado",
-          "location": "Valle de Bravo, MX",
-          "mainImage": { "alt": "Casa Ladera — exterior", "url": "/img/anro/projects/casa-ladera/main.jpg" },
-          "landscaping": "Verde Estudio",
-          "collaboration": "Studio Origen",
-          "secondaryImage": { "alt": "Casa Ladera — interior", "url": "/img/anro/projects/casa-ladera/secondary.jpg" },
-          "structuralDesign": "Ing. M. Hernández",
-          "illuminationDesign": "Luz Norte"
-        }
-      ]
-    },
-    {
-      "type": "Approach",
-      "subtitle": "EXCELLENCE AT EVERY LAYER",
-      "description": "At ANRO we lead with a different ethos — one that centers not just on the finished product, but on the people, talent, and process that bring it to life.",
-      "motto": "“We believe strong projects are the result of strong relationships”",
-      "items": [
-        { "image": { "alt":"Approach A","url":"/img/anro/approach_a.png" }, "title":"CRAFTSMANSHIP AND INTEGRITY", "description":"A diverse group committed to excellence in every project." },
-        { "image": { "alt":"Approach B","url":"/img/anro/approach_b.png" }, "title":"RELATIONSHIP DRIVEN PROCESS", "description":"Building lasting partnerships through collaborative communication and shared vision." },
-        { "image": { "alt":"Approach C","url":"/img/anro/approach_c.png" }, "title":"INTENTIONAL GROWTH", "description":"Strategic expansion that maintains our core values while embracing innovation." }
-      ]
-    },
-    {
-      "type": "Footer",
-      "mainText": "ANRO builds spaces shaped by story, crafted to endure.",
-      "getInTouch": {
-        "mail": "hello@anro.studio",
-        "address": "Av. Progreso 123, CDMX, México",
-        "telephone": "+52 55 0000 0000"
-      },
-      "letsConnect": {
-        "linkedIn": "https://www.linkedin.com/company/anro-studio",
-        "instagram": "https://www.instagram.com/anro.studio"
-      },
-      "copyright": "© 2025 ANRO. All rights reserved.",
-      "privacyPolicy": "https://anro.studio/privacy"
+    "approachBottom": {
+      "title": "INTENTIONAL GROWTH",
+      "text": "Strategic expansion that maintains our core values while embracing innovation.",
+      "image": { "url": "https://cdn.example.com/anro/approach-bottom.jpg", "alt": "Intentional growth" }
     }
-  ]
+  }
 }
-

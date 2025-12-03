@@ -8,7 +8,7 @@ One-shot local bootstrap (DESTRUCTIVE):
 3) Seed core auth (roles/permissions + superadmins)
 4) Create tenants: OWA and ANRO
 5) Load JSON Schemas from app/schemas/<tenant>/<section>/vX.json (activates highest version per section)
-6) Seed content for each tenant if content JSON exists (OWA: home; ANRO: home/about/legacy_court/portfolio)
+6) Seed content for each tenant if content JSON exists (OWA: home; ANRO: home/about/navigation/projects)
 7) Create default tenant members (editors) for OWA and ANRO
 
 Run locally:
@@ -40,12 +40,12 @@ from alembic.config import Config
 
 
 def reset_public_schema() -> None:
-    """Hard reset of the 'public' schema — local/dev only."""
+    """Hard reset of the 'public' schema - local/dev only."""
     with engine.begin() as conn:
         conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE;"))
         conn.execute(text("CREATE SCHEMA public;"))
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto;"))
-    print("🧹 public schema dropped & recreated")
+    print("[reset] public schema dropped & recreated")
 
 
 def alembic_upgrade_head() -> None:
@@ -53,7 +53,7 @@ def alembic_upgrade_head() -> None:
     ini_path = (ROOT / "alembic.ini").as_posix()
     cfg = Config(ini_path)
     command.upgrade(cfg, "head")
-    print("🔼 Alembic upgrade head OK")
+    print("[reset] Alembic upgrade head OK")
 
 
 def _commit(db: Session) -> None:
@@ -70,7 +70,7 @@ def _ensure_tenant(slug: str, name: Optional[str] = None):
     try:
         t = get_or_create_tenant(db, name=(name or slug.upper()), slug=slug)
         _commit(db)
-        print(f"🏷️  Tenant ensured: id={t.id} name={t.name} slug={t.slug}")
+        print(f"[reset] Tenant ensured: id={t.id} name={t.name} slug={t.slug}")
         return t
     finally:
         db.close()
@@ -85,7 +85,7 @@ def _maybe_seed_content(
     publish: bool = True,
 ) -> None:
     if not Path(content_path).exists():
-        print(f"⚠️  Content file not found, skipping: {content_path}")
+        print(f"[reset] Content file not found, skipping: {content_path}")
         return
     seed_tenant_content(
         tenant_key_or_name=tenant,
@@ -125,11 +125,11 @@ def main() -> None:
         schema_version=None,
         publish=True,
     )
-    # ANRO: seed ALL pages if files exist
-    _maybe_seed_content("anro", "home",         "home",          "content/anro/home_v1.json",         publish=True)
-    _maybe_seed_content("anro", "about",        "about",         "content/anro/about_v1.json",        publish=True)
-    _maybe_seed_content("anro", "legacy_court", "legacy-court",  "content/anro/legacy_court_v1.json", publish=True)
-    _maybe_seed_content("anro", "portfolio",    "portfolio",     "content/anro/portfolio_v1.json",    publish=True)
+    # ANRO: seed all pages if files exist
+    _maybe_seed_content("anro", "home",       "home",       "content/anro/home_v1.json",       publish=True)
+    _maybe_seed_content("anro", "about",      "about",      "content/anro/about_v1.json",      publish=True)
+    _maybe_seed_content("anro", "navigation", "navigation", "content/anro/navigation_v1.json", publish=True)
+    _maybe_seed_content("anro", "projects",   "projects",   "content/anro/projects_v1.json",   publish=True)
 
     # 7) Default editors
     add_member(
@@ -147,18 +147,13 @@ def main() -> None:
         role_key="editor",
     )
 
-    print("\n✅ All done (local reset). Delivery samples:")
+    print("\n[reset] All done (local reset). Delivery samples:")
     print("  /delivery/v1/tenants/owa/sections/landing_pages/entries/home")
     print("  /delivery/v1/tenants/anro/sections/home/entries/home")
     print("  /delivery/v1/tenants/anro/sections/about/entries/about")
-    print("  /delivery/v1/tenants/anro/sections/legacy_court/entries/legacy-court")
-    print("  /delivery/v1/tenants/anro/sections/portfolio/entries/portfolio")
+    print("  /delivery/v1/tenants/anro/sections/navigation/entries/navigation")
+    print("  /delivery/v1/tenants/anro/sections/projects/entries/projects")
 
 
 if __name__ == "__main__":
     main()
-
-
-
-
-

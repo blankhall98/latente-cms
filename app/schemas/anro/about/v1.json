@@ -1,109 +1,82 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latente.app/schemas/anro/about/v1.json",
-  "title": "ANRO · About v1",
+  "title": "ANRO - About",
   "type": "object",
-  "x-ui": {
-    "label": "ANRO · About",
-    "help": "About page composed of sections.",
-    "order": ["seo", "sections"]
-  },
+  "x-ui": { "label": "About", "order": ["intro", "ourTeam", "shapedByStory"] },
   "properties": {
-    "seo": {
+    "intro": {
       "type": "object",
-      "x-ui": { "label": "SEO", "help": "Page meta for search engines" },
+      "x-ui": { "label": "Intro", "order": ["text", "image", "cta"] },
       "properties": {
-        "title": { "type": "string", "maxLength": 120, "x-ui": { "label": "SEO Title" } },
-        "description": { "type": "string", "maxLength": 240, "x-ui": { "label": "SEO Description" } }
-      }
+        "text": { "type": "string", "x-ui": { "label": "Intro Text", "textarea": true } },
+        "image": { "$ref": "#/$defs/Image", "x-ui": { "label": "Intro Image" } },
+        "cta": {
+          "type": "object",
+          "x-ui": { "label": "Get In Touch" },
+          "properties": {
+            "href": { "type": "string", "x-ui": { "label": "Href/Path" } }
+          },
+          "required": ["href"]
+        }
+      },
+      "required": ["text", "image", "cta"]
     },
-    "sections": {
-      "type": "array",
-      "x-ui": { "label": "Sections" },
-      "items": {
-        "oneOf": [
-          { "$ref": "#/$defs/Intro" },
-          { "$ref": "#/$defs/OurTeam" },
-          { "$ref": "#/$defs/ShapedByStory" }
-        ]
-      }
+    "ourTeam": {
+      "type": "object",
+      "x-ui": { "label": "Our Team", "order": ["teamIntro", "members"] },
+      "properties": {
+        "teamIntro": { "type": "string", "x-ui": { "label": "Team Intro", "textarea": true } },
+        "members": {
+          "type": "array",
+          "x-ui": { "label": "Team Members", "addLabel": "Add team member" },
+          "items": { "$ref": "#/$defs/TeamMember" }
+        }
+      },
+      "required": ["teamIntro", "members"]
+    },
+    "shapedByStory": {
+      "type": "object",
+      "x-ui": { "label": "Shaped by Story", "order": ["storyIntro", "storyMotto", "mainImage", "secondaryImage", "cta"] },
+      "properties": {
+        "storyIntro": { "type": "string", "x-ui": { "label": "Story Intro", "textarea": true } },
+        "storyMotto": { "type": "string", "x-ui": { "label": "Story Motto", "textarea": true } },
+        "mainImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Main Image" } },
+        "secondaryImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Secondary Image" } },
+        "cta": {
+          "type": "object",
+          "x-ui": { "label": "View Our Work" },
+          "properties": {
+            "href": { "type": "string", "x-ui": { "label": "Href/Path" } }
+          },
+          "required": ["href"]
+        }
+      },
+      "required": ["storyIntro", "storyMotto", "mainImage", "secondaryImage", "cta"]
     }
   },
-  "required": ["sections"],
+  "required": ["intro", "ourTeam", "shapedByStory"],
   "$defs": {
     "Image": {
       "type": "object",
       "x-ui": { "label": "Image" },
       "properties": {
-        "type": { "type": "string", "enum": ["image", "video"], "default": "image", "x-ui": { "label": "Type" } },
-        "url":  { "type": "string", "format": "uri", "x-ui": { "label": "URL" } },
-        "alt":  { "type": "string", "x-ui": { "label": "Alt" } }
+        "url": { "type": "string", "format": "uri", "x-ui": { "label": "URL" } },
+        "alt": { "type": "string", "x-ui": { "label": "Alt text" } }
       },
       "required": ["url"]
     },
-
-    "Link": {
+    "TeamMember": {
       "type": "object",
-      "x-ui": { "label": "Link" },
+      "x-ui": { "label": "Team Member", "order": ["profilePicture", "name", "lastName", "role", "description"] },
       "properties": {
-        "label": { "type": "string", "x-ui": { "label": "Text" } },
-        "href":  { "type": "string", "x-ui": { "label": "URL/Path" } }
+        "profilePicture": { "$ref": "#/$defs/Image", "x-ui": { "label": "Profile Picture" } },
+        "name": { "type": "string", "x-ui": { "label": "Name" } },
+        "lastName": { "type": "string", "x-ui": { "label": "Last Name" } },
+        "role": { "type": "string", "x-ui": { "label": "Role" } },
+        "description": { "type": "string", "x-ui": { "label": "Member Description", "textarea": true } }
       },
-      "required": ["label", "href"]
-    },
-
-    "StaffMember": {
-      "type": "object",
-      "x-ui": { "label": "Staff Member" },
-      "properties": {
-        "picture":     { "$ref": "#/$defs/Image", "x-ui": { "label": "Picture" } },
-        "firstName":   { "type": "string", "x-ui": { "label": "First Name" } },
-        "lastName":    { "type": "string", "x-ui": { "label": "Last Name" } },
-        "role":        { "type": "string", "x-ui": { "label": "Role" } },
-        "description": { "type": "string", "x-ui": { "label": "Short Bio" } }
-      },
-      "required": ["picture", "firstName", "lastName", "role", "description"]
-    },
-
-    "Intro": {
-      "type": "object",
-      "x-ui": { "label": "Intro" },
-      "properties": {
-        "type":        { "const": "Intro" },
-        "text":        { "type": "string", "x-ui": { "label": "Intro Text" } },
-        "image":       { "$ref": "#/$defs/Image", "x-ui": { "label": "Intro Image" } },
-        "getInTouch":  { "$ref": "#/$defs/Link", "x-ui": { "label": "GET IN TOUCH" } }
-      },
-      "required": ["type", "text", "image", "getInTouch"]
-    },
-
-    "OurTeam": {
-      "type": "object",
-      "x-ui": { "label": "Our Team", "help": "Team text and a list of staff members" },
-      "properties": {
-        "type": { "const": "OurTeam" },
-        "teamText": { "type": "string", "x-ui": { "label": "Team Text" } },
-        "members": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/StaffMember" },
-          "x-ui": { "label": "Staff Members", "addLabel": "Add member" }
-        }
-      },
-      "required": ["type", "teamText", "members"]
-    },
-
-    "ShapedByStory": {
-      "type": "object",
-      "x-ui": { "label": "Shaped by Story" },
-      "properties": {
-        "type":          { "const": "ShapedByStory" },
-        "subtitle":      { "type": "string", "x-ui": { "label": "Story Subtitle" } },
-        "text":          { "type": "string", "x-ui": { "label": "Story Text" } },
-        "primaryImage":  { "$ref": "#/$defs/Image", "x-ui": { "label": "Primary Image" } },
-        "secondaryImage":{ "$ref": "#/$defs/Image", "x-ui": { "label": "Secondary Image" } },
-        "cta":           { "$ref": "#/$defs/Link", "x-ui": { "label": "VIEW OUR WORK (CTA)" } }
-      },
-      "required": ["type", "subtitle", "text", "primaryImage", "secondaryImage", "cta"]
+      "required": ["profilePicture", "name", "lastName", "role", "description"]
     }
   }
 }

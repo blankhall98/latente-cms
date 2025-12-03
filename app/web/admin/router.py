@@ -110,14 +110,14 @@ def _extract_schema_dict(ss: SectionSchema | None) -> dict:
 
 
 def _deep_merge(base: Any, override: Any) -> Any:
-    # dict ← dict
+    # dict <- dict
     if isinstance(base, dict) and isinstance(override, dict):
         out = dict(base)
         for k, v in override.items():
             out[k] = _deep_merge(base.get(k), v)
         return out
 
-    # list ← list
+    # list <- list
     if isinstance(base, list) and isinstance(override, list):
         merged: list[Any] = []
         m = max(len(base), len(override))
@@ -216,7 +216,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
                 "quick_links": [
                     {"href": "/admin/projects", "title": "Browse Projects", "sub": "Switch or set your active project"},
                 ],
-                "current_tenant": {"name": "—", "slug": None, "id": None},
+                "current_tenant": {"name": "-", "slug": None, "id": None},
             },
         )
 
@@ -268,7 +268,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         title = (e.data or {}).get("title") or e.slug or f"Page {getattr(e, 'id', '')}"
         recent_entries.append({
             "title": title,
-            "sub": f"{section_key} / {tenant_slug} · {status_text}",
+            "sub": f"{section_key} / {tenant_slug} - {status_text}",
             "id": int(getattr(e, "id", 0)) if getattr(e, "id", None) else None,
         })
 
@@ -370,7 +370,7 @@ def set_active_project(tenant_id: int, request: Request, db: Session = Depends(g
     ).first()
 
     if not tu:
-        raise HTTPException(status_code=403, detail="You don’t have access to this project.")
+        raise HTTPException(status_code=403, detail="You don't have access to this project.")
 
     tenant, _ = tu
     _set_active_tenant(request, tenant.id, tenant.slug, tenant.name)
@@ -536,7 +536,7 @@ def page_detail(
     )
 
 
-# --------------------------- Page Editor (Active Schema–driven) ---------------------------
+# --------------------------- Page Editor (Active Schema-driven) ---------------------------
 @router.get("/admin/pages/{entry_id}/edit")
 def page_edit_get(
     entry_id: int,
@@ -581,8 +581,8 @@ def page_edit_get(
         for i, sec in enumerate(raw_sections):
             t = (sec or {}).get("type") or "Block"
             heading = (sec or {}).get("heading") or ""
-            label = f"{i+1:02d} · {t}" + (f" — {heading}" if heading else "")
-            sections_ui.append({"index": i, "label": label, "sec": sec})
+            label = f"{i+1:02d} - {t}" + (f" | {heading}" if heading else "")
+            sections_ui.append({"index": i, "label": label, "sec": sec, "key": (sec or {}).get("type") })
     else:
         # Fallback for object-style pages (ANRO)
         sections_ui = build_sections_ui_fallback_for_object_page(form_model)
@@ -654,7 +654,7 @@ def page_edit_post(
         if sections:
             sections_ui = [{
                 "index": i,
-                "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+                "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
                 "sec": (blk or {}),
             } for i, blk in enumerate(sections)]
         else:
@@ -696,7 +696,7 @@ def page_edit_post(
         if sections:
             sections_ui = [{
                 "index": i,
-                "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+                "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
                 "sec": (blk or {}),
             } for i, blk in enumerate(sections)]
         else:
@@ -741,7 +741,7 @@ def page_edit_post(
         # Build UI list from either sections[] or object-style
         sections_ui = [{
             "index": i,
-            "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+            "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
             "sec": (blk or {}),
         } for i, blk in enumerate(base_data.get("sections") or [])] or build_sections_ui_fallback_for_object_page(base_data)
 
@@ -800,7 +800,7 @@ def page_edit_post(
     sections = (working_after.get("sections") or [])
     sections_ui = [{
         "index": i,
-        "label": f"{i+1:02d} · {(blk or {}).get('type','Section')}" + (f" — { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+        "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
         "sec": (blk or {}),
     } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after)
 

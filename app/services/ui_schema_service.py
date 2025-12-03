@@ -480,13 +480,28 @@ def build_ui_contract_for_active_schema(
 _ANRO_LABELS = {
     "navbar": "Navbar",
     "hero": "Hero",
+    "introduction": "Introduction",
     "intro": "Intro",
     "approach": "Approach",
     "featuredProjects": "Featured Projects",
+    "ourTeam": "Our Team",
+    "shapedByStory": "Shaped by Story",
+    "projects": "Projects",
     "footer": "Footer",
 }
 
-_ANRO_ORDER = ["navbar", "hero", "intro", "approach", "featuredProjects", "footer"]
+_ANRO_ORDER = [
+    "navbar",
+    "hero",
+    "introduction",
+    "intro",
+    "approach",
+    "featuredProjects",
+    "ourTeam",
+    "shapedByStory",
+    "projects",
+    "footer",
+]
 
 
 def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -503,14 +518,14 @@ def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dic
     keys = known + extras
 
     for idx, key in enumerate(keys):
-        sec = data.get(key) or {}
+        sec = data.get(key) if key in data else {}
         if isinstance(sec, dict) and "type" not in sec:
             sec = {"type": _ANRO_LABELS.get(key, key), **sec}
         label = _ANRO_LABELS.get(key, key.title())
         sections_ui.append({
             "index": idx,
-            "label": f"{idx+1:02d} · {label}",
+            "label": f"{idx+1:02d} - {label}",
             "sec": sec,
+            "key": key,
         })
     return sections_ui
-

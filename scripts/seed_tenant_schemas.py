@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -76,13 +76,13 @@ def _discover_section_files(base_dir: Path, tenant: str) -> List[SectionFile]:
     return files
 
 
-def _apply_active_overrides(files: List[SectionFile], overrides: List[str]) -> None:
+def _apply_active_overrides(files: List[SectionFile], overrides: List[str]) -> List[SectionFile]:
     """
     Permite forzar activaciones específicas: --set-active home=1 portfolio=2
-    Desactiva otras versiones de esa sección.
+    Devuelve una lista nueva (SectionFile es frozen).
     """
     if not overrides:
-        return
+        return files
     # Normalize into dict: section_key -> version
     wanted: Dict[str, int] = {}
     for item in overrides:
@@ -96,15 +96,18 @@ def _apply_active_overrides(files: List[SectionFile], overrides: List[str]) -> N
             raise SystemExit(f"[ERR] Versión inválida en --set-active: '{item}'")
         wanted[k] = ver
 
-    # Turn off all, then re-enable target
-    for k, ver in wanted.items():
-        any_found = False
-        for sf in files:
-            if sf.section_key == k:
-                any_found = True
-                sf.is_active = (sf.version == ver)
-        if not any_found:
+    new_files: List[SectionFile] = []
+    for sf in files:
+        if sf.section_key in wanted:
+            new_files.append(replace(sf, is_active=(sf.version == wanted[sf.section_key])))
+        else:
+            new_files.append(sf)
+
+    # Warn on missing sections
+    for k in wanted.keys():
+        if not any(sf.section_key == k for sf in files):
             print(f"[WARN] --set-active ignorado: sección '{k}' no encontrada en archivos descubiertos")
+    return new_files
 
 
 def run(
@@ -115,7 +118,7 @@ def run(
 ) -> None:
     base = Path(base_dir)
     files = _discover_section_files(base, tenant_key_or_name)
-    _apply_active_overrides(files, set_active or [])
+    files = _apply_active_overrides(files, set_active or [])
 
     print(f"[INFO] Tenant='{tenant_key_or_name}'  BaseDir='{base.as_posix()}'")
     for sf in files:
@@ -169,6 +172,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

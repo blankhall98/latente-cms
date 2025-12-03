@@ -1,0 +1,32 @@
+{
+  "navbar": {
+    "left":   { "label": "ABOUT",        "href": "/about" },
+    "middle": { "label": "PORTFOLIO",    "href": "/portfolio" },
+    "right":  { "label": "WORK WITH US", "href": "/work_with_us" }
+  },
+  "footer": {
+    "footerMain": {
+      "header": "We have a deep respect for craft so every project is shaped by skilled hands, honest dialogue, and meaningful relationships."
+    },
+    "getInTouch": {
+      "telephone": "305.300.1473",
+      "contactEmail": "contact@anro.com",
+      "address": "College Station, TX"
+    },
+    "letsConnect": {
+      "linkedIn": "/linkedin",
+      "instagram": "/Instagram"
+    },
+    "subscribe": {
+      "newsletterEmail": "newsletter@anro.com"
+    },
+    "discussProject": {
+      "formMessage": "Tell us about your project",
+      "projectsEmail": "projects@anro.com"
+    },
+    "legal": {
+      "rightsReserved": "2025 All Rights Reserved",
+      "privacyPolicy": "/privacy"
+    }
+  }
+}

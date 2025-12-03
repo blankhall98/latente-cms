@@ -1,4 +1,8 @@
-# scripts/add_tenant_member.py
+"""
+Create (or reuse) a user and link them to a tenant with the given role.
+Idempotent: safe to run multiple times.
+"""
+
 from __future__ import annotations
 
 import sys
@@ -14,9 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
-from app.models.auth import (
-    User, Tenant, Role, UserTenant, UserTenantStatus
-)
+from app.models.auth import User, Tenant, Role, UserTenant, UserTenantStatus
 from app.services.passwords import hash_password
 
 
@@ -31,10 +33,6 @@ def run(
     tenant_slug: str,
     role_key: str = "editor",
 ) -> None:
-    """
-    Create (or reuse) a user and link them to a tenant with the given role.
-    Idempotent: safe to run multiple times.
-    """
     db: Session = SessionLocal()
     try:
         tenant = db.scalar(select(Tenant).where(Tenant.slug == tenant_slug))
@@ -58,7 +56,7 @@ def run(
             )
             db.add(user)
             db.flush()
-            print(f"➕ User created: {email}")
+            print(f"[add-member] User created: {email}")
         else:
             # Ensure the user is active and has a password
             if not user.hashed_password:
@@ -81,10 +79,10 @@ def run(
             )
             db.add(ut)
             db.flush()
-            print(f"🔗 Linked {email} → '{tenant.slug}' as {role_key.upper()}")
+            print(f"[add-member] Linked {email} to '{tenant.slug}' as {role_key.upper()}")
 
         db.commit()
-        print("✅ Tenant member OK.")
+        print("[add-member] Tenant member OK.")
     except Exception:
         db.rollback()
         raise
