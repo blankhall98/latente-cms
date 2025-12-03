@@ -273,7 +273,9 @@
         <div class="d-flex align-items-center justify-content-between mb-2">
           <h2 class="h6 text-uppercase fw-bold mb-0">Active project</h2>
           {% if current_tenant %}
-            <a class="btn btn-outline btn-sm" href="/admin/projects" title="Switch to another project">Switch project</a>
+            {% if not request.session.get('hide_projects_nav') %}
+              <a class="btn btn-outline btn-sm" href="/admin/projects" title="Switch to another project">Switch project</a>
+            {% endif %}
           {% endif %}
         </div>
 

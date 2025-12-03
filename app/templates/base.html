@@ -145,10 +145,12 @@
            href="/admin/pages"
            {% if is_pages %}aria-current="page"{% endif %}>Pages</a>
 
-        {% set is_projects = path.startswith('/admin/projects') %}
-        <a class="nav-link {{ 'active' if is_projects else '' }}"
-           href="/admin/projects"
-           {% if is_projects %}aria-current="page"{% endif %}>Projects</a>
+        {% if not (request.session.get('hide_projects_nav')) %}
+          {% set is_projects = path.startswith('/admin/projects') %}
+          <a class="nav-link {{ 'active' if is_projects else '' }}"
+             href="/admin/projects"
+             {% if is_projects %}aria-current="page"{% endif %}>Projects</a>
+        {% endif %}
 
         <form action="/logout" method="post" class="ms-2" aria-label="Sign out">
           <!-- Same effect as login CTA, in red -->

@@ -650,6 +650,9 @@
     if(keys.includes('title') && keys.includes('text') && keys.includes('image')){
       return ['title','text','image', ...keys.filter(k=>!['title','text','image'].includes(k))];
     }
+    if(keys.includes('label') && keys.includes('href')){
+      return ['label','href', ...keys.filter(k=>!['label','href'].includes(k))];
+    }
     if(keys.includes('left') && keys.includes('middle') && keys.includes('right')){
       return ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
     }

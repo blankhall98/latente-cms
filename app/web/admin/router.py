@@ -56,6 +56,27 @@ def _get_active_tenant(request: Request) -> dict | None:
     return (request.session or {}).get(SESSION_ACTIVE_TENANT_KEY)
 
 
+def _set_single_project_flag(request: Request, db: Session, user: dict, projects_count: int | None = None) -> None:
+    """
+    Flag used by templates to hide the Projects nav when a non-superadmin has only one project.
+    If projects_count is provided, avoids re-querying.
+    """
+    try:
+        is_superadmin = bool(user.get("is_superadmin"))
+    except Exception:
+        is_superadmin = False
+    if is_superadmin:
+        request.session.pop("hide_projects_nav", None)
+        return
+    if projects_count is None:
+        user_id = int(user["id"])
+        projects_count = db.scalar(
+            select(func.count(UserTenant.tenant_id))
+            .where(and_(UserTenant.user_id == user_id, UserTenant.status == _active_status_value()))
+        ) or 0
+    request.session["hide_projects_nav"] = (projects_count == 1)
+
+
 def _set_active_tenant(request: Request, tenant_id: int, tenant_slug: str, tenant_name: str) -> None:
     request.session[SESSION_ACTIVE_TENANT_KEY] = {
         "id": int(tenant_id),
@@ -230,6 +251,8 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             .where(and_(UserTenant.user_id == user_id, UserTenant.status == _active_status_value()))
         ) or 0
 
+    _set_single_project_flag(request, db, auth, projects_count)
+
     sections_count = db.scalar(
         select(func.count(Section.id)).where(Section.tenant_id == tenant_id)
     ) or 0
@@ -276,6 +299,10 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         {"href": "/admin/projects", "title": "Browse Projects", "sub": "Switch between your projects"},
         {"href": "/admin/pages", "title": "All Pages", "sub": "View and edit pages"},
     ]
+    if (not is_superadmin) and projects_count == 1:
+        quick_links = [
+            {"href": "/admin/pages", "title": "All Pages", "sub": "View and edit pages"},
+        ]
 
     return templates.TemplateResponse(
         "admin/dashboard.html",
@@ -331,6 +358,13 @@ def projects_list(request: Request, db: Session = Depends(get_db)):
                 "role_label": getattr(r, "label", r.key).title() if getattr(r, "label", None) else r.key,
                 "status": getattr(ut.status, "value", ut.status),
             })
+
+    _set_single_project_flag(request, db, user, len(items))
+
+    if (not is_superadmin) and len(items) == 1:
+        only = items[0]
+        _set_active_tenant(request, only["id"], only["slug"], only["name"])
+        return RedirectResponse(url="/admin/pages", status_code=302)
 
     current = _get_active_tenant(request)
     return templates.TemplateResponse(
