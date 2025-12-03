@@ -1106,7 +1106,11 @@
       if(!isEmptySection(merged)){
         const key = (panel.getAttribute('data-section-key')||'').trim();
         if(key){
-          keyed[key] = merged;
+          if(Object.keys(merged).length === 1 && merged[key] !== undefined){
+            keyed[key] = merged[key];
+          }else{
+            keyed[key] = merged;
+          }
         }else{
           acc.push(merged);
         }
