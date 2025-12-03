@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://latente.app/schemas/anro/about/v1.json",
-  "title": "ANRO - About",
+  "$id": "https://latente.app/schemas/anro/about/v2.json",
+  "title": "ANRO - About v2",
   "type": "object",
   "x-ui": { "label": "About", "order": ["intro", "ourTeam", "shapedByStory"] },
   "properties": {
@@ -41,8 +41,8 @@
       "properties": {
         "storyIntro": { "type": "string", "x-ui": { "label": "Story Intro", "textarea": true } },
         "storyMotto": { "type": "string", "x-ui": { "label": "Story Motto", "textarea": true } },
-        "mainImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Main Image", "widget": "image", "preview": true, "placeholder": "Upload or paste image URL" } },
-        "secondaryImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Secondary Image", "widget": "image", "preview": true, "placeholder": "Upload or paste image URL" } },
+        "mainImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Main Image" } },
+        "secondaryImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Secondary Image" } },
         "cta": {
           "type": "object",
           "x-ui": { "label": "View Our Work" },
@@ -79,7 +79,7 @@
       "type": "object",
       "x-ui": { "label": "Team Member", "order": ["profilePicture", "name", "lastName", "role", "description"] },
       "properties": {
-        "profilePicture": { "$ref": "#/$defs/Image", "x-ui": { "label": "Profile Picture", "widget": "image", "preview": true, "placeholder": "Upload or paste image URL" } },
+        "profilePicture": { "$ref": "#/$defs/Image", "x-ui": { "label": "Profile Picture" } },
         "name": { "type": "string", "x-ui": { "label": "Name" } },
         "lastName": { "type": "string", "x-ui": { "label": "Last Name" } },
         "role": { "type": "string", "x-ui": { "label": "Role" } },

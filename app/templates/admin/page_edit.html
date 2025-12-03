@@ -290,6 +290,16 @@
   .z2h-rep-item{ border:1px dashed var(--border); border-radius:14px; }
   .z2h-roomy{ padding:1.1rem !important; }
 
+  /* Force single-column layout for all form rows (desktop too) */
+  .z2h-panel .row.g-3 > [class^="col"],
+  .z2h-panel .row.g-3 > [class*=" col"]{
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  .z2h-autoform .field{
+    width: 100%;
+  }
+
   /* Textareas larger by default */
   .textarea-md{ min-height:200px; }
   .textarea-lg{ min-height:260px; }
@@ -636,6 +646,17 @@
   function orderKeys(props, ui){
     const keys=Object.keys(props||{});
     const ord=(ui && ui.order)||ui?.['x-order']||[];
+    // Common content patterns
+    if(keys.includes('title') && keys.includes('text') && keys.includes('image')){
+      return ['title','text','image', ...keys.filter(k=>!['title','text','image'].includes(k))];
+    }
+    if(keys.includes('left') && keys.includes('middle') && keys.includes('right')){
+      return ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
+    }
+    // Fallback for common nav pattern when no explicit order is present
+    if((!ord || !ord.length) && keys.includes('left') && keys.includes('middle') && keys.includes('right')){
+      return ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
+    }
     const ordSet=new Set(ord);
     const rest=keys.filter(k=>!ordSet.has(k));
     return [...ord, ...rest];
@@ -887,7 +908,10 @@
     }
 
     const box=document.createElement('div'); box.className='card p-3';
-    const props=schema.properties||{}; const keys=orderKeys(props, ui);
+    const props=schema.properties||{}; let keys=orderKeys(props, ui);
+    if(keys.includes('left') && keys.includes('middle') && keys.includes('right')){
+      keys = ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
+    }
     wrap.appendChild(lab);
     keys.forEach(k=>{ renderField(`${path}.${k}`, props[k], (value||{})[k], box); });
     wrap.appendChild(box); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap);
@@ -958,6 +982,7 @@
       return;
     }
     const props=sub && sub.properties ? sub.properties : {};
+    const uiSub = uiOf(sub);
     const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
 
     // If this node is an array (e.g., projects list), render directly
@@ -966,7 +991,13 @@
       return;
     }
 
-    const keys=Object.keys(props||{});
+    let keys=orderKeys(props, uiSub);
+    if(panelKey==='approach'){
+      const desired=['approachText','approachTop','approachMiddle','approachBottom','approachMotto'];
+      keys = [...desired.filter(k=>keys.includes(k)), ...keys.filter(k=>!desired.includes(k))];
+    } else if(keys.includes('left') && keys.includes('middle') && keys.includes('right')){
+      keys = ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
+    }
     if(!keys.length){ host.innerHTML='<div class="text-muted">No schema fields available.</div>'; return; }
     keys.forEach(k=>{
       if(k==='type' && (props[k]?.const || (Array.isArray(props[k]?.enum) && props[k].enum.length===1))) return;

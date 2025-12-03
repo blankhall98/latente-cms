@@ -462,9 +462,8 @@ textarea.form-control{ min-height: 110px; resize: vertical; }
 .repeater-item .repeater-actions{ display:flex; gap:.5rem; align-items:center; }
 .repeater-item .repeater-actions .btn{ padding:.45rem .7rem; font-size:.8rem; letter-spacing:.04em; }
 
-/* Repeater grid helpers */
-.repeater-grid{ display:grid; gap:1rem; grid-template-columns: 1fr; }
-@media (min-width: 1400px){ .repeater-grid{ grid-template-columns: 1fr 1fr; } }
+/* Repeater grid helpers (force single column on all viewports) */
+.repeater-grid{ display:grid; gap:1rem; grid-template-columns: 1fr !important; }
 
 /* Media */
 .img-thumb{

@@ -29,7 +29,7 @@
     },
     "approach": {
       "type": "object",
-      "x-ui": { "label": "Approach", "order": ["approachText", "approachMotto", "approachTop", "approachMiddle", "approachBottom"] },
+      "x-ui": { "label": "Approach", "order": ["approachText", "approachTop", "approachMiddle", "approachBottom", "approachMotto"] },
       "properties": {
         "approachText": { "type": "string", "x-ui": { "label": "Approach Text", "textarea": true } },
         "approachMotto": { "type": "string", "x-ui": { "label": "Approach Motto" } },
