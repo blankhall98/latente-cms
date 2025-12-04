@@ -169,14 +169,19 @@
           <script type="application/json" class="z2h-sec-json">{{ S|tojson }}</script>
 
           <!-- Auto-Form (Schema-driven) -->
-          <div class="card z2h-roomy mb-3">
-            <div class="z2h-autoform" data-autoform-for="section"></div>
-            <div class="text-muted small" data-autoform-hint style="display:none;">
-              This form is generated from the active JSON Schema.
-            </div>
-          </div>
-        </section>
-        {% endfor %}
+      <div class="card z2h-roomy mb-3">
+        <div class="z2h-autoform" data-autoform-for="section"></div>
+        <div class="text-muted small" data-autoform-hint style="display:none;">
+          This form is generated from the active JSON Schema.
+        </div>
+      </div>
+      {% if it.key == 'projects' %}
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-outline" data-projects-draft-btn>Save projects draft (local)</button>
+      </div>
+      {% endif %}
+    </section>
+    {% endfor %}
 
         <!-- Hidden JSON for POST -->
         <textarea name="content_json" id="z2h-content-json" class="d-none" aria-hidden="true"></textarea>
@@ -1126,6 +1131,32 @@
     if(Object.keys(keyed).length){
       Object.assign(out, keyed);
     }
+
+    // Always pull fresh Projects data from the projects panel to avoid accidental wipes
+    const projPanel = document.querySelector('[data-section-key="projects"]');
+    if(projPanel){
+      try{
+        const projPatch = serializeAutoForm(projPanel) || {};
+        if(Array.isArray(projPatch)){
+          out.projects = projPatch;
+        }else if(Array.isArray(projPatch.projects)){
+          out.projects = projPatch.projects;
+        }else if(projPatch.projects && Array.isArray(projPatch.projects.projects)){
+          out.projects = projPatch.projects.projects;
+        }
+      }catch(_){}
+      if(!out.projects){
+        const seed = projPanel.querySelector('.z2h-sec-json');
+        if(seed){
+          try{
+            const seedObj = JSON.parse(seed.textContent || '{}');
+            if(Array.isArray(seedObj)) out.projects = seedObj;
+            else if(seedObj && Array.isArray(seedObj.projects)) out.projects = seedObj.projects;
+          }catch(_){}
+        }
+      }
+    }
+
     contentJson.value = JSON.stringify(out);
     return out;
   }
@@ -1146,6 +1177,23 @@
     try{ localStorage.removeItem('z2h-edit-backup-'+entryId); }catch{}
     setDirty(false);
     setTimeout(()=>flashOk('Saved.'), 10);
+  });
+
+  // Projects-local draft (button inside panel)
+  document.querySelectorAll('[data-projects-draft-btn]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const panel = btn.closest('[data-section-key="projects"]');
+      if(!panel){ flashErr('Projects panel not found'); return; }
+      try{
+        const projPatch = serializeAutoForm(panel) || {};
+        const stash = Array.isArray(projPatch) ? {projects: projPatch} : {projects: projPatch.projects || []};
+        localStorage.setItem('z2h-projects-draft-'+entryId, JSON.stringify(stash));
+        flashOk('Projects draft saved locally.');
+      }catch(err){
+        flashErr(err?.message||'Could not save draft');
+      }
+    });
   });
 
   async function fetchDeliveryJSON(){
@@ -1315,6 +1363,21 @@
           const parsed=JSON.parse(jsonArea.value||'{}');
           if(parsed && typeof parsed==='object' && secDataLegacy.data === undefined) secDataLegacy.data=parsed;
         }catch(_){}
+      }
+
+      // Restore local projects draft if present and current data is empty
+      const isProjects = (panel.getAttribute('data-section-key')||'') === 'projects';
+      if(isProjects){
+        const hasProjects = Array.isArray(secDataLegacy) ? secDataLegacy.length>0 : Array.isArray(secDataLegacy.projects) ? secDataLegacy.projects.length>0 : false;
+        if(!hasProjects){
+          try{
+            const draft = localStorage.getItem('z2h-projects-draft-'+entryId);
+            if(draft){
+              const parsed = JSON.parse(draft);
+              if(Array.isArray(parsed?.projects)) secDataLegacy = { projects: parsed.projects };
+            }
+          }catch(_){}
+        }
       }
       renderSectionAutoForm(panel, schema, secDataLegacy);
     });

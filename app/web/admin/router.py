@@ -146,6 +146,28 @@ def _deep_merge(base: Any, override: Any) -> Any:
     return override if override is not None else base
 
 
+def _normalize_projects_payload(payload: Any) -> dict:
+    """
+    Flatten __draft nesting and ensure projects is a list, not an object with a projects key.
+    """
+    data = payload or {}
+    if not isinstance(data, dict):
+        return {}
+    cur = data
+    # unwrap nested __draft
+    while isinstance(cur, dict) and "__draft" in cur and isinstance(cur["__draft"], dict):
+        cur = cur["__draft"]
+    if not isinstance(cur, dict):
+        return {}
+    out = dict(cur)
+    proj = out.get("projects")
+    if isinstance(proj, dict) and "projects" in proj:
+        out["projects"] = proj.get("projects") if isinstance(proj.get("projects"), list) else []
+    elif proj is None:
+        out["projects"] = []
+    return out
+
+
 def _defaults_from_schema(schema: dict) -> Any:
     if not isinstance(schema, dict):
         return None
@@ -577,10 +599,18 @@ def page_edit_get(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
-    # If page is published and has __draft, edit the draft
+    # If page is published and has __draft, edit the draft (except projects)
     base_data = entry.data or {}
     is_published = (getattr(entry, "status", "draft") == "published")
-    working_data = (base_data.get("__draft") if (is_published and isinstance(base_data.get("__draft"), dict)) else base_data)
+    if section.key == "projects":
+        base_data = _normalize_projects_payload(base_data)
+        entry.data = base_data
+        db.add(entry)
+        db.commit()
+        db.refresh(entry)
+        working_data = base_data
+    else:
+        working_data = (base_data.get("__draft") if (is_published and isinstance(base_data.get("__draft"), dict)) else base_data)
 
     # UI JSON Schema (enriched) for auto-form
     try:
@@ -764,6 +794,55 @@ def page_edit_post(
     base_data = entry.data or {}
     payload = parsed or {}
 
+    # Special handling: projects section saves directly to root (no drafts/merge)
+    if getattr(section, "key", "") == "projects":
+        # Never allow an empty submission to wipe existing projects
+        base_projects_data = _normalize_projects_payload(entry.data or {})
+        payload = _normalize_projects_payload(payload)
+        if not payload.get("projects"):
+            payload["projects"] = base_projects_data.get("projects", [])
+        if "seo" not in payload and base_projects_data.get("seo"):
+            payload["seo"] = base_projects_data["seo"]
+        if "replace" not in payload:
+            payload["replace"] = False
+        now = datetime.now(timezone.utc)
+        entry.data = payload
+        entry.schema_version = active_version
+        entry.updated_at = now
+        db.add(entry)
+        db.commit()
+        db.refresh(entry)
+
+        working_after = entry.data or {}
+        sections_ui = build_sections_ui_fallback_for_object_page(working_after)
+        return templates.TemplateResponse(
+            "admin/page_edit.html",
+            {
+                "request": request,
+                "user": {"id": int(user["id"]), "email": user.get("email")},
+                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+                "is_superadmin": is_superadmin,
+                "page": {
+                    "id": entry.id,
+                    "slug": entry.slug,
+                    "title": (working_after or {}).get("title") or entry.slug,
+                    "status": entry.status,
+                    "section_name": section.name,
+                    "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                    "section_id": int(section.id),
+                    "schema_version": active_version,
+                },
+                "initial_json": json.dumps(working_after or {}, ensure_ascii=False, indent=2),
+                "replace_val": bool((working_after or {}).get("replace", False)),
+                "seo_title": ((working_after or {}).get("seo") or {}).get("title", ""),
+                "seo_desc": ((working_after or {}).get("seo") or {}).get("description", ""),
+                "sections_ui": sections_ui,
+                "schema_ui_json": schema_ui_json,
+                "error": None,
+                "ok_message": "Changes saved.",
+            },
+        )
+
     incoming_has_sections_key = "sections" in payload
     incoming_sections = payload.get("sections", None)
     replace_flag = bool(payload.get("replace", False))
@@ -804,17 +883,37 @@ def page_edit_post(
             status_code=400,
         )
 
-    # Non-destructive merge
-    merged = _deep_merge(base_data, payload)
-    if not incoming_has_sections_key and "sections" in base_data:
-        merged["sections"] = base_data["sections"]
+    # Non-destructive merge (draft-aware)
+    is_published_now = (getattr(entry, "status", "draft") == "published")
+
+    def _unwrap_draft(d: Any) -> Any:
+        cur = d
+        while isinstance(cur, dict) and "__draft" in cur:
+            nxt = cur.get("__draft")
+            if not isinstance(nxt, dict):
+                break
+            cur = nxt
+        return cur
+
+    working_base = _unwrap_draft(base_data.get("__draft")) if (is_published_now and isinstance(base_data.get("__draft"), dict)) else _unwrap_draft(base_data)
+    if isinstance(working_base, dict) and "__draft" in working_base:
+        working_base = {k: v for k, v in working_base.items() if k != "__draft"}
+    merged = _deep_merge(working_base, payload)
+    if not incoming_has_sections_key and "sections" in working_base:
+        merged["sections"] = working_base["sections"]
+    if isinstance(merged, dict) and "__draft" in merged:
+        merged.pop("__draft", None)
 
     # Persist (draft vs root)
     is_published_now = (getattr(entry, "status", "draft") == "published")
-    if is_published_now:
-        new_base = dict(base_data)
-        new_base["__draft"] = merged
-        entry.data = new_base
+    if getattr(section, "key", "") == "projects":
+        # Projects: persist directly to root to avoid nested draft wiping
+        entry.data = merged
+    elif is_published_now:
+        base_clean = dict(base_data)
+        base_clean.pop("__draft", None)
+        base_clean["__draft"] = merged
+        entry.data = base_clean
     else:
         entry.data = merged
 

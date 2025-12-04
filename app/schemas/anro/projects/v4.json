@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://latente.app/schemas/anro/projects/v3.json",
-  "title": "ANRO - Projects v3",
+  "$id": "https://latente.app/schemas/anro/projects/v4.json",
+  "title": "ANRO - Projects v4",
   "type": "object",
   "x-ui": { "label": "Projects", "order": ["projects"] },
   "properties": {
