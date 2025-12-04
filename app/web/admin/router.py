@@ -138,18 +138,9 @@ def _deep_merge(base: Any, override: Any) -> Any:
             out[k] = _deep_merge(base.get(k), v)
         return out
 
-    # list <- list
+    # list <- list (override wins wholesale)
     if isinstance(base, list) and isinstance(override, list):
-        merged: list[Any] = []
-        m = max(len(base), len(override))
-        for i in range(m):
-            if i < len(override) and i < len(base):
-                merged.append(_deep_merge(base[i], override[i]))
-            elif i < len(override):
-                merged.append(override[i])
-            else:
-                merged.append(base[i])
-        return merged
+        return override
 
     # override wins only if not None
     return override if override is not None else base
@@ -578,6 +569,7 @@ def page_edit_get(
     db: Session = Depends(get_db),
 ):
     user = _require_web_user(request)
+    is_superadmin = bool(user.get("is_superadmin"))
     active = _get_active_tenant(request)
     tid = int((active or {}).get("id") or 0)
     if not tid:
@@ -627,6 +619,7 @@ def page_edit_get(
             "request": request,
             "user": {"id": int(user["id"]), "email": user.get("email")},
             "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
@@ -656,6 +649,7 @@ def page_edit_post(
     content_json: str = Form(...),
 ):
     user = _require_web_user(request)
+    is_superadmin = bool(user.get("is_superadmin"))
     active = _get_active_tenant(request)
     tid = int((active or {}).get("id") or 0)
     if not tid:
@@ -697,14 +691,15 @@ def page_edit_post(
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
-                "request": request,
-                "user": {"id": int(user["id"]), "email": user.get("email")},
-                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
-                "page": {
-                    "id": entry.id,
-                    "slug": entry.slug,
-                    "title": (data.get("title") or data.get("name") or entry.slug),
-                    "status": entry.status,
+            "request": request,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": (data.get("title") or data.get("name") or entry.slug),
+                "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                     "section_id": int(section.id),
@@ -739,14 +734,15 @@ def page_edit_post(
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
-                "request": request,
-                "user": {"id": int(user["id"]), "email": user.get("email")},
-                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
-                "page": {
-                    "id": entry.id,
-                    "slug": entry.slug,
-                    "title": (parsed.get("title") or (entry.data or {}).get("title") or entry.slug),
-                    "status": entry.status,
+            "request": request,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": (parsed.get("title") or (entry.data or {}).get("title") or entry.slug),
+                "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                     "section_id": int(section.id),
@@ -782,14 +778,15 @@ def page_edit_post(
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
-                "request": request,
-                "user": {"id": int(user["id"]), "email": user.get("email")},
-                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
-                "page": {
-                    "id": entry.id,
-                    "slug": entry.slug,
-                    "title": (base_data.get("title") or entry.slug),
-                    "status": entry.status,
+            "request": request,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": (base_data.get("title") or entry.slug),
+                "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                     "section_id": int(section.id),
@@ -844,6 +841,7 @@ def page_edit_post(
             "request": request,
             "user": {"id": int(user["id"]), "email": user.get("email")},
             "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,

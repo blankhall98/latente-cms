@@ -53,6 +53,7 @@
               Advanced Actions
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow z2h-adv-menu" role="menu" aria-label="Advanced actions">
+              {% if is_superadmin %}
               <li role="none">
                 <a role="menuitem"
                    class="dropdown-item d-none"
@@ -60,6 +61,7 @@
                    target="_blank"
                    rel="noopener">Delivery JSON</a>
               </li>
+              {% endif %}
               <li><hr class="dropdown-divider"></li>
               <li role="none">
                 <button role="menuitem"
