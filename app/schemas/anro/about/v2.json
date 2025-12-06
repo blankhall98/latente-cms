@@ -83,7 +83,16 @@
         "name": { "type": "string", "x-ui": { "label": "Name" } },
         "lastName": { "type": "string", "x-ui": { "label": "Last Name" } },
         "role": { "type": "string", "x-ui": { "label": "Role" } },
-        "description": { "type": "string", "x-ui": { "label": "Member Description", "textarea": true } }
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "x-ui": {
+            "label": "Member Description",
+            "textarea": true,
+            "help": "Up to 200 characters",
+            "maxLength": 200
+          }
+        }
       },
       "required": ["profilePicture", "name", "lastName", "role", "description"]
     }

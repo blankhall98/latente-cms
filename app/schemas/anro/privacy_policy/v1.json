@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/privacy_policy/v1.json",
+  "title": "ANRO - Privacy Policy v1",
+  "type": "object",
+  "x-ui": { "label": "Privacy Policy", "order": ["body"] },
+  "properties": {
+    "body": {
+      "type": "string",
+      "x-ui": {
+        "label": "Privacy Policy Text",
+        "textarea": true,
+        "rows": 12,
+        "help": "Add the full privacy policy. No character limit."
+      }
+    }
+  },
+  "required": ["body"]
+}

@@ -150,7 +150,8 @@
 
         <!-- Panels per section -->
         {% for it in sections_ui %}
-        {% set S = it.sec|default({}, true) %}
+        {# Preserve primitives (avoid defaulting falsy values like "" to {}) #}
+        {% set S = it.sec if it.sec is not none else {} %}
         {% set PID = 'panel-section-' ~ (it.index if it.index is defined else loop.index0) %}
         <section id="{{ PID }}"
                  class="z2h-panel d-none"
@@ -796,15 +797,39 @@
     }
 
     if(t==='string'){
+      let maxLen = schema.maxLength || ui.maxLength || ui.max || null;
+      const canonLabel = (label||'').trim().toLowerCase();
+      if(!maxLen && canonLabel === 'member description'){ maxLen = 200; }
+      const autoId = `af-${path.replace(/[^a-zA-Z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
       const isTextarea = !!ui.textarea;
       if(isTextarea){
         const ta=document.createElement('textarea'); ta.className='form-control z2h-dirty textarea-lg';
         ta.name=NAME; ta.placeholder=placeholder; if(value!=null) ta.value=String(value); if(readOnly) ta.readOnly=true;
         if(ui.rows){ ta.rows = parseInt(ui.rows,10) || 6; }
-        wrap.appendChild(lab); wrap.appendChild(ta); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+        if(maxLen){ ta.maxLength=maxLen; ta.classList.add('z2h-count'); ta.dataset.max=String(maxLen); if(!ta.id) ta.id=autoId; }
+        wrap.appendChild(lab); wrap.appendChild(ta);
+        if(maxLen){
+          const meter=document.createElement('div'); meter.className='form-hint';
+          meter.innerHTML=`<span data-for="${ta.id}">0</span>/${maxLen}`;
+          const span=meter.querySelector(`[data-for="${ta.id}"]`);
+          const upd=()=>{ if(span){ const n=(ta.value||'').trim().length; span.textContent=n; ta.classList.toggle('is-invalid', n>maxLen); } };
+          ta.addEventListener('input', upd); upd();
+          wrap.appendChild(meter);
+        }
+        wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
       }
       const inp=document.createElement('input'); inp.type='text'; inp.className='form-control z2h-dirty'; inp.name=NAME; inp.placeholder=placeholder; if(value!=null) inp.value=String(value); if(readOnly) inp.readOnly=true;
-      wrap.appendChild(lab); wrap.appendChild(inp); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+      if(maxLen){ inp.maxLength=maxLen; inp.classList.add('z2h-count'); inp.dataset.max=String(maxLen); if(!inp.id) inp.id=autoId; }
+      wrap.appendChild(lab); wrap.appendChild(inp);
+      if(maxLen){
+        const meter=document.createElement('div'); meter.className='form-hint';
+        meter.innerHTML=`<span data-for="${inp.id}">0</span>/${maxLen}`;
+        const span=meter.querySelector(`[data-for="${inp.id}"]`);
+        const upd=()=>{ if(span){ const n=(inp.value||'').trim().length; span.textContent=n; inp.classList.toggle('is-invalid', n>maxLen); } };
+        inp.addEventListener('input', upd); upd();
+        wrap.appendChild(meter);
+      }
+      wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
     if(t==='number' || t==='integer'){
@@ -961,8 +986,8 @@
     const isArrayData = Array.isArray(secData);
     if(panelKey && schemaUI?.properties && schemaUI.properties[panelKey]){
       sub = schemaUI.properties[panelKey];
-      // If this node is an empty ref, fallback to variant pick
-      if(!sub.properties && !sub.items){
+      // Only fallback if truly empty (no type/properties/items)
+      if(!sub || (!sub.type && !sub.properties && !sub.items)){
         sub = pickSectionSubschema(schemaUI, secData);
       }
       // Explicit array handling when schema is present
@@ -974,8 +999,19 @@
     }else{
       sub = pickSectionSubschema(schemaUI, secData);
     }
+    // Primitive fallback when schema is missing but data exists
+    if(!sub && (typeof secData === 'string' || typeof secData === 'number' || typeof secData === 'boolean')){
+      sub = { type: typeof secData === 'number' ? 'number' : (typeof secData === 'boolean' ? 'boolean' : 'string') };
+    }
+
     if(!sub && secData!==undefined){
       sub = inferSchemaFromData(secData);
+    }
+    // If this is a primitive field (string/number/boolean) at the panel root, render it directly
+    if(sub && (!sub.properties && !sub.items) && (['string','number','integer','boolean'].includes(sub.type))){
+      renderField(panelKey || 'section', sub, secData, host);
+      const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+      return;
     }
     // If we still don't have items for an array data, synthesize a minimal array schema
     if(isArrayData && (!sub || (!sub.items && !sub.oneOf && !sub.anyOf))){
