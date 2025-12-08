@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/navigation/v2.json",
+  "title": "ANRO - Navigation v2",
+  "type": "object",
+  "x-ui": { "label": "Navigation", "order": ["navbar", "footer"] },
+  "properties": {
+    "navbar": {
+      "type": "object",
+      "x-ui": { "label": "Navbar", "order": ["left", "middle", "right"] },
+      "properties": {
+        "left":   { "$ref": "#/$defs/Link", "x-ui": { "label": "Left Link" } },
+        "middle": { "$ref": "#/$defs/Link", "x-ui": { "label": "Middle Link" } },
+        "right":  { "$ref": "#/$defs/Link", "x-ui": { "label": "Right Link" } }
+      },
+      "required": ["left", "middle", "right"]
+    },
+    "footer": {
+      "type": "object",
+      "x-ui": { "label": "Footer", "order": ["footerMain", "getInTouch", "letsConnect", "subscribe", "discussProject", "legal"] },
+      "properties": {
+        "footerMain": {
+          "type": "object",
+          "x-ui": { "label": "Footer Main" },
+          "properties": {
+            "header": { "type": "string", "x-ui": { "label": "Footer Header", "textarea": true } }
+          },
+          "required": ["header"]
+        },
+        "getInTouch": {
+          "type": "object",
+          "x-ui": { "label": "Get In Touch", "order": ["telephone", "contactEmail", "address"] },
+          "properties": {
+            "telephone":    { "type": "string", "x-ui": { "label": "Telephone" } },
+            "contactEmail": { "type": "string", "format": "email", "x-ui": { "label": "Contact Email" } },
+            "address":      { "type": "string", "x-ui": { "label": "Address" } }
+          },
+          "required": ["telephone", "contactEmail", "address"]
+        },
+        "letsConnect": {
+          "type": "object",
+          "x-ui": { "label": "Lets Connect", "order": ["linkedIn", "instagram", "youtube"] },
+          "properties": {
+            "linkedIn": { "type": "string", "format": "uri", "x-ui": { "label": "LinkedIn URL" } },
+            "instagram": { "type": "string", "format": "uri", "x-ui": { "label": "Instagram URL" } },
+            "youtube": { "type": "string", "format": "uri", "x-ui": { "label": "YouTube URL" } }
+          },
+          "required": ["linkedIn", "instagram", "youtube"]
+        },
+        "subscribe": {
+          "type": "object",
+          "x-ui": { "label": "Subscribe to Newsletter" },
+          "properties": {
+            "newsletterEmail": { "type": "string", "format": "email", "x-ui": { "label": "Newsletter Email" } }
+          },
+          "required": ["newsletterEmail"]
+        },
+        "discussProject": {
+          "type": "object",
+          "x-ui": { "label": "Discuss a Project With Us" },
+          "properties": {
+            "formMessage": { "type": "string", "x-ui": { "label": "Form Message" } },
+            "projectsEmail": { "type": "string", "format": "email", "x-ui": { "label": "Projects Email" } }
+          },
+          "required": ["formMessage", "projectsEmail"]
+        },
+        "legal": {
+          "type": "object",
+          "x-ui": { "label": "Legal" },
+          "properties": {
+            "rightsReserved": { "type": "string", "x-ui": { "label": "Rights Reserved" } },
+            "privacyPolicy": { "type": "string", "format": "uri", "x-ui": { "label": "Privacy Policy URL" } }
+          },
+          "required": ["rightsReserved", "privacyPolicy"]
+        }
+      },
+      "required": ["footerMain", "getInTouch", "letsConnect", "subscribe", "discussProject", "legal"]
+    }
+  },
+  "required": ["navbar", "footer"],
+  "$defs": {
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link", "order": ["label", "href"] },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Text" } },
+        "href":  { "type": "string", "x-ui": { "label": "Href/Path" } }
+      },
+      "required": ["label", "href"]
+    }
+  }
+}

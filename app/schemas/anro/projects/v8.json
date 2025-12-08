@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/projects/v8.json",
+  "title": "ANRO - Projects v8",
+  "type": "object",
+  "x-ui": { "label": "Projects", "order": ["projects"] },
+  "properties": {
+    "projects": {
+      "type": "array",
+      "x-ui": { "label": "Projects", "addLabel": "Add project" },
+      "items": { "$ref": "#/$defs/Project" }
+    }
+  },
+  "required": ["projects"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt text" } }
+      },
+      "required": ["url"]
+    },
+    "Project": {
+      "type": "object",
+      "x-ui": {
+        "label": "Project",
+        "order": [
+          "title",
+          "description",
+          "projectTagline",
+          "year",
+          "location",
+          "team",
+          "sqft",
+          "client",
+          "contractor",
+          "structuralDesign",
+          "interiorDesign",
+          "landscaping",
+          "civilDesign",
+          "inCollaborationWith",
+          "selectedPress",
+          "selectedAwards",
+          "gallery",
+          "coverImage",
+          "sketchImage",
+          "type"
+        ]
+      },
+      "properties": {
+        "title": { "type": "string", "x-ui": { "label": "Project Title" } },
+        "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "projectTagline": { "type": "string", "x-ui": { "label": "Project Tagline" } },
+        "year": { "type": "integer", "x-ui": { "label": "Year" } },
+        "location": { "type": "string", "x-ui": { "label": "Location" } },
+        "team": {
+          "type": "array",
+          "x-ui": { "label": "ANRO Team", "addLabel": "Add team member" },
+          "items": { "type": "string", "x-ui": { "label": "Team member" } }
+        },
+        "sqft": { "type": "integer", "x-ui": { "label": "SQFT" } },
+        "client": { "type": "string", "x-ui": { "label": "Client" } },
+        "contractor": { "type": "string", "x-ui": { "label": "Contractor" } },
+        "structuralDesign": { "type": "string", "x-ui": { "label": "Structural Design" } },
+        "interiorDesign": { "type": "string", "x-ui": { "label": "Interior Design" } },
+        "landscaping": { "type": "string", "x-ui": { "label": "Landscape Design" } },
+        "civilDesign": { "type": "string", "x-ui": { "label": "Civil Design" } },
+        "inCollaborationWith": {
+          "type": "array",
+          "x-ui": { "label": "In collaboration with", "addLabel": "Add collaborator" },
+          "items": { "type": "string", "x-ui": { "label": "Collaborator name" } }
+        },
+        "selectedPress": {
+          "type": "array",
+          "x-ui": { "label": "Selected Press", "addLabel": "Add press item" },
+          "items": {
+            "type": "object",
+            "x-ui": { "label": "Press" },
+            "properties": {
+              "label": { "type": "string", "x-ui": { "label": "Press" } },
+              "href": { "type": "string", "x-ui": { "label": "Href/URL", "placeholder": "https://..." } }
+            },
+            "required": ["label"]
+          }
+        },
+        "selectedAwards": {
+          "type": "array",
+          "x-ui": { "label": "Selected Awards", "addLabel": "Add award" },
+          "items": {
+            "type": "object",
+            "x-ui": { "label": "Award" },
+            "properties": {
+              "label": { "type": "string", "x-ui": { "label": "Award" } },
+              "href": { "type": "string", "x-ui": { "label": "Href/URL", "placeholder": "https://..." } }
+            },
+            "required": ["label"]
+          }
+        },
+        "gallery": {
+          "type": "array",
+          "x-ui": { "label": "Gallery Images", "addLabel": "Add image" },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "coverImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Cover Image" } },
+        "sketchImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Sketch Image" } },
+        "type": {
+          "type": "string",
+          "enum": ["Residential", "Commercial"],
+          "x-ui": { "label": "Type", "widget": "select" }
+        }
+      },
+      "required": ["title"]
+    }
+  }
+}
