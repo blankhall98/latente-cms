@@ -212,6 +212,11 @@
   .z2h-adv-menu .dropdown-item{ font-weight: 600; }
   .z2h-adv-menu .dropdown-item:hover{ background: #f3f6ff; }
 
+  /* Featured projects chips */
+  .z2h-chip-list .z2h-chip-selected{ background:#fff; color:#111; border:1px solid #d1d5db; }
+  .z2h-chip-close{ filter:none !important; opacity:0.8; color:#b91c1c; }
+  .z2h-chip-close:hover{ opacity:1; color:#7f1d1d; }
+
   /* Soft divider (gradiente) */
   .z2h-soft-divider{
     height:1px;
@@ -896,8 +901,7 @@
     // Special case: featured projects picker (array of strings with widget=project-select)
       if(itemUi.widget === 'project-select'){
         const chips=document.createElement('div'); chips.className='d-flex flex-wrap gap-2 mb-2 z2h-chip-list';
-        const select=document.createElement('select'); select.className='form-select form-select-sm'; select.name=NAME + '::select';
-        const btn=document.createElement('button'); btn.type='button'; btn.className='btn btn-soft-success btn-sm'; btn.textContent='Add project';
+        const listBox=document.createElement('div'); listBox.className='z2h-fp-list d-flex flex-column gap-2';
 
         const current = Array.isArray(value)? [...value] : [];
         // Fallback: pull from injected entry data if nothing rendered (helps when server seed is empty)
@@ -912,42 +916,47 @@
         const syncHidden=()=>{
           hiddenHost.innerHTML='';
           current.forEach((v,idx)=>{
-            const h=document.createElement('input'); h.type='hidden'; h.name=`af:${NAME}[${idx}]`; h.value=v; hiddenHost.appendChild(h);
+            const h=document.createElement('input'); h.type='hidden'; h.name=`${NAME}[${idx}]`; h.value=v; hiddenHost.appendChild(h);
           });
         };
         const renderChips=()=>{
           chips.innerHTML='';
           current.forEach((slug,idx)=>{
-            const chip=document.createElement('span'); chip.className='badge bg-secondary d-flex align-items-center gap-1 px-2 py-2 z2h-chip-selected';
+            const chip=document.createElement('span'); chip.className='badge z2h-chip-selected d-flex align-items-center gap-1 px-2 py-2';
             chip.textContent = slug;
-            const x=document.createElement('button'); x.type='button'; x.className='btn-close btn-close-white btn-sm'; x.style.filter='invert(1)';
-            x.addEventListener('click',()=>{ current.splice(idx,1); renderChips(); syncHidden(); setDirty(true); });
+            const x=document.createElement('button'); x.type='button'; x.className='btn-close btn-close-white btn-sm z2h-chip-close';
+            x.addEventListener('click',()=>{ current.splice(idx,1); renderChips(); syncHidden(); setDirty(true); renderOptions(); });
             chip.appendChild(x); chips.appendChild(chip);
           });
         };
         renderChips(); syncHidden();
 
-        btn.addEventListener('click', ()=>{
-          const selVal = select.value;
-          if(selVal && !current.includes(selVal)){
-            current.push(selVal);
-            renderChips(); syncHidden(); setDirty(true);
-          }
-        });
-
-        (async ()=>{
+        const renderOptions = async ()=>{
           try{
             const opts = await getProjectsOptions();
-            select.innerHTML='';
+            listBox.innerHTML='';
             opts.forEach(o=>{
-              const opt=document.createElement('option'); opt.value=o.value; opt.textContent=o.label; select.appendChild(opt);
+              const row=document.createElement('label');
+              row.className='z2h-fp-item form-check d-flex align-items-center justify-content-between gap-2';
+              const cb=document.createElement('input'); cb.type='checkbox'; cb.className='form-check-input'; cb.value=o.value;
+              cb.checked = current.includes(o.value);
+              cb.addEventListener('change', ()=>{
+                if(cb.checked){
+                  if(!current.includes(cb.value)) current.push(cb.value);
+                }else{
+                  const i=current.indexOf(cb.value); if(i>=0) current.splice(i,1);
+                }
+                renderChips(); syncHidden(); setDirty(true);
+              });
+              const txt=document.createElement('span'); txt.className='flex-grow-1'; txt.textContent=o.label;
+              row.appendChild(txt); row.appendChild(cb); listBox.appendChild(row);
             });
           }catch(_){}
-        })();
+        };
+        renderOptions();
 
         wrap.appendChild(chips);
-        wrap.appendChild(select);
-        wrap.appendChild(btn);
+        wrap.appendChild(listBox);
         wrap.appendChild(hiddenHost);
         wrap.insertAdjacentHTML('beforeend', hint);
         parent.appendChild(wrap);
@@ -1277,6 +1286,21 @@
         }
       }catch(_){}
       // Do NOT auto-fill projects from previous data; respect form intent
+    }
+
+    // Explicitly extract featuredProjects from its chips/hidden inputs to ensure it is sent
+    const fpPanelExists = !!document.querySelector('[data-section-key="featuredProjects"]');
+    const fpInputs = Array.from(document.querySelectorAll('[name^="af:featuredProjects"]'));
+    if(fpInputs.length){
+      const fps=[];
+      fpInputs.sort((a,b)=>a.name.localeCompare(b.name));
+      fpInputs.forEach(inp=>{
+        if(inp.value) fps.push(inp.value);
+      });
+      out.featuredProjects = fps;
+    } else if(fpPanelExists){
+      // Explicitly clear if no chips present
+      out.featuredProjects = [];
     }
 
     contentJson.value = JSON.stringify(out);

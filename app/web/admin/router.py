@@ -168,6 +168,15 @@ def _normalize_projects_payload(payload: Any) -> dict:
     return out
 
 
+def _clean_projects_list(lst: Any) -> list[dict]:
+    """
+    Remove null/invalid items from a projects array.
+    """
+    if not isinstance(lst, list):
+        return []
+    return [p for p in lst if isinstance(p, dict)]
+
+
 def _render_projects_data(data: Any) -> dict:
     """
     If a draft exists, return draft projects; otherwise return published/root projects.
@@ -893,9 +902,10 @@ def page_edit_post(
         incoming_projects = _normalize_projects_payload(payload)
         # If projects key is missing, fall back to existing; but if it is present (even empty), respect it.
         if "projects" not in incoming_projects:
-            incoming_projects["projects"] = base_projects_data.get("projects", [])
+            incoming_projects["projects"] = []
         elif incoming_projects.get("projects") is None:
-            incoming_projects["projects"] = base_projects_data.get("projects", [])
+            incoming_projects["projects"] = []
+        incoming_projects["projects"] = _clean_projects_list(incoming_projects.get("projects"))
         if "seo" not in incoming_projects and base_projects_data.get("seo"):
             incoming_projects["seo"] = base_projects_data["seo"]
         if "replace" not in incoming_projects:
@@ -1014,17 +1024,19 @@ def page_edit_post(
     if isinstance(working_base, dict) and "__draft" in working_base:
         working_base = {k: v for k, v in working_base.items() if k != "__draft"}
     if getattr(section, "key", "") == "home":
-        # For home, merge conservatively: keep existing featuredProjects unless an explicit array is provided
+        # Home: carry featuredProjects exactly as submitted; if missing, keep existing
         merged = dict(working_base) if isinstance(working_base, dict) else {}
+        existing_fp = merged.get("featuredProjects") if isinstance(merged, dict) else []
+        incoming_fp_present = isinstance(payload, dict) and "featuredProjects" in payload
+        if incoming_fp_present:
+            merged["featuredProjects"] = payload.get("featuredProjects") if isinstance(payload.get("featuredProjects"), list) else []
+        else:
+            merged["featuredProjects"] = existing_fp if isinstance(existing_fp, list) else []
         if isinstance(payload, dict):
             for k, v in payload.items():
                 if k == "featuredProjects":
-                    if isinstance(v, list):
-                        merged["featuredProjects"] = v
-                else:
-                    merged[k] = _deep_merge(merged.get(k), v)
-        if "featuredProjects" not in merged and isinstance(working_base, dict) and isinstance(working_base.get("featuredProjects"), list):
-            merged["featuredProjects"] = working_base.get("featuredProjects")
+                    continue
+                merged[k] = _deep_merge(merged.get(k), v)
     else:
         merged = _deep_merge(working_base, payload)
     if not incoming_has_sections_key and "sections" in working_base:
