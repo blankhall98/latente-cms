@@ -180,7 +180,7 @@
     {% endfor %}
 
         <!-- Hidden JSON for POST -->
-        <textarea name="content_json" id="z2h-content-json" class="d-none" aria-hidden="true"></textarea>
+        <textarea name="content_json" id="z2h-content-json" class="d-none" aria-hidden="true" data-entry-data="{{ __entry_data_json|default('') }}"></textarea>
 
         <!-- Bottom actions (mobile only) -->
         <div class="z2h-actions-bottom d-md-none">
@@ -560,6 +560,46 @@
     }
   })();
 
+  async function getProjectsOptions(){
+    const opts = [];
+    const seen = new Set();
+
+    const addTitles = (arr)=>{
+      if(!Array.isArray(arr)) return;
+      arr.forEach(p=>{
+        const t = (p && (p.title||p.name||'').trim()) || '';
+        if(!t) return;
+        if(seen.has(t)) return;
+        seen.add(t);
+        opts.push({ label: t, value: t });
+      });
+    };
+
+    // From injected entry data (root + draft)
+    try{
+      const entryData = window.__ENTRY_DATA__ || (document.getElementById('z2h-content-json')?.dataset?.entryData ? JSON.parse(document.getElementById('z2h-content-json').dataset.entryData) : null);
+      if(entryData){
+        addTitles(entryData.projects);
+        if(entryData.__draft) addTitles(entryData.__draft.projects);
+      }
+    }catch(_){}
+
+    // Fetch published delivery as fallback
+    const tenant=root?.dataset?.tenant||'';
+    if(tenant && opts.length===0){
+      try{
+        const url = `/delivery/v1/tenants/${tenant}/sections/projects/entries/projects?_=${Date.now()}`;
+        const res = await fetch(url, { headers:{'X-Requested-With':'fetch'} });
+        if(res.ok){
+          const j = await res.json();
+          addTitles(j?.data?.projects);
+        }
+      }catch(_){}
+    }
+
+    return opts;
+  }
+
   (function(){
     const publishBtn=document.getElementById('z2h-publish-btn');
     if(!publishBtn) return;
@@ -620,6 +660,8 @@
   })();
 
   let SCHEMA_UI=null;
+  // Inject entry.data for fallbacks (set server-side)
+  window.__ENTRY_DATA__ = window.__ENTRY_DATA__ || (document.getElementById('z2h-content-json')?.dataset?.entryData ? JSON.parse(document.getElementById('z2h-content-json').dataset.entryData) : null);
   (function(){
     try{
       const script=document.getElementById('z2h-schema-ui');
@@ -851,24 +893,32 @@
       const itemsSchema=schema.items||{};
       const itemUi = uiOf(itemsSchema);
 
-      // Special case: featured projects picker (array of strings with widget=project-select)
+    // Special case: featured projects picker (array of strings with widget=project-select)
       if(itemUi.widget === 'project-select'){
-        const chips=document.createElement('div'); chips.className='d-flex flex-wrap gap-2 mb-2';
+        const chips=document.createElement('div'); chips.className='d-flex flex-wrap gap-2 mb-2 z2h-chip-list';
         const select=document.createElement('select'); select.className='form-select form-select-sm'; select.name=NAME + '::select';
         const btn=document.createElement('button'); btn.type='button'; btn.className='btn btn-soft-success btn-sm'; btn.textContent='Add project';
 
         const current = Array.isArray(value)? [...value] : [];
+        // Fallback: pull from injected entry data if nothing rendered (helps when server seed is empty)
+        if(current.length === 0){
+          try{
+            const ed = window.__ENTRY_DATA__ || {};
+            if(Array.isArray(ed.featuredProjects) && ed.featuredProjects.length){ current.push(...ed.featuredProjects); }
+            else if(Array.isArray(ed.__draft?.featuredProjects) && ed.__draft.featuredProjects.length){ current.push(...ed.__draft.featuredProjects); }
+          }catch(_){}
+        }
         const hiddenHost=document.createElement('div');
         const syncHidden=()=>{
           hiddenHost.innerHTML='';
           current.forEach((v,idx)=>{
-            const h=document.createElement('input'); h.type='hidden'; h.name=`${NAME}[${idx}]`; h.value=v; hiddenHost.appendChild(h);
+            const h=document.createElement('input'); h.type='hidden'; h.name=`af:${NAME}[${idx}]`; h.value=v; hiddenHost.appendChild(h);
           });
         };
         const renderChips=()=>{
           chips.innerHTML='';
           current.forEach((slug,idx)=>{
-            const chip=document.createElement('span'); chip.className='badge bg-secondary d-flex align-items-center gap-1';
+            const chip=document.createElement('span'); chip.className='badge bg-secondary d-flex align-items-center gap-1 px-2 py-2 z2h-chip-selected';
             chip.textContent = slug;
             const x=document.createElement('button'); x.type='button'; x.className='btn-close btn-close-white btn-sm'; x.style.filter='invert(1)';
             x.addEventListener('click',()=>{ current.splice(idx,1); renderChips(); syncHidden(); setDirty(true); });
@@ -984,12 +1034,35 @@
     const panelKey=(panel.getAttribute('data-section-key')||'').trim();
     let sub=null;
     const isArrayData = Array.isArray(secData);
+
+    // Special case: privacy_policy single body field
+    if(panelKey==='privacy_policy' && schemaUI?.properties?.body){
+      const bodySchema = schemaUI.properties.body;
+      let val = secData;
+      if(val && typeof val === 'object' && !Array.isArray(val) && val.body !== undefined){
+        val = val.body;
+      }
+      renderField('body', bodySchema, val ?? '', host);
+      const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+      return;
+    }
+    if(panelKey==='featuredProjects' && schemaUI?.properties?.featuredProjects){
+      const fpSchema = schemaUI.properties.featuredProjects;
+      const val = Array.isArray(secData?.featuredProjects) ? secData.featuredProjects : (Array.isArray(secData) ? secData : []);
+      renderField('featuredProjects', fpSchema, val, host);
+      const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+      return;
+    }
+    // Special case: projects array
+    if(panelKey==='projects' && schemaUI?.properties?.projects){
+      const projSchema = schemaUI.properties.projects;
+      let val = Array.isArray(secData) ? secData : (secData && secData.projects && Array.isArray(secData.projects) ? secData.projects : []);
+      renderField('projects', projSchema, val, host);
+      const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+      return;
+    }
     if(panelKey && schemaUI?.properties && schemaUI.properties[panelKey]){
       sub = schemaUI.properties[panelKey];
-      // Only fallback if truly empty (no type/properties/items)
-      if(!sub || (!sub.type && !sub.properties && !sub.items)){
-        sub = pickSectionSubschema(schemaUI, secData);
-      }
       // Explicit array handling when schema is present
       if((sub && (sub.type==='array' || sub.items)) && isArrayData){
         renderField(panelKey, sub, secData ?? [], host);
@@ -1009,7 +1082,11 @@
     }
     // If this is a primitive field (string/number/boolean) at the panel root, render it directly
     if(sub && (!sub.properties && !sub.items) && (['string','number','integer','boolean'].includes(sub.type))){
-      renderField(panelKey || 'section', sub, secData, host);
+      let val = secData;
+      if(panelKey && val && typeof val === 'object' && !Array.isArray(val) && val[panelKey] !== undefined){
+        val = val[panelKey];
+      }
+      renderField(panelKey || 'section', sub, val, host);
       const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
       return;
     }
@@ -1039,7 +1116,14 @@
     } else if(keys.includes('left') && keys.includes('middle') && keys.includes('right')){
       keys = ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
     }
-    if(!keys.length){ host.innerHTML='<div class="text-muted">No schema fields available.</div>'; return; }
+    if(!keys.length){
+      // Last-resort fallback for primitive panels (e.g., privacy_policy body) when schema props are empty
+      if(panelKey && (typeof secData === 'string' || typeof secData === 'number' || typeof secData === 'boolean')){
+        renderField(panelKey, { type: typeof secData === 'number' ? 'number' : (typeof secData === 'boolean' ? 'boolean' : 'string'), 'x-ui': { label: panelKey } }, secData, host);
+        return;
+      }
+      host.innerHTML='<div class="text-muted">No schema fields available.</div>'; return;
+    }
     keys.forEach(k=>{
       if(k==='type' && (props[k]?.const || (Array.isArray(props[k]?.enum) && props[k].enum.length===1))) return;
       renderField(k, props[k], secData ? secData[k] : undefined, host);
@@ -1144,16 +1228,29 @@
       if(!isEmptySection(merged)){
         const key = (panel.getAttribute('data-section-key')||'').trim();
         if(key){
-          if(Object.keys(merged).length === 1 && merged[key] !== undefined){
+          if(key === 'privacy_policy' && merged.body !== undefined){
+            keyed['body'] = merged.body;
+            if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged.body); }catch{} }
+          } else if(key === 'featuredProjects'){
+            const fpVal = Array.isArray(merged) ? merged
+              : Array.isArray(merged.featuredProjects) ? merged.featuredProjects
+              : [];
+            if(fpVal.length){
+              keyed[key] = fpVal;
+              if(seedEl){ try{ seedEl.textContent = JSON.stringify(fpVal); }catch{} }
+            }
+          } else if(Object.keys(merged).length === 1 && merged[key] !== undefined){
             keyed[key] = merged[key];
+            if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged[key]); }catch{} }
           }else{
             keyed[key] = merged;
+            if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged); }catch{} }
           }
         }else{
           acc.push(merged);
+          if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged); }catch{} }
         }
-      }
-      if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged); }catch{} }
+      }else if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged); }catch{} }
     });
 
     if(acc.length){
@@ -1183,8 +1280,55 @@
             const seedObj = JSON.parse(seed.textContent || '{}');
             if(Array.isArray(seedObj)) out.projects = seedObj;
             else if(seedObj && Array.isArray(seedObj.projects)) out.projects = seedObj.projects;
+            else if(seedObj && Array.isArray(seedObj.__draft?.projects)) out.projects = seedObj.__draft.projects;
           }catch(_){}
         }
+      }
+      if(!out.projects){
+        const formJsonEl = document.getElementById('z2h-content-json');
+        const formJson = formJsonEl?.value;
+        if(formJson){
+          try{
+            const parsed = JSON.parse(formJson);
+            if(Array.isArray(parsed?.projects)) out.projects = parsed.projects;
+            else if(parsed?.__draft?.projects && Array.isArray(parsed.__draft.projects)) out.projects = parsed.__draft.projects;
+          }catch(_){}
+        }
+      }
+      if(!out.projects){
+        // Last resort: pull from current entry.data (injected into dataset attribute)
+        let entryData = window.__ENTRY_DATA__;
+        if(!entryData && formJsonEl?.dataset?.entryData){
+          try{ entryData = JSON.parse(formJsonEl.dataset.entryData); }catch(_){}
+        }
+        if(entryData){
+          try{
+            const parsed = typeof entryData === 'string' ? JSON.parse(entryData) : entryData;
+            if(Array.isArray(parsed?.projects)) out.projects = parsed.projects;
+            else if(parsed?.__draft?.projects && Array.isArray(parsed.__draft.projects)) out.projects = parsed.__draft.projects;
+          }catch(_){}
+        }
+      }
+    }
+
+    // Fallback to avoid wiping featuredProjects if the picker didn’t serialize
+    if(!out.featuredProjects || !Array.isArray(out.featuredProjects) || out.featuredProjects.length===0){
+      // try seed from panel JSON
+      try{
+        const fpPanel = document.querySelector('[data-section-key="featuredProjects"] .z2h-sec-json');
+        if(fpPanel){
+          const seed = JSON.parse(fpPanel.textContent || 'null');
+          if(Array.isArray(seed)) out.featuredProjects = seed;
+          else if(seed && Array.isArray(seed.featuredProjects)) out.featuredProjects = seed.featuredProjects;
+        }
+      }catch(_){}
+      // try injected entry data
+      if(!out.featuredProjects || out.featuredProjects.length===0){
+        try{
+          const ed = window.__ENTRY_DATA__;
+          if(Array.isArray(ed?.featuredProjects) && ed.featuredProjects.length) out.featuredProjects = ed.featuredProjects;
+          else if(Array.isArray(ed?.__draft?.featuredProjects) && ed.__draft.featuredProjects.length) out.featuredProjects = ed.__draft.featuredProjects;
+        }catch(_){}
       }
     }
 

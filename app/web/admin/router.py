@@ -168,6 +168,97 @@ def _normalize_projects_payload(payload: Any) -> dict:
     return out
 
 
+def _render_projects_data(data: Any) -> dict:
+    """
+    Merge published root projects with draft projects for display.
+    Draft entries with the same title override the published ones; otherwise both are shown.
+    """
+    if not isinstance(data, dict):
+        return {"projects": []}
+
+    # Keep published root separate from draft; do NOT unwrap __draft when building root
+    root_payload = dict(data)
+    if "__draft" in root_payload:
+        root_payload = {k: v for k, v in root_payload.items() if k != "__draft"}
+    root = _normalize_projects_payload(root_payload)
+
+    draft_raw = data.get("__draft") if isinstance(data.get("__draft"), dict) else None
+    draft = _normalize_projects_payload(draft_raw) if draft_raw else {}
+
+    combined = []
+    index_by_title = {}
+
+    def add_list(arr):
+        if not isinstance(arr, list):
+            return
+        for proj in arr:
+            if not isinstance(proj, dict):
+                continue
+            title_key = (proj.get("title") or "").strip().lower()
+            if title_key and title_key in index_by_title:
+                combined[index_by_title[title_key]] = proj
+            else:
+                index_by_title[title_key] = len(combined) if title_key else len(combined)
+                combined.append(proj)
+
+    add_list(root.get("projects"))
+    add_list(draft.get("projects"))
+
+    out = dict(root)
+    out["projects"] = combined
+    if draft.get("seo"):
+        out["seo"] = draft["seo"]
+    if "replace" in draft:
+        out["replace"] = draft["replace"]
+    return out
+
+
+def _render_home_data(data: Any) -> dict:
+    """
+    For Home page, merge draft over root so featuredProjects etc. stay visible after save.
+    """
+    if not isinstance(data, dict):
+        return {}
+    root = data if isinstance(data, dict) else {}
+    draft = root.get("__draft") if isinstance(root.get("__draft"), dict) else None
+    if draft:
+        merged = _deep_merge(root, draft)
+        merged.pop("__draft", None)
+        return merged
+    return root
+
+
+def _normalize_privacy_payload(payload: Any, existing: dict | None = None) -> dict:
+    """
+    Ensure privacy policy payload is a simple object with a string body and optional seo/replace.
+    Avoid wiping content when an empty/invalid payload arrives.
+    """
+    base = existing or {}
+    if not isinstance(base, dict):
+        base = {}
+    out: Dict[str, Any] = {}
+
+    if isinstance(payload, dict):
+        body_val = payload.get("body", payload.get("content"))
+        out["body"] = "" if body_val is None else str(body_val)
+        if "seo" in payload and isinstance(payload.get("seo"), dict):
+            out["seo"] = payload["seo"]
+        elif isinstance(base.get("seo"), dict):
+            out["seo"] = base["seo"]
+        out["replace"] = bool(payload.get("replace", base.get("replace", False)))
+    else:
+        out["body"] = str(payload) if payload is not None else ""
+        if isinstance(base.get("seo"), dict):
+            out["seo"] = base["seo"]
+        out["replace"] = bool(base.get("replace", False))
+
+    # Fallback to existing body if incoming is empty and existing had content
+    if (out.get("body", "") == "") and isinstance(base.get("body"), str) and base.get("body"):
+        out["body"] = base["body"]
+
+    return out
+
+
 def _defaults_from_schema(schema: dict) -> Any:
     if not isinstance(schema, dict):
         return None
@@ -603,12 +694,13 @@ def page_edit_get(
     base_data = entry.data or {}
     is_published = (getattr(entry, "status", "draft") == "published")
     if section.key == "projects":
-        base_data = _normalize_projects_payload(base_data)
-        entry.data = base_data
-        db.add(entry)
-        db.commit()
-        db.refresh(entry)
-        working_data = base_data
+        working_data = _render_projects_data(base_data)
+    elif section.key == "privacy_policy":
+        # Prefer draft if exists, but always normalize to a simple object
+        working_candidate = base_data.get("__draft") if (is_published and isinstance(base_data.get("__draft"), dict)) else base_data
+        working_data = _normalize_privacy_payload(working_candidate, base_data if isinstance(base_data, dict) else {})
+    elif section.key == "home":
+        working_data = _render_home_data(base_data)
     else:
         working_data = (base_data.get("__draft") if (is_published and isinstance(base_data.get("__draft"), dict)) else base_data)
 
@@ -633,7 +725,22 @@ def page_edit_get(
 
     raw_sections = form_model.get("sections") or []
     sections_ui = []
-    if isinstance(raw_sections, list) and raw_sections:
+    if section.key == "privacy_policy":
+        # Single body field; force a simple panel keyed to privacy_policy with body inside
+        sections_ui = [{
+            "index": 0,
+            "label": "01 - Privacy Policy",
+            "sec": {"body": form_model.get("body", "")},
+            "key": "privacy_policy",
+        }]
+    elif section.key == "projects":
+        sections_ui = [{
+            "index": 0,
+            "label": "01 - Projects",
+            "sec": {"projects": form_model.get("projects", [])},
+            "key": "projects",
+        }]
+    elif isinstance(raw_sections, list) and raw_sections:
         for i, sec in enumerate(raw_sections):
             t = (sec or {}).get("type") or "Block"
             heading = (sec or {}).get("heading") or ""
@@ -642,6 +749,13 @@ def page_edit_get(
     else:
         # Fallback for object-style pages (ANRO)
         sections_ui = build_sections_ui_fallback_for_object_page(form_model)
+
+    if getattr(section, "key", "") == "home":
+        entry_json_for_client = _render_home_data(entry.data)
+    elif getattr(section, "key", "") == "projects":
+        entry_json_for_client = _render_projects_data(entry.data)
+    else:
+        entry_json_for_client = working_data if working_data is not None else (entry.data or {})
 
     return templates.TemplateResponse(
         "admin/page_edit.html",
@@ -667,6 +781,7 @@ def page_edit_get(
             "schema_ui_json": schema_ui_json,  # serialized
             "error": None,
             "ok_message": None,
+            "__entry_data_json": json.dumps(entry_json_for_client or {}, ensure_ascii=False),
         },
     )
 
@@ -793,28 +908,41 @@ def page_edit_post(
     # ----------------------------- Anti-wipe rules -----------------------------
     base_data = entry.data or {}
     payload = parsed or {}
+    is_published_now = (getattr(entry, "status", "draft") == "published")
 
-    # Special handling: projects section saves directly to root (no drafts/merge)
+    # Special handling: projects section
     if getattr(section, "key", "") == "projects":
-        # Never allow an empty submission to wipe existing projects
         base_projects_data = _normalize_projects_payload(entry.data or {})
-        payload = _normalize_projects_payload(payload)
-        if not payload.get("projects"):
-            payload["projects"] = base_projects_data.get("projects", [])
-        if "seo" not in payload and base_projects_data.get("seo"):
-            payload["seo"] = base_projects_data["seo"]
-        if "replace" not in payload:
-            payload["replace"] = False
+        incoming_projects = _normalize_projects_payload(payload)
+        if not incoming_projects.get("projects"):
+            incoming_projects["projects"] = base_projects_data.get("projects", [])
+        if "seo" not in incoming_projects and base_projects_data.get("seo"):
+            incoming_projects["seo"] = base_projects_data["seo"]
+        if "replace" not in incoming_projects:
+            incoming_projects["replace"] = False
+
         now = datetime.now(timezone.utc)
-        entry.data = payload
+        if is_published_now:
+            base_clean = dict(entry.data) if isinstance(entry.data, dict) else {}
+            base_clean.pop("__draft", None)
+            base_clean["__draft"] = incoming_projects
+            entry.data = base_clean
+        else:
+            entry.data = incoming_projects
         entry.schema_version = active_version
         entry.updated_at = now
         db.add(entry)
         db.commit()
         db.refresh(entry)
 
-        working_after = entry.data or {}
-        sections_ui = build_sections_ui_fallback_for_object_page(working_after)
+        working_after = _render_projects_data(entry.data)
+        sections_ui = [{
+            "index": 0,
+            "label": "01 - Projects",
+            "sec": {"projects": (working_after or {}).get("projects", [])},
+            "key": "projects",
+        }]
+        entry_json_for_client = _render_projects_data(entry.data)
         return templates.TemplateResponse(
             "admin/page_edit.html",
             {
@@ -837,11 +965,15 @@ def page_edit_post(
                 "seo_title": ((working_after or {}).get("seo") or {}).get("title", ""),
                 "seo_desc": ((working_after or {}).get("seo") or {}).get("description", ""),
                 "sections_ui": sections_ui,
-                "schema_ui_json": schema_ui_json,
-                "error": None,
-                "ok_message": "Changes saved.",
-            },
-        )
+        "schema_ui_json": schema_ui_json,
+        "error": None,
+        "ok_message": "Changes saved.",
+        "__entry_data_json": json.dumps(
+            (_render_home_data(entry.data) if getattr(section, "key", "") == "home" else entry_json_for_client) or {},
+            ensure_ascii=False
+        ),
+    },
+)
 
     incoming_has_sections_key = "sections" in payload
     incoming_sections = payload.get("sections", None)
@@ -896,8 +1028,22 @@ def page_edit_post(
         return cur
 
     working_base = _unwrap_draft(base_data.get("__draft")) if (is_published_now and isinstance(base_data.get("__draft"), dict)) else _unwrap_draft(base_data)
+    if getattr(section, "key", "") == "home":
+        # Home: use merged view (draft over root) so featuredProjects don't vanish
+        working_base = _render_home_data(base_data)
     if isinstance(working_base, dict) and "__draft" in working_base:
         working_base = {k: v for k, v in working_base.items() if k != "__draft"}
+    # Home: prevent wiping featuredProjects when the client sends empty/missing
+    if getattr(section, "key", "") == "home":
+        try:
+            existing_fp = working_base.get("featuredProjects") if isinstance(working_base, dict) else []
+        except Exception:
+            existing_fp = []
+        incoming_fp = payload.get("featuredProjects") if isinstance(payload, dict) else None
+        if (not incoming_fp) and isinstance(existing_fp, list) and len(existing_fp) > 0:
+            if isinstance(payload, dict):
+                payload["featuredProjects"] = existing_fp
+
     merged = _deep_merge(working_base, payload)
     if not incoming_has_sections_key and "sections" in working_base:
         merged["sections"] = working_base["sections"]
@@ -907,8 +1053,32 @@ def page_edit_post(
     # Persist (draft vs root)
     is_published_now = (getattr(entry, "status", "draft") == "published")
     if getattr(section, "key", "") == "projects":
-        # Projects: persist directly to root to avoid nested draft wiping
-        entry.data = merged
+        # Projects: if published, stash into __draft so delivery stays stable until publish
+        if is_published_now:
+            base_clean = dict(base_data) if isinstance(base_data, dict) else {}
+            base_clean.pop("__draft", None)
+            base_clean["__draft"] = merged
+            entry.data = base_clean
+        else:
+            entry.data = merged
+    elif getattr(section, "key", "") == "privacy_policy":
+        # Privacy Policy: accept both {body:...} and {privacy_policy:{body:...}}
+        incoming = payload
+        if isinstance(payload, dict) and "privacy_policy" in payload:
+            pp = payload.get("privacy_policy")
+            if isinstance(pp, dict):
+                incoming = {**payload, **pp}
+            elif isinstance(pp, str):
+                incoming = {**payload, "body": pp}
+        merged = _normalize_privacy_payload(incoming, base_data if isinstance(base_data, dict) else {})
+        if is_published_now:
+            # If already published, stash edits in __draft so delivery stays unchanged until publish
+            base_clean = dict(base_data) if isinstance(base_data, dict) else {}
+            base_clean.pop("__draft", None)
+            base_clean["__draft"] = merged
+            entry.data = base_clean
+        else:
+            entry.data = merged
     elif is_published_now:
         base_clean = dict(base_data)
         base_clean.pop("__draft", None)
@@ -927,12 +1097,38 @@ def page_edit_post(
     current_base = entry.data or {}
     working_after = (current_base.get("__draft") if is_published_now and isinstance(current_base.get("__draft"), dict) else current_base)
 
-    sections = (working_after.get("sections") or [])
-    sections_ui = [{
-        "index": i,
-        "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
-        "sec": (blk or {}),
-    } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after)
+    if getattr(section, "key", "") == "privacy_policy":
+        sections_ui = [{
+            "index": 0,
+            "label": "01 - Privacy Policy",
+            "sec": {"body": working_after.get("body", "")},
+            "key": "privacy_policy",
+        }]
+    elif getattr(section, "key", "") == "home":
+        wa = _render_home_data(entry.data)
+        working_after = wa  # ensure initial_json and SEO values reflect merged view
+        sections_ui = build_sections_ui_fallback_for_object_page(wa)
+    elif getattr(section, "key", "") == "projects":
+        sections_ui = [{
+            "index": 0,
+            "label": "01 - Projects",
+            "sec": {"projects": (working_after or {}).get("projects", [])},
+            "key": "projects",
+        }]
+    else:
+        sections = (working_after.get("sections") or [])
+        sections_ui = [{
+            "index": i,
+            "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
+            "sec": (blk or {}),
+        } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after)
+
+    if getattr(section, "key", "") == "home":
+        entry_json_for_client = _render_home_data(entry.data)
+    elif getattr(section, "key", "") == "projects":
+        entry_json_for_client = _render_projects_data(entry.data)
+    else:
+        entry_json_for_client = working_after if working_after is not None else (entry.data or {})
 
     return templates.TemplateResponse(
         "admin/page_edit.html",
@@ -959,6 +1155,7 @@ def page_edit_post(
             "schema_ui_json": schema_ui_json,
             "error": None,
             "ok_message": "Changes saved.",
+            "__entry_data_json": json.dumps(entry_json_for_client or {}, ensure_ascii=False),
         },
     )
 
@@ -980,17 +1177,30 @@ def admin_publish_page(
     if not tid:
         raise HTTPException(status_code=400, detail="No active project.")
 
-    entry, _section = _load_entry_or_404(db, entry_id, tid)
+    entry, section = _load_entry_or_404(db, entry_id, tid)
 
     data_now = entry.data or {}
     working = data_now.get("__draft") if isinstance(data_now.get("__draft"), dict) else None
     candidate = (working or data_now)
 
+    # Projects: publish merged view (root + draft) so we don't lose published items
+    if getattr(section, "key", "") == "projects":
+        candidate = _render_projects_data(data_now)
+    # Home: publish merged view to keep featured projects and other blocks visible
+    elif getattr(section, "key", "") == "home":
+        candidate = _render_home_data(data_now)
+
     # Allow publish if either sections[] has content OR object-style has meaningful blocks
     has_sections = isinstance(candidate.get("sections"), list) and len(candidate["sections"]) > 0
     object_keys = [k for k in candidate.keys() if k not in ("seo", "replace", "__draft")]
     has_object_blocks = any(isinstance(candidate.get(k), dict) for k in object_keys)
-    if not (has_sections or has_object_blocks):
+    has_array_blocks = any(isinstance(candidate.get(k), list) and len(candidate.get(k) or []) > 0 for k in object_keys)
+    has_primitive_content = any(
+        isinstance(candidate.get(k), (str, int, float, bool))
+        for k in candidate.keys()
+        if k not in ("seo", "replace", "__draft")
+    )
+    if not (has_sections or has_object_blocks or has_array_blocks or has_primitive_content):
         raise HTTPException(status_code=409, detail="Cannot publish an empty page. Save content first.")
 
     now = datetime.now(timezone.utc)
