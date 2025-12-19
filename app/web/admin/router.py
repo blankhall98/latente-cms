@@ -170,47 +170,24 @@ def _normalize_projects_payload(payload: Any) -> dict:
 
 def _render_projects_data(data: Any) -> dict:
     """
-    Merge published root projects with draft projects for display.
-    Draft entries with the same title override the published ones; otherwise both are shown.
+    If a draft exists, return draft projects; otherwise return published/root projects.
+    In both cases, drop null/invalid items.
     """
+    def _drop_invalid(lst):
+        if not isinstance(lst, list):
+            return []
+        return [p for p in lst if isinstance(p, dict)]
+
     if not isinstance(data, dict):
         return {"projects": []}
-
-    # Keep published root separate from draft; do NOT unwrap __draft when building root
-    root_payload = dict(data)
-    if "__draft" in root_payload:
-        root_payload = {k: v for k, v in root_payload.items() if k != "__draft"}
-    root = _normalize_projects_payload(root_payload)
-
     draft_raw = data.get("__draft") if isinstance(data.get("__draft"), dict) else None
-    draft = _normalize_projects_payload(draft_raw) if draft_raw else {}
-
-    combined = []
-    index_by_title = {}
-
-    def add_list(arr):
-        if not isinstance(arr, list):
-            return
-        for proj in arr:
-            if not isinstance(proj, dict):
-                continue
-            title_key = (proj.get("title") or "").strip().lower()
-            if title_key and title_key in index_by_title:
-                combined[index_by_title[title_key]] = proj
-            else:
-                index_by_title[title_key] = len(combined) if title_key else len(combined)
-                combined.append(proj)
-
-    add_list(root.get("projects"))
-    add_list(draft.get("projects"))
-
-    out = dict(root)
-    out["projects"] = combined
-    if draft.get("seo"):
-        out["seo"] = draft["seo"]
-    if "replace" in draft:
-        out["replace"] = draft["replace"]
-    return out
+    if draft_raw is not None:
+        normalized = _normalize_projects_payload(draft_raw)
+        normalized["projects"] = _drop_invalid(normalized.get("projects"))
+        return normalized
+    normalized = _normalize_projects_payload(data)
+    normalized["projects"] = _drop_invalid(normalized.get("projects"))
+    return normalized
 
 
 def _render_home_data(data: Any) -> dict:
@@ -914,7 +891,10 @@ def page_edit_post(
     if getattr(section, "key", "") == "projects":
         base_projects_data = _normalize_projects_payload(entry.data or {})
         incoming_projects = _normalize_projects_payload(payload)
-        if not incoming_projects.get("projects"):
+        # If projects key is missing, fall back to existing; but if it is present (even empty), respect it.
+        if "projects" not in incoming_projects:
+            incoming_projects["projects"] = base_projects_data.get("projects", [])
+        elif incoming_projects.get("projects") is None:
             incoming_projects["projects"] = base_projects_data.get("projects", [])
         if "seo" not in incoming_projects and base_projects_data.get("seo"):
             incoming_projects["seo"] = base_projects_data["seo"]
@@ -1033,18 +1013,20 @@ def page_edit_post(
         working_base = _render_home_data(base_data)
     if isinstance(working_base, dict) and "__draft" in working_base:
         working_base = {k: v for k, v in working_base.items() if k != "__draft"}
-    # Home: prevent wiping featuredProjects when the client sends empty/missing
     if getattr(section, "key", "") == "home":
-        try:
-            existing_fp = working_base.get("featuredProjects") if isinstance(working_base, dict) else []
-        except Exception:
-            existing_fp = []
-        incoming_fp = payload.get("featuredProjects") if isinstance(payload, dict) else None
-        if (not incoming_fp) and isinstance(existing_fp, list) and len(existing_fp) > 0:
-            if isinstance(payload, dict):
-                payload["featuredProjects"] = existing_fp
-
-    merged = _deep_merge(working_base, payload)
+        # For home, merge conservatively: keep existing featuredProjects unless an explicit array is provided
+        merged = dict(working_base) if isinstance(working_base, dict) else {}
+        if isinstance(payload, dict):
+            for k, v in payload.items():
+                if k == "featuredProjects":
+                    if isinstance(v, list):
+                        merged["featuredProjects"] = v
+                else:
+                    merged[k] = _deep_merge(merged.get(k), v)
+        if "featuredProjects" not in merged and isinstance(working_base, dict) and isinstance(working_base.get("featuredProjects"), list):
+            merged["featuredProjects"] = working_base.get("featuredProjects")
+    else:
+        merged = _deep_merge(working_base, payload)
     if not incoming_has_sections_key and "sections" in working_base:
         merged["sections"] = working_base["sections"]
     if isinstance(merged, dict) and "__draft" in merged:

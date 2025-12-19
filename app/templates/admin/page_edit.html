@@ -1235,10 +1235,9 @@
             const fpVal = Array.isArray(merged) ? merged
               : Array.isArray(merged.featuredProjects) ? merged.featuredProjects
               : [];
-            if(fpVal.length){
-              keyed[key] = fpVal;
-              if(seedEl){ try{ seedEl.textContent = JSON.stringify(fpVal); }catch{} }
-            }
+            // Always write the array (can be empty) so server sees explicit intent
+            keyed[key] = fpVal;
+            if(seedEl){ try{ seedEl.textContent = JSON.stringify(fpVal); }catch{} }
           } else if(Object.keys(merged).length === 1 && merged[key] !== undefined){
             keyed[key] = merged[key];
             if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged[key]); }catch{} }
@@ -1265,71 +1264,19 @@
     if(projPanel){
       try{
         const projPatch = serializeAutoForm(projPanel) || {};
+        const hasKeys = Object.keys(projPatch||{}).length > 0;
         if(Array.isArray(projPatch)){
           out.projects = projPatch;
         }else if(Array.isArray(projPatch.projects)){
           out.projects = projPatch.projects;
         }else if(projPatch.projects && Array.isArray(projPatch.projects.projects)){
           out.projects = projPatch.projects.projects;
+        }else if(!hasKeys){
+          // Explicitly keep empty when user removed all items
+          out.projects = [];
         }
       }catch(_){}
-      if(!out.projects){
-        const seed = projPanel.querySelector('.z2h-sec-json');
-        if(seed){
-          try{
-            const seedObj = JSON.parse(seed.textContent || '{}');
-            if(Array.isArray(seedObj)) out.projects = seedObj;
-            else if(seedObj && Array.isArray(seedObj.projects)) out.projects = seedObj.projects;
-            else if(seedObj && Array.isArray(seedObj.__draft?.projects)) out.projects = seedObj.__draft.projects;
-          }catch(_){}
-        }
-      }
-      if(!out.projects){
-        const formJsonEl = document.getElementById('z2h-content-json');
-        const formJson = formJsonEl?.value;
-        if(formJson){
-          try{
-            const parsed = JSON.parse(formJson);
-            if(Array.isArray(parsed?.projects)) out.projects = parsed.projects;
-            else if(parsed?.__draft?.projects && Array.isArray(parsed.__draft.projects)) out.projects = parsed.__draft.projects;
-          }catch(_){}
-        }
-      }
-      if(!out.projects){
-        // Last resort: pull from current entry.data (injected into dataset attribute)
-        let entryData = window.__ENTRY_DATA__;
-        if(!entryData && formJsonEl?.dataset?.entryData){
-          try{ entryData = JSON.parse(formJsonEl.dataset.entryData); }catch(_){}
-        }
-        if(entryData){
-          try{
-            const parsed = typeof entryData === 'string' ? JSON.parse(entryData) : entryData;
-            if(Array.isArray(parsed?.projects)) out.projects = parsed.projects;
-            else if(parsed?.__draft?.projects && Array.isArray(parsed.__draft.projects)) out.projects = parsed.__draft.projects;
-          }catch(_){}
-        }
-      }
-    }
-
-    // Fallback to avoid wiping featuredProjects if the picker didn’t serialize
-    if(!out.featuredProjects || !Array.isArray(out.featuredProjects) || out.featuredProjects.length===0){
-      // try seed from panel JSON
-      try{
-        const fpPanel = document.querySelector('[data-section-key="featuredProjects"] .z2h-sec-json');
-        if(fpPanel){
-          const seed = JSON.parse(fpPanel.textContent || 'null');
-          if(Array.isArray(seed)) out.featuredProjects = seed;
-          else if(seed && Array.isArray(seed.featuredProjects)) out.featuredProjects = seed.featuredProjects;
-        }
-      }catch(_){}
-      // try injected entry data
-      if(!out.featuredProjects || out.featuredProjects.length===0){
-        try{
-          const ed = window.__ENTRY_DATA__;
-          if(Array.isArray(ed?.featuredProjects) && ed.featuredProjects.length) out.featuredProjects = ed.featuredProjects;
-          else if(Array.isArray(ed?.__draft?.featuredProjects) && ed.__draft.featuredProjects.length) out.featuredProjects = ed.__draft.featuredProjects;
-        }catch(_){}
-      }
+      // Do NOT auto-fill projects from previous data; respect form intent
     }
 
     contentJson.value = JSON.stringify(out);
