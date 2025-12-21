@@ -3,14 +3,19 @@ from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
 from datetime import datetime, timezone
+import os
+import re
+import time
+import uuid
 import json
 
-from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query
+from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query, UploadFile, File
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, and_, func, or_
 from sqlalchemy.orm import Session
 
+from app.core.settings import settings
 from app.db.session import get_db
 from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
@@ -20,6 +25,7 @@ from app.services.ui_schema_service import (
     build_ui_jsonschema_for_active_section,
     build_sections_ui_fallback_for_object_page,  # NEW
 )
+from app.services.firebase_storage import is_firebase_configured, upload_file_to_firebase
 
 # Optional server-side schema validation toggle
 ENABLE_SERVER_VALIDATION = False
@@ -54,6 +60,42 @@ def _require_web_user(request: Request) -> dict:
 
 def _get_active_tenant(request: Request) -> dict | None:
     return (request.session or {}).get(SESSION_ACTIVE_TENANT_KEY)
+
+
+_SEGMENT_RE = re.compile(r"[^a-zA-Z0-9_-]+")
+
+
+def _parse_upload_tenant_slugs(raw: str) -> set[str]:
+    cleaned = (raw or "").strip().lower()
+    if not cleaned:
+        return set()
+    if cleaned in ("*", "all"):
+        return {"*"}
+    return {s.strip().lower() for s in cleaned.split(",") if s.strip()}
+
+
+def _uploads_enabled_for_tenant(active: dict | None) -> bool:
+    if not is_firebase_configured():
+        return False
+    allowed = _parse_upload_tenant_slugs(getattr(settings, "UPLOAD_TENANT_SLUGS", ""))
+    if not allowed or "*" in allowed:
+        return True
+    slug = ((active or {}).get("slug") or "").strip().lower()
+    return slug in allowed
+
+
+def _upload_context(active: dict | None) -> dict:
+    return {
+        "upload_enabled": _uploads_enabled_for_tenant(active),
+        "upload_url": "/admin/uploads",
+        "upload_max_mb": int(getattr(settings, "UPLOAD_MAX_MB", 0) or 0),
+    }
+
+
+def _safe_segment(value: str, default: str) -> str:
+    cleaned = _SEGMENT_RE.sub("-", (value or "").strip())
+    cleaned = cleaned.strip("-_")
+    return cleaned or default
 
 
 def _set_single_project_flag(request: Request, db: Session, user: dict, projects_count: int | None = None) -> None:
@@ -768,6 +810,7 @@ def page_edit_get(
             "error": None,
             "ok_message": None,
             "__entry_data_json": json.dumps(entry_json_for_client or {}, ensure_ascii=False),
+            **_upload_context(active),
         },
     )
 
@@ -844,6 +887,7 @@ def page_edit_post(
                 "schema_ui_json": schema_ui_json,
                 "error": f"Invalid JSON: {e}",
                 "ok_message": None,
+                **_upload_context(active),
             },
             status_code=400,
         )
@@ -887,6 +931,7 @@ def page_edit_post(
                 "schema_ui_json": schema_ui_json,
                 "error": "Schema validation failed: " + "; ".join(errors[:5]),
                 "ok_message": None,
+                **_upload_context(active),
             },
             status_code=422,
         )
@@ -962,6 +1007,7 @@ def page_edit_post(
             (_render_home_data(entry.data) if getattr(section, "key", "") == "home" else entry_json_for_client) or {},
             ensure_ascii=False
         ),
+        **_upload_context(active),
     },
 )
 
@@ -1001,6 +1047,7 @@ def page_edit_post(
                 "schema_ui_json": schema_ui_json,
                 "error": "Cannot clear sections without replace=true.",
                 "ok_message": None,
+                **_upload_context(active),
             },
             status_code=400,
         )
@@ -1150,7 +1197,83 @@ def page_edit_post(
             "error": None,
             "ok_message": "Changes saved.",
             "__entry_data_json": json.dumps(entry_json_for_client or {}, ensure_ascii=False),
+            **_upload_context(active),
         },
+    )
+
+
+# --------------------------- Admin Uploads (session-based) ---------------------------
+@router.post("/admin/uploads")
+def admin_upload_media(
+    request: Request,
+    file: UploadFile = File(...),
+    field: str = Form(""),
+    kind: str = Form("image"),
+    entry_id: Optional[int] = Form(None),
+    section_key: Optional[str] = Form(None),
+):
+    _require_web_user(request)
+    active = _get_active_tenant(request)
+    tid = int((active or {}).get("id") or 0)
+    if not tid:
+        raise HTTPException(status_code=400, detail="No active project.")
+
+    if not _uploads_enabled_for_tenant(active):
+        raise HTTPException(status_code=503, detail="Uploads not configured for this project.")
+
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded.")
+
+    media_kind = (kind or "image").strip().lower()
+    if media_kind not in ("image", "video"):
+        raise HTTPException(status_code=400, detail="Invalid media kind.")
+
+    content_type = (file.content_type or "").lower()
+    if media_kind == "image" and not content_type.startswith("image/"):
+        raise HTTPException(status_code=415, detail="Only images are allowed.")
+    if media_kind == "video" and not content_type.startswith("video/"):
+        raise HTTPException(status_code=415, detail="Only videos are allowed.")
+
+    size_bytes = None
+    max_mb = int(getattr(settings, "UPLOAD_MAX_MB", 0) or 0)
+    if max_mb > 0:
+        try:
+            file.file.seek(0, os.SEEK_END)
+            size_bytes = file.file.tell()
+            file.file.seek(0)
+        except Exception:
+            size_bytes = None
+        if size_bytes is not None and size_bytes > (max_mb * 1024 * 1024):
+            raise HTTPException(status_code=413, detail=f"File too large. Max {max_mb}MB.")
+
+    tenant_slug = _safe_segment((active or {}).get("slug") or f"tenant-{tid}", "tenant")
+    parts = ["uploads", tenant_slug]
+    if section_key:
+        parts.append(_safe_segment(section_key, "section"))
+    if entry_id:
+        parts.append(f"entry-{int(entry_id)}")
+    if field:
+        parts.append(_safe_segment(field, "field"))
+
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext and not re.match(r"^\.[a-z0-9]{1,6}$", ext):
+        ext = ""
+
+    unique = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
+    dest_path = "/".join(parts + [unique + ext])
+
+    try:
+        url = upload_file_to_firebase(file.file, content_type, dest_path)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Upload failed.") from exc
+
+    return JSONResponse(
+        {
+            "url": url,
+            "path": dest_path,
+            "content_type": content_type,
+            "size": size_bytes,
+        }
     )
 
 

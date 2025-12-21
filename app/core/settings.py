@@ -123,6 +123,12 @@ class Settings(BaseSettings):
     IDEMPOTENCY_ENABLED: bool = os.getenv("IDEMPOTENCY_ENABLED", "true").lower() == "true"
     IDEMPOTENCY_TTL_SECONDS: int = int(os.getenv("IDEMPOTENCY_TTL_SECONDS", "86400"))
 
+    # ====== Uploads (Firebase Storage) ======
+    FIREBASE_CREDENTIALS_PATH: str | None = os.getenv("FIREBASE_CREDENTIALS_PATH")
+    FIREBASE_STORAGE_BUCKET: str | None = os.getenv("FIREBASE_STORAGE_BUCKET")
+    UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "15"))
+    UPLOAD_TENANT_SLUGS: str = os.getenv("UPLOAD_TENANT_SLUGS", "anro")
+
     # ============== Webhooks (Paso 20) ==============
     WEBHOOKS_ENABLED: bool = os.getenv("WEBHOOKS_ENABLED", "false").lower() == "true"
     WEBHOOKS_TIMEOUT_SECONDS: float = float(os.getenv("WEBHOOKS_TIMEOUT_SECONDS", "3"))

@@ -10,7 +10,10 @@
          data-section-key="{{ page.section_key|default('') }}"
          data-entry-id="{{ page.id|default('') }}"
          data-entry-slug="{{ page.slug|default('') }}"
-         data-section-id="{{ page.section_id|default('') }}">
+         data-section-id="{{ page.section_id|default('') }}"
+         data-upload-enabled="{{ '1' if upload_enabled else '0' }}"
+         data-upload-url="{{ upload_url|default('') }}"
+         data-upload-max-mb="{{ upload_max_mb|default('0') }}">
 
   {% if schema_ui_json is defined and schema_ui_json %}
     <!-- Already JSON-serialized; don't tojson -->
@@ -384,6 +387,10 @@
   const form=document.getElementById('z2h-edit-form');
   const contentJson=document.getElementById('z2h-content-json');
   const entryId=root?.dataset?.entryId;
+  const uploadEnabled = root?.dataset?.uploadEnabled === '1';
+  const uploadUrl = root?.dataset?.uploadUrl || '';
+  const uploadMaxMb = parseFloat(root?.dataset?.uploadMaxMb || '0') || 0;
+  const sectionKey = root?.dataset?.sectionKey || '';
   const statusDot=document.querySelector('.z2h-dot');
   const saverTxt=document.querySelector('.z2h-save-txt');
   const publishBtn=document.getElementById('z2h-publish-btn');
@@ -393,6 +400,41 @@
 
   function flashOk(m){ if(window.z2hFlash) z2hFlash(m||'Done.','success'); }
   function flashErr(m){ if(window.z2hFlash) z2hFlash(m||'Something went wrong.','error'); }
+
+  async function uploadMediaFile(file, fieldPath, kind){
+    if(!uploadEnabled || !uploadUrl){
+      throw new Error('Uploads are not configured.');
+    }
+    if(uploadMaxMb > 0 && file.size > (uploadMaxMb * 1024 * 1024)){
+      throw new Error(`File too large. Max ${uploadMaxMb}MB.`);
+    }
+    const fd = new FormData();
+    fd.append('file', file, file.name || 'upload');
+    if(fieldPath) fd.append('field', fieldPath);
+    if(kind) fd.append('kind', kind);
+    if(entryId) fd.append('entry_id', entryId);
+    if(sectionKey) fd.append('section_key', sectionKey);
+
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'fetch' },
+    });
+    if(!res.ok){
+      let msg = 'Upload failed.';
+      try{
+        const data = await res.json();
+        if(data && data.detail) msg = data.detail;
+      }catch(_){ }
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    if(!data || !data.url){
+      throw new Error('Upload failed.');
+    }
+    return data.url;
+  }
 
   let isDirty=false;
   function setDirty(v){
@@ -812,32 +854,60 @@
       fileInput.type='file';
       fileInput.accept = widget==='image' ? 'image/*' : 'video/*';
       fileInput.className='d-none';
+      if(readOnly || !uploadEnabled){ fileInput.disabled=true; }
       const uploadBtn = document.createElement('button');
       uploadBtn.type='button';
       uploadBtn.className='btn btn-outline-secondary';
       uploadBtn.textContent = widget==='image' ? 'Upload image' : 'Upload media';
-      if(readOnly){ uploadBtn.disabled=true; }
+      if(readOnly || !uploadEnabled){
+        uploadBtn.disabled=true;
+        if(!uploadEnabled){ uploadBtn.title='Uploads are not configured.'; }
+      }
       uploadBtn.addEventListener('click', ()=> fileInput.click());
-      fileInput.addEventListener('change', ()=>{
+      fileInput.addEventListener('change', async ()=>{
         const f = fileInput.files && fileInput.files[0];
         if(!f) return;
-        const r=new FileReader();
-        r.onload = ev=>{
-          const res = ev.target?.result;
-          if(typeof res === 'string'){
-            url.value = res;
+        if(!uploadEnabled){
+          flashErr('Uploads are not configured.');
+          fileInput.value='';
+          return;
+        }
+        const prevText = uploadBtn.textContent;
+        uploadBtn.textContent = 'Uploading...';
+        uploadBtn.disabled = true;
+        try{
+          const remoteUrl = await uploadMediaFile(f, path, widget);
+          if(remoteUrl){
+            url.value = remoteUrl;
             url.dispatchEvent(new Event('input',{bubbles:true}));
           }
-        };
-        r.readAsDataURL(f);
+        }catch(err){
+          flashErr(err?.message || 'Upload failed.');
+        }finally{
+          uploadBtn.textContent = prevText;
+          uploadBtn.disabled = readOnly || !uploadEnabled;
+          fileInput.value = '';
+        }
       });
 
       wrap.appendChild(lab); row.appendChild(url); row.appendChild(uploadBtn); row.appendChild(fileInput); wrap.appendChild(row);
 
-      if (ui.preview && url.value) {
+      if (ui.preview) {
         const prev = document.createElement(widget==='image'?'img':'video');
         if (widget==='video') prev.controls = true;
-        prev.src = url.value; prev.className='mt-2 rounded'; prev.style.maxWidth='360px';
+        prev.className='mt-2 rounded'; prev.style.maxWidth='360px';
+        const updatePreview = ()=>{
+          const val = (url.value || '').trim();
+          if(val){
+            prev.src = val;
+            prev.classList.remove('d-none');
+          }else{
+            prev.removeAttribute('src');
+            prev.classList.add('d-none');
+          }
+        };
+        url.addEventListener('input', updatePreview);
+        updatePreview();
         wrap.appendChild(prev);
       }
       wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
