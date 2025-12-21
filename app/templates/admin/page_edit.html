@@ -1384,7 +1384,12 @@
 
   window.addEventListener('keydown', (e)=>{
     if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); document.getElementById('z2h-edit-form').requestSubmit(); }
-    if(e.key.toLowerCase()==='f'){ const s=document.getElementById('z2h-section-search'); s?.focus(); e.preventDefault(); }
+    if(e.key.toLowerCase()==='f'){
+      const t = e.target;
+      const isTyping = t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT' || t.isContentEditable);
+      if(isTyping) return;
+      const s=document.getElementById('z2h-section-search'); s?.focus(); e.preventDefault();
+    }
   });
 
   form.addEventListener('submit', function(ev){
