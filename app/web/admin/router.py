@@ -268,6 +268,20 @@ def _render_home_data(data: Any) -> dict:
     return root
 
 
+def _render_object_page_data(data: Any) -> dict:
+    """
+    For object-style pages, merge draft over root so missing keys fall back to published values.
+    """
+    if not isinstance(data, dict):
+        return {}
+    draft = data.get("__draft") if isinstance(data.get("__draft"), dict) else None
+    if draft:
+        merged = _deep_merge(data, draft)
+        merged.pop("__draft", None)
+        return merged
+    return data
+
+
 def _normalize_privacy_payload(payload: Any, existing: dict | None = None) -> dict:
     """
     Ensure privacy policy payload is a simple object with a string body and optional seo/replace.
@@ -742,7 +756,7 @@ def page_edit_get(
     elif section.key == "home":
         working_data = _render_home_data(base_data)
     else:
-        working_data = (base_data.get("__draft") if (is_published and isinstance(base_data.get("__draft"), dict)) else base_data)
+        working_data = _render_object_page_data(base_data) if is_published else base_data
 
     # UI JSON Schema (enriched) for auto-form
     try:
@@ -1157,7 +1171,10 @@ def page_edit_post(
 
     # Rebuild UI bits after save (based on current working data)
     current_base = entry.data or {}
-    working_after = (current_base.get("__draft") if is_published_now and isinstance(current_base.get("__draft"), dict) else current_base)
+    if is_published_now and isinstance(current_base, dict) and isinstance(current_base.get("__draft"), dict):
+        working_after = _render_object_page_data(current_base)
+    else:
+        working_after = current_base
 
     if getattr(section, "key", "") == "privacy_policy":
         sections_ui = [{
