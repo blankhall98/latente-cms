@@ -1,0 +1,33 @@
+{
+  "navbar": {
+    "about": {
+      "text": { "en": "", "es": "" },
+      "href": ""
+    },
+    "businessUnits": {
+      "text": { "en": "", "es": "" },
+      "href": ""
+    },
+    "contact": {
+      "text": { "en": "", "es": "" },
+      "href": ""
+    }
+  },
+  "footer": {
+    "ourMission": {
+      "sectionTitle": { "en": "", "es": "" },
+      "sectionContent": { "en": "", "es": "" }
+    },
+    "contact": {
+      "sectionTitle": { "en": "", "es": "" }
+    },
+    "dewaCompany": {
+      "sectionTitle": { "en": "", "es": "" },
+      "physicalAddress": { "en": "", "es": "" },
+      "contactEmail": { "en": "", "es": "" },
+      "linkedInHref": "",
+      "substackHref": ""
+    },
+    "copyright": { "en": "", "es": "" }
+  }
+}

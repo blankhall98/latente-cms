@@ -503,6 +503,50 @@ _ANRO_ORDER = [
     "footer",
 ]
 
+_DEWA_LABELS = {
+    "navbar": "Navbar",
+    "hero": "Hero",
+    "moto": "Moto",
+    "whatWeDo": "What We Do",
+    "dewaCapital": "Dewa Capital",
+    "businessUnits": "Business Units",
+    "values": "Values",
+    "legacy": "Legacy",
+    "dewaLegacyProjects": "Dewa Legacy Projects",
+    "ourTeam": "Our Team",
+    "impact": "Impact",
+    "carrousel": "Carrousel",
+    "footer": "Footer",
+}
+
+_DEWA_ORDER = [
+    "navbar",
+    "hero",
+    "moto",
+    "whatWeDo",
+    "dewaCapital",
+    "businessUnits",
+    "values",
+    "legacy",
+    "dewaLegacyProjects",
+    "ourTeam",
+    "impact",
+    "carrousel",
+    "footer",
+]
+
+_DEWA_DETECT_KEYS = {
+    "moto",
+    "whatWeDo",
+    "dewaCapital",
+    "businessUnits",
+    "values",
+    "legacy",
+    "dewaLegacyProjects",
+    "impact",
+    "carrousel",
+}
+
 
 def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
@@ -513,15 +557,21 @@ def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dic
     if not isinstance(data, dict):
         return sections_ui
 
-    known = [k for k in _ANRO_ORDER if k in data]
-    extras = [k for k in data.keys() if k not in _ANRO_ORDER and k not in ("seo", "replace", "__draft")]
+    order = _ANRO_ORDER
+    labels = _ANRO_LABELS
+    if any(k in data for k in _DEWA_DETECT_KEYS):
+        order = _DEWA_ORDER
+        labels = _DEWA_LABELS
+
+    known = [k for k in order if k in data]
+    extras = [k for k in data.keys() if k not in order and k not in ("seo", "replace", "__draft")]
     keys = known + extras
 
     for idx, key in enumerate(keys):
         sec = data.get(key) if key in data else {}
         if isinstance(sec, dict) and "type" not in sec:
-            sec = {"type": _ANRO_LABELS.get(key, key), **sec}
-        label = _ANRO_LABELS.get(key, key.title())
+            sec = {"type": labels.get(key, key), **sec}
+        label = labels.get(key, key.title())
         sections_ui.append({
             "index": idx,
             "label": f"{idx+1:02d} - {label}",

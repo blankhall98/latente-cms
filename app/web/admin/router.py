@@ -63,6 +63,9 @@ def _get_active_tenant(request: Request) -> dict | None:
 
 
 _SEGMENT_RE = re.compile(r"[^a-zA-Z0-9_-]+")
+_UPLOAD_TENANT_FOLDER_MAP = {
+    "dewa": "dewa-cms",
+}
 
 
 def _parse_upload_tenant_slugs(raw: str) -> set[str]:
@@ -96,6 +99,15 @@ def _safe_segment(value: str, default: str) -> str:
     cleaned = _SEGMENT_RE.sub("-", (value or "").strip())
     cleaned = cleaned.strip("-_")
     return cleaned or default
+
+
+def _upload_tenant_folder(active: dict | None, tenant_id: int) -> str:
+    slug = ((active or {}).get("slug") or "").strip().lower()
+    if slug in _UPLOAD_TENANT_FOLDER_MAP:
+        return _UPLOAD_TENANT_FOLDER_MAP[slug]
+    if slug:
+        return slug
+    return f"tenant-{tenant_id}"
 
 
 def _set_single_project_flag(request: Request, db: Session, user: dict, projects_count: int | None = None) -> None:
@@ -1246,8 +1258,8 @@ def admin_upload_media(
         if size_bytes is not None and size_bytes > (max_mb * 1024 * 1024):
             raise HTTPException(status_code=413, detail=f"File too large. Max {max_mb}MB.")
 
-    tenant_slug = _safe_segment((active or {}).get("slug") or f"tenant-{tid}", "tenant")
-    parts = ["uploads", tenant_slug]
+    tenant_folder = _safe_segment(_upload_tenant_folder(active, tid), "tenant")
+    parts = ["uploads", tenant_folder]
     if section_key:
         parts.append(_safe_segment(section_key, "section"))
     if entry_id:

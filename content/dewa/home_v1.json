@@ -1,0 +1,58 @@
+{
+  "hero": {
+    "backgroundImage": { "url": "" },
+    "heroText": { "en": "", "es": "" }
+  },
+  "moto": {
+    "motoText": { "en": "", "es": "" }
+  },
+  "whatWeDo": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "sectionSecondaryText": { "en": "", "es": "" },
+    "sectionImage": { "url": "" },
+    "ourFirm": {
+      "text": { "en": "", "es": "" },
+      "href": ""
+    }
+  },
+  "dewaCapital": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "sectionSecondaryText": { "en": "", "es": "" },
+    "sectionAnimation": { "url": "" },
+    "getInTouch": {
+      "text": { "en": "", "es": "" },
+      "href": ""
+    }
+  },
+  "businessUnits": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "sectionSecondaryText": { "en": "", "es": "" },
+    "projects": {
+      "frontier": {
+        "projectSectionTitle": { "en": "", "es": "" },
+        "projectSectionSubtitle": { "en": "", "es": "" },
+        "projectSectionImage": { "url": "" },
+        "projectSectionImageText": { "en": "", "es": "" }
+      },
+      "limitedEdition": {
+        "projectSectionTitle": { "en": "", "es": "" },
+        "projectSectionSubtitle": { "en": "", "es": "" },
+        "projectSectionImage": { "url": "" },
+        "projectSectionImageText": { "en": "", "es": "" }
+      },
+      "dewaSignature": {
+        "projectSectionTitle": { "en": "", "es": "" },
+        "projectSectionSubtitle": { "en": "", "es": "" },
+        "projectSectionImage": { "url": "" },
+        "projectSectionImageText": { "en": "", "es": "" }
+      }
+    },
+    "meetOurTeam": {
+      "text": { "en": "", "es": "" },
+      "href": ""
+    }
+  }
+}

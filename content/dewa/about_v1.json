@@ -1,0 +1,55 @@
+{
+  "hero": {
+    "backgroundImage": { "url": "" },
+    "heroText": { "en": "", "es": "" }
+  },
+  "moto": {
+    "motoText": { "en": "", "es": "" }
+  },
+  "values": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "sectionSecondaryText": { "en": "", "es": "" },
+    "sectionImage": { "url": "" },
+    "valuesList": []
+  },
+  "legacy": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "sectionSecondaryText": { "en": "", "es": "" },
+    "legacyList": []
+  },
+  "dewaLegacyProjects": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "legacyProjectsList": []
+  },
+  "ourTeam": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "teamList": []
+  },
+  "impact": {
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionMainText": { "en": "", "es": "" },
+    "sectionSecondaryText": { "en": "", "es": "" },
+    "impactList": {
+      "people": {
+        "impactTitle": { "en": "", "es": "" },
+        "impactAmount": { "en": "", "es": "" },
+        "impactDescription": { "en": "", "es": "" }
+      },
+      "planet": {
+        "impactTitle": { "en": "", "es": "" },
+        "impactAmount": { "en": "", "es": "" },
+        "impactDescription": { "en": "", "es": "" }
+      },
+      "profit": {
+        "impactTitle": { "en": "", "es": "" },
+        "impactAmount": { "en": "", "es": "" },
+        "impactDescription": { "en": "", "es": "" }
+      }
+    }
+  },
+  "carrousel": []
+}

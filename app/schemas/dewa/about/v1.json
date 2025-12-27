@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/about/v1.json",
+  "title": "DEWA - About v1",
+  "type": "object",
+  "x-ui": {
+    "label": "About",
+    "order": ["hero", "moto", "values", "legacy", "dewaLegacyProjects", "ourTeam", "impact", "carrousel"]
+  },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["backgroundImage", "heroText"] },
+      "properties": {
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background Image" } },
+        "heroText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Text" } }
+      },
+      "required": ["backgroundImage", "heroText"]
+    },
+    "moto": {
+      "type": "object",
+      "x-ui": { "label": "Moto", "order": ["motoText"] },
+      "properties": {
+        "motoText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Moto Text" } }
+      },
+      "required": ["motoText"]
+    },
+    "values": {
+      "type": "object",
+      "x-ui": {
+        "label": "Values",
+        "order": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "sectionImage", "valuesList"]
+      },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "sectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Image" } },
+        "valuesList": {
+          "type": "array",
+          "x-ui": { "label": "Values List", "addLabel": "Add value" },
+          "items": { "$ref": "#/$defs/Value" }
+        }
+      },
+      "required": [
+        "sectionTitle",
+        "sectionMainText",
+        "sectionSecondaryText",
+        "sectionImage",
+        "valuesList"
+      ]
+    },
+    "legacy": {
+      "type": "object",
+      "x-ui": {
+        "label": "Legacy",
+        "order": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "legacyList"]
+      },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "legacyList": {
+          "type": "array",
+          "x-ui": { "label": "Legacy List", "addLabel": "Add legacy" },
+          "items": { "$ref": "#/$defs/Legacy" }
+        }
+      },
+      "required": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "legacyList"]
+    },
+    "dewaLegacyProjects": {
+      "type": "object",
+      "x-ui": { "label": "Dewa Legacy Projects", "order": ["sectionTitle", "sectionMainText", "legacyProjectsList"] },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "legacyProjectsList": {
+          "type": "array",
+          "x-ui": { "label": "Legacy Projects List", "addLabel": "Add legacy project" },
+          "items": { "$ref": "#/$defs/LegacyProject" }
+        }
+      },
+      "required": ["sectionTitle", "sectionMainText", "legacyProjectsList"]
+    },
+    "ourTeam": {
+      "type": "object",
+      "x-ui": { "label": "Our Team", "order": ["sectionTitle", "sectionMainText", "teamList"] },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "teamList": {
+          "type": "array",
+          "x-ui": { "label": "Team List", "addLabel": "Add team member" },
+          "items": { "$ref": "#/$defs/TeamMember" }
+        }
+      },
+      "required": ["sectionTitle", "sectionMainText", "teamList"]
+    },
+    "impact": {
+      "type": "object",
+      "x-ui": {
+        "label": "Impact",
+        "order": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "impactList"]
+      },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "impactList": {
+          "type": "object",
+          "x-ui": { "label": "Impact List", "order": ["people", "planet", "profit"] },
+          "properties": {
+            "people": { "$ref": "#/$defs/ImpactItem", "x-ui": { "label": "People Impact" } },
+            "planet": { "$ref": "#/$defs/ImpactItem", "x-ui": { "label": "Planet Impact" } },
+            "profit": { "$ref": "#/$defs/ImpactItem", "x-ui": { "label": "Profit Impact" } }
+          },
+          "required": ["people", "planet", "profit"]
+        }
+      },
+      "required": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "impactList"]
+    },
+    "carrousel": {
+      "type": "array",
+      "x-ui": { "label": "Carrousel", "addLabel": "Add impact card" },
+      "items": { "$ref": "#/$defs/ImpactCard" }
+    }
+  },
+  "required": [
+    "hero",
+    "moto",
+    "values",
+    "legacy",
+    "dewaLegacyProjects",
+    "ourTeam",
+    "impact",
+    "carrousel"
+  ],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "Value": {
+      "type": "object",
+      "x-ui": { "label": "Value", "order": ["valueTitle", "valueText"] },
+      "properties": {
+        "valueTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Value Title" } },
+        "valueText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Value Text" } }
+      },
+      "required": ["valueTitle", "valueText"]
+    },
+    "Legacy": {
+      "type": "object",
+      "x-ui": { "label": "Legacy", "order": ["legacyYear", "legacyText"] },
+      "properties": {
+        "legacyYear": { "type": "integer", "x-ui": { "label": "Legacy Year" } },
+        "legacyText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Legacy Text" } }
+      },
+      "required": ["legacyYear", "legacyText"]
+    },
+    "LegacyProject": {
+      "type": "object",
+      "x-ui": {
+        "label": "Legacy Project",
+        "order": ["projectName", "projectType", "size", "location", "year"]
+      },
+      "properties": {
+        "projectName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Name" } },
+        "projectType": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Type" } },
+        "size": {
+          "type": "object",
+          "x-ui": { "label": "Size", "order": ["amount", "unit"] },
+          "properties": {
+            "amount": { "type": "integer", "x-ui": { "label": "Size Amount" } },
+            "unit": {
+              "type": "string",
+              "enum": ["SF", "Acres", "M^2"],
+              "x-ui": { "label": "Unit", "widget": "select" }
+            }
+          },
+          "required": ["amount", "unit"]
+        },
+        "location": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Location" } },
+        "year": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Year" } }
+      },
+      "required": ["projectName", "projectType", "size", "location", "year"]
+    },
+    "TeamMember": {
+      "type": "object",
+      "x-ui": {
+        "label": "Team Member",
+        "order": ["memberName", "memberRole", "memberDescription", "memberLinkedIn"]
+      },
+      "properties": {
+        "memberName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Member Name" } },
+        "memberRole": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Member Role" } },
+        "memberDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Member Description" } },
+        "memberLinkedIn": { "type": "string", "x-ui": { "label": "Member LinkedIn" } }
+      },
+      "required": ["memberName", "memberRole", "memberDescription", "memberLinkedIn"]
+    },
+    "ImpactItem": {
+      "type": "object",
+      "x-ui": { "label": "Impact", "order": ["impactTitle", "impactAmount", "impactDescription"] },
+      "properties": {
+        "impactTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Impact Title" } },
+        "impactAmount": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Impact Amount" } },
+        "impactDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Impact Description" } }
+      },
+      "required": ["impactTitle", "impactAmount", "impactDescription"]
+    },
+    "ImpactCard": {
+      "type": "object",
+      "x-ui": { "label": "Impact Card", "order": ["cardTitle", "quote", "author", "role"] },
+      "properties": {
+        "cardTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Card Title" } },
+        "quote": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Quote" } },
+        "author": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Author" } },
+        "role": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Role" } }
+      },
+      "required": ["cardTitle", "quote", "author", "role"]
+    }
+  }
+}
