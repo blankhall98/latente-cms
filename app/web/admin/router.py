@@ -856,6 +856,12 @@ def page_edit_post(
     json_schema = _extract_schema_dict(ss)
     active_version = (ui_version if ui_version is not None else (ss.version if ss else entry.schema_version))
 
+    def _schema_has_property(schema: dict, key: str) -> bool:
+        if not isinstance(schema, dict):
+            return False
+        props = schema.get("properties")
+        return isinstance(props, dict) and key in props
+
     # --- Safe parse
     try:
         parsed = json.loads(content_json)
@@ -1066,6 +1072,7 @@ def page_edit_post(
 
     # Non-destructive merge (draft-aware)
     is_published_now = (getattr(entry, "status", "draft") == "published")
+    home_supports_featured = _schema_has_property(json_schema, "featuredProjects")
 
     def _unwrap_draft(d: Any) -> Any:
         cur = d
@@ -1082,7 +1089,7 @@ def page_edit_post(
         working_base = _render_home_data(base_data)
     if isinstance(working_base, dict) and "__draft" in working_base:
         working_base = {k: v for k, v in working_base.items() if k != "__draft"}
-    if getattr(section, "key", "") == "home":
+    if getattr(section, "key", "") == "home" and home_supports_featured:
         # Home: carry featuredProjects exactly as submitted; if missing, keep existing
         merged = dict(working_base) if isinstance(working_base, dict) else {}
         existing_fp = merged.get("featuredProjects") if isinstance(merged, dict) else []
@@ -1098,6 +1105,8 @@ def page_edit_post(
                 merged[k] = _deep_merge(merged.get(k), v)
     else:
         merged = _deep_merge(working_base, payload)
+        if getattr(section, "key", "") == "home" and isinstance(merged, dict):
+            merged.pop("featuredProjects", None)
     if not incoming_has_sections_key and "sections" in working_base:
         merged["sections"] = working_base["sections"]
     if isinstance(merged, dict) and "__draft" in merged:

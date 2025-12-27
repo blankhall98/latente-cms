@@ -559,12 +559,17 @@ def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dic
 
     order = _ANRO_ORDER
     labels = _ANRO_LABELS
+    ignore: set[str] = set()
     if any(k in data for k in _DEWA_DETECT_KEYS):
         order = _DEWA_ORDER
         labels = _DEWA_LABELS
+        ignore.add("featuredProjects")
 
     known = [k for k in order if k in data]
-    extras = [k for k in data.keys() if k not in order and k not in ("seo", "replace", "__draft")]
+    extras = [
+        k for k in data.keys()
+        if k not in order and k not in ignore and k not in ("seo", "replace", "__draft")
+    ]
     keys = known + extras
 
     for idx, key in enumerate(keys):
