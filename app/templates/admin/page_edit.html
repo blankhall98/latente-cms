@@ -1112,8 +1112,8 @@
       host.innerHTML='';
       const panelKey=(panel.getAttribute('data-section-key')||'').trim();
       let sub=null;
-      const arrayVal = (panelKey && secData && Array.isArray(secData[panelKey])) ? secData[panelKey] : secData;
-      const isArrayData = Array.isArray(arrayVal);
+      let arrayVal = (panelKey && secData && Array.isArray(secData[panelKey])) ? secData[panelKey] : secData;
+      let isArrayData = Array.isArray(arrayVal);
 
     // Special case: privacy_policy single body field
     if(panelKey==='privacy_policy' && schemaUI?.properties?.body){
@@ -1143,6 +1143,17 @@
     }
       if(panelKey && schemaUI?.properties && schemaUI.properties[panelKey]){
         sub = schemaUI.properties[panelKey];
+        // Fallback: hydrate array values from entry data if panel seed was empty
+        if(sub && (sub.type==='array' || sub.items) && !isArrayData){
+          const ed = window.__ENTRY_DATA__ || {};
+          const edArr = Array.isArray(ed?.[panelKey]) ? ed[panelKey]
+            : Array.isArray(ed?.__draft?.[panelKey]) ? ed.__draft[panelKey]
+            : null;
+          if(Array.isArray(edArr)){
+            arrayVal = edArr;
+            isArrayData = true;
+          }
+        }
         // Explicit array handling when schema is present
         if((sub && (sub.type==='array' || sub.items)) && isArrayData){
           renderField(panelKey, sub, arrayVal ?? [], host);
