@@ -1107,12 +1107,13 @@
     return {type:'object', properties:{}};
   }
 
-  function renderSectionAutoForm(panel, schemaUI, secData){
-    const host=panel.querySelector('.z2h-autoform'); if(!host) return;
-    host.innerHTML='';
-    const panelKey=(panel.getAttribute('data-section-key')||'').trim();
-    let sub=null;
-    const isArrayData = Array.isArray(secData);
+    function renderSectionAutoForm(panel, schemaUI, secData){
+      const host=panel.querySelector('.z2h-autoform'); if(!host) return;
+      host.innerHTML='';
+      const panelKey=(panel.getAttribute('data-section-key')||'').trim();
+      let sub=null;
+      const arrayVal = (panelKey && secData && Array.isArray(secData[panelKey])) ? secData[panelKey] : secData;
+      const isArrayData = Array.isArray(arrayVal);
 
     // Special case: privacy_policy single body field
     if(panelKey==='privacy_policy' && schemaUI?.properties?.body){
@@ -1140,15 +1141,15 @@
       const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
       return;
     }
-    if(panelKey && schemaUI?.properties && schemaUI.properties[panelKey]){
-      sub = schemaUI.properties[panelKey];
-      // Explicit array handling when schema is present
-      if((sub && (sub.type==='array' || sub.items)) && isArrayData){
-        renderField(panelKey, sub, secData ?? [], host);
-        const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
-        return;
-      }
-    }else{
+      if(panelKey && schemaUI?.properties && schemaUI.properties[panelKey]){
+        sub = schemaUI.properties[panelKey];
+        // Explicit array handling when schema is present
+        if((sub && (sub.type==='array' || sub.items)) && isArrayData){
+          renderField(panelKey, sub, arrayVal ?? [], host);
+          const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
+          return;
+        }
+      }else{
       sub = pickSectionSubschema(schemaUI, secData);
     }
     // Primitive fallback when schema is missing but data exists
