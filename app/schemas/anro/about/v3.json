@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/about/v3.json",
+  "title": "ANRO - About v3",
+  "type": "object",
+  "x-ui": { "label": "About", "order": ["intro", "ourTeam", "shapedByStory"] },
+  "properties": {
+    "intro": {
+      "type": "object",
+      "x-ui": { "label": "Intro", "order": ["text", "image", "cta"] },
+      "properties": {
+        "text": { "type": "string", "x-ui": { "label": "Intro Text", "textarea": true } },
+        "image": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Intro Image", "help": "Recommended image size: 672 x 526 px." }
+        },
+        "cta": {
+          "type": "object",
+          "x-ui": { "label": "Get In Touch" },
+          "properties": {
+            "href": { "type": "string", "x-ui": { "label": "Href/Path" } }
+          },
+          "required": ["href"]
+        }
+      },
+      "required": ["text", "image", "cta"]
+    },
+    "ourTeam": {
+      "type": "object",
+      "x-ui": { "label": "Our Team", "order": ["teamIntro", "members"] },
+      "properties": {
+        "teamIntro": { "type": "string", "x-ui": { "label": "Team Intro", "textarea": true } },
+        "members": {
+          "type": "array",
+          "x-ui": { "label": "Team Members", "addLabel": "Add team member" },
+          "items": { "$ref": "#/$defs/TeamMember" }
+        }
+      },
+      "required": ["teamIntro", "members"]
+    },
+    "shapedByStory": {
+      "type": "object",
+      "x-ui": { "label": "Shaped by Story", "order": ["storyIntro", "storyMotto", "mainImage", "secondaryImage", "cta"] },
+      "properties": {
+        "storyIntro": { "type": "string", "x-ui": { "label": "Story Intro", "textarea": true } },
+        "storyMotto": { "type": "string", "x-ui": { "label": "Story Motto", "textarea": true } },
+        "mainImage": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Main Image", "help": "Recommended image size: 558 x 569 px." }
+        },
+        "secondaryImage": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Secondary Image", "help": "Recommended image size: 558 x 569 px." }
+        },
+        "cta": {
+          "type": "object",
+          "x-ui": { "label": "View Our Work" },
+          "properties": {
+            "href": { "type": "string", "x-ui": { "label": "Href/Path" } }
+          },
+          "required": ["href"]
+        }
+      },
+      "required": ["storyIntro", "storyMotto", "mainImage", "secondaryImage", "cta"]
+    }
+  },
+  "required": ["intro", "ourTeam", "shapedByStory"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt text" } }
+      },
+      "required": ["url"]
+    },
+    "TeamMember": {
+      "type": "object",
+      "x-ui": { "label": "Team Member", "order": ["profilePicture", "name", "lastName", "role", "description"] },
+      "properties": {
+        "profilePicture": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Profile Picture", "help": "Recommended image size: 430 x 433 px." }
+        },
+        "name": { "type": "string", "x-ui": { "label": "Name" } },
+        "lastName": { "type": "string", "x-ui": { "label": "Last Name" } },
+        "role": { "type": "string", "x-ui": { "label": "Role" } },
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "x-ui": {
+            "label": "Member Description",
+            "textarea": true,
+            "help": "Up to 200 characters",
+            "maxLength": 200
+          }
+        }
+      },
+      "required": ["profilePicture", "name", "lastName", "role", "description"]
+    }
+  }
+}

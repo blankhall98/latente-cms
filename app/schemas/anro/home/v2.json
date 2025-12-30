@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/anro/home/v2.json",
+  "title": "ANRO - Home v2",
+  "type": "object",
+  "x-ui": { "label": "Home", "order": ["hero", "introduction", "featuredProjects", "approach"] },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["text", "image"] },
+      "properties": {
+        "text": { "type": "string", "x-ui": { "label": "Hero Text" } },
+        "image": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hero Image" } }
+      },
+      "required": ["text", "image"]
+    },
+    "introduction": {
+      "type": "object",
+      "x-ui": { "label": "Introduction" },
+      "properties": {
+        "text": { "type": "string", "x-ui": { "label": "Intro Text", "textarea": true } }
+      },
+      "required": ["text"]
+    },
+    "featuredProjects": {
+      "type": "array",
+      "x-ui": { "label": "Featured Projects", "help": "Select projects created on the Projects page.", "addLabel": "Add project" },
+      "items": { "type": "string", "x-ui": { "label": "Project", "widget": "project-select" } }
+    },
+    "approach": {
+      "type": "object",
+      "x-ui": { "label": "Approach", "order": ["approachText", "approachTop", "approachMiddle", "approachBottom", "approachMotto"] },
+      "properties": {
+        "approachText": { "type": "string", "x-ui": { "label": "Approach Text", "textarea": true } },
+        "approachMotto": { "type": "string", "x-ui": { "label": "Approach Motto" } },
+        "approachTop":    { "$ref": "#/$defs/ApproachBlock", "x-ui": { "label": "Approach Top" } },
+        "approachMiddle": { "$ref": "#/$defs/ApproachBlock", "x-ui": { "label": "Approach Middle" } },
+        "approachBottom": { "$ref": "#/$defs/ApproachBlock", "x-ui": { "label": "Approach Bottom" } }
+      },
+      "required": ["approachText", "approachMotto", "approachTop", "approachMiddle", "approachBottom"]
+    }
+  },
+  "required": ["hero", "introduction", "featuredProjects", "approach"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": { "label": "URL", "widget": "image", "preview": true, "placeholder": "Upload or paste image URL" }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt text" } }
+      },
+      "required": ["url"]
+    },
+    "ApproachBlock": {
+      "type": "object",
+      "x-ui": { "label": "Approach Block", "order": ["title", "text", "image"] },
+      "properties": {
+        "title": { "type": "string", "x-ui": { "label": "Title" } },
+        "text":  { "type": "string", "x-ui": { "label": "Text", "textarea": true } },
+        "image": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Image", "help": "Recommended image size: 672 x 599 px." }
+        }
+      },
+      "required": ["title", "text", "image"]
+    }
+  }
+}
