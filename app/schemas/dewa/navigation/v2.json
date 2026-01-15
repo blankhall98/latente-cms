@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/navigation/v2.json",
+  "title": "DEWA - Navigation v2",
+  "type": "object",
+  "x-ui": { "label": "Navigation", "order": ["navbar", "footer"] },
+  "properties": {
+    "navbar": {
+      "type": "object",
+      "x-ui": { "label": "Navbar", "order": ["about", "businessUnits", "contact"] },
+      "properties": {
+        "about": { "$ref": "#/$defs/Link", "x-ui": { "label": "About" } },
+        "businessUnits": { "$ref": "#/$defs/Link", "x-ui": { "label": "Business Units" } },
+        "contact": { "$ref": "#/$defs/Link", "x-ui": { "label": "Contact" } }
+      },
+      "required": ["about", "businessUnits", "contact"]
+    },
+    "footer": {
+      "type": "object",
+      "x-ui": { "label": "Footer", "order": ["ourMission", "contact", "dewaCompany", "copyright"] },
+      "properties": {
+        "ourMission": {
+          "type": "object",
+          "x-ui": { "label": "Our Mission", "order": ["sectionTitle", "sectionContent"] },
+          "properties": {
+            "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+            "sectionContent": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Content" } }
+          },
+          "required": ["sectionTitle", "sectionContent"]
+        },
+        "contact": {
+          "type": "object",
+          "x-ui": { "label": "Contact", "order": ["sectionTitle"] },
+          "properties": {
+            "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } }
+          },
+          "required": ["sectionTitle"]
+        },
+        "dewaCompany": {
+          "type": "object",
+          "x-ui": {
+            "label": "Dewa Company",
+            "order": [
+              "sectionTitle",
+              "physicalAddress",
+              "googleMapsHref",
+              "contactEmail",
+              "linkedInHref",
+              "substackHref"
+            ]
+          },
+          "properties": {
+            "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+            "physicalAddress": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Physical Address" } },
+            "googleMapsHref": { "type": "string", "x-ui": { "label": "Google Maps Link" } },
+            "contactEmail": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Contact Email" } },
+            "linkedInHref": { "type": "string", "x-ui": { "label": "LinkedIn Href" } },
+            "substackHref": { "type": "string", "x-ui": { "label": "Substack Href" } }
+          },
+          "required": [
+            "sectionTitle",
+            "physicalAddress",
+            "googleMapsHref",
+            "contactEmail",
+            "linkedInHref",
+            "substackHref"
+          ]
+        },
+        "copyright": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Copyright" } }
+      },
+      "required": ["ourMission", "contact", "dewaCompany", "copyright"]
+    }
+  },
+  "required": ["navbar", "footer"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link", "order": ["text", "href"] },
+      "properties": {
+        "text": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Link Text" } },
+        "href": { "type": "string", "x-ui": { "label": "Link Href" } }
+      },
+      "required": ["text", "href"]
+    }
+  }
+}
