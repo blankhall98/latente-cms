@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/limited_edition/v1.json",
+  "title": "DEWA - Limited Edition v1",
+  "type": "object",
+  "x-ui": { "label": "Limited Edition", "order": ["hero", "limitedEditionProjects"] },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": {
+        "label": "Hero",
+        "order": ["backgroundImage", "heroSectionTitle", "heroMainText"]
+      },
+      "properties": {
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hero Background Image" } },
+        "heroSectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Section Title" } },
+        "heroMainText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Main Text" } }
+      },
+      "required": ["backgroundImage", "heroSectionTitle", "heroMainText"]
+    },
+    "limitedEditionProjects": {
+      "type": "object",
+      "x-ui": { "label": "Limited Edition Projects", "order": ["projectsList"] },
+      "properties": {
+        "projectsList": {
+          "type": "array",
+          "x-ui": { "label": "Existing Projects", "addLabel": "Add new project" },
+          "items": { "$ref": "#/$defs/LimitedEditionProject" }
+        }
+      },
+      "required": ["projectsList"]
+    }
+  },
+  "required": ["hero", "limitedEditionProjects"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "ProjectNote": {
+      "type": "object",
+      "x-ui": { "label": "Note", "order": ["noteTitle", "noteValue"] },
+      "properties": {
+        "noteTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Note Title" } },
+        "noteValue": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Note Value" } }
+      },
+      "required": ["noteTitle", "noteValue"]
+    },
+    "ExternalReference": {
+      "type": "object",
+      "x-ui": { "label": "External Reference", "order": ["referenceTitle", "referenceUrl"] },
+      "properties": {
+        "referenceTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Reference Title" } },
+        "referenceUrl": { "type": "string", "format": "uri", "x-ui": { "label": "Reference URL" } }
+      },
+      "required": ["referenceTitle", "referenceUrl"]
+    },
+    "HardStatistic": {
+      "type": "object",
+      "x-ui": { "label": "Hard Statistic", "order": ["statisticTitle", "statisticValue"] },
+      "properties": {
+        "statisticTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Statistic Title" } },
+        "statisticValue": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Statistic Value" } }
+      },
+      "required": ["statisticTitle", "statisticValue"]
+    },
+    "LimitedEditionProject": {
+      "type": "object",
+      "x-ui": {
+        "label": "Limited Edition Project",
+        "order": [
+          "projectTitle",
+          "projectDescription",
+          "projectNotes",
+          "externalReference",
+          "gallery",
+          "hardStatistic"
+        ]
+      },
+      "properties": {
+        "projectTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Title" } },
+        "projectDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Project Description" } },
+        "projectNotes": {
+          "type": "object",
+          "x-ui": {
+            "label": "Project Notes",
+            "order": ["noteTopLeft", "noteTopRight", "noteBottomLeft", "noteBottomRight"]
+          },
+          "properties": {
+            "noteTopLeft": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Top-Left" } },
+            "noteTopRight": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Top-Right" } },
+            "noteBottomLeft": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Bottom-Left" } },
+            "noteBottomRight": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Bottom-Right" } }
+          },
+          "required": ["noteTopLeft", "noteTopRight", "noteBottomLeft", "noteBottomRight"]
+        },
+        "externalReference": { "$ref": "#/$defs/ExternalReference", "x-ui": { "label": "External Reference" } },
+        "gallery": {
+          "type": "array",
+          "x-ui": { "label": "Gallery", "addLabel": "Upload new image to gallery" },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "hardStatistic": { "$ref": "#/$defs/HardStatistic", "x-ui": { "label": "Hard Statistic" } }
+      },
+      "required": [
+        "projectTitle",
+        "projectDescription",
+        "projectNotes",
+        "externalReference",
+        "gallery",
+        "hardStatistic"
+      ]
+    }
+  }
+}
