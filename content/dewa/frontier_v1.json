@@ -1,0 +1,16 @@
+{
+  "hero": {
+    "backgroundImage": { "url": "" },
+    "heroSectionTitle": { "en": "", "es": "" },
+    "heroMainText": { "en": "", "es": "" }
+  },
+  "frontierProjects": {
+    "projectsList": []
+  },
+  "ac2Notice": {
+    "ac2Logo": { "url": "" },
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionDescription": { "en": "", "es": "" },
+    "sectionImage": { "url": "" }
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/frontier/v1.json",
+  "title": "DEWA - Frontier v1",
+  "type": "object",
+  "x-ui": { "label": "Frontier", "order": ["hero", "frontierProjects", "ac2Notice"] },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": {
+        "label": "Hero",
+        "order": ["backgroundImage", "heroSectionTitle", "heroMainText"]
+      },
+      "properties": {
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hero Background Image" } },
+        "heroSectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Section Title" } },
+        "heroMainText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Main Text" } }
+      },
+      "required": ["backgroundImage", "heroSectionTitle", "heroMainText"]
+    },
+    "frontierProjects": {
+      "type": "object",
+      "x-ui": { "label": "Frontier Projects", "order": ["projectsList"] },
+      "properties": {
+        "projectsList": {
+          "type": "array",
+          "x-ui": { "label": "Existing Frontier Projects", "addLabel": "Add new Frontier Project" },
+          "items": { "$ref": "#/$defs/FrontierProject" }
+        }
+      },
+      "required": ["projectsList"]
+    },
+    "ac2Notice": {
+      "type": "object",
+      "x-ui": {
+        "label": "AC2 Notice",
+        "order": ["ac2Logo", "sectionTitle", "sectionDescription", "sectionImage"]
+      },
+      "properties": {
+        "ac2Logo": { "$ref": "#/$defs/Image", "x-ui": { "label": "AC2 Logo" } },
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Description" } },
+        "sectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Image" } }
+      },
+      "required": ["ac2Logo", "sectionTitle", "sectionDescription", "sectionImage"]
+    }
+  },
+  "required": ["hero", "frontierProjects", "ac2Notice"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "ProjectNote": {
+      "type": "object",
+      "x-ui": { "label": "Note", "order": ["noteTitle", "noteValue"] },
+      "properties": {
+        "noteTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Note Title" } },
+        "noteValue": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Note Value" } }
+      },
+      "required": ["noteTitle", "noteValue"]
+    },
+    "ExternalReference": {
+      "type": "object",
+      "x-ui": { "label": "External Reference", "order": ["referenceTitle", "referenceUrl"] },
+      "properties": {
+        "referenceTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Reference Title" } },
+        "referenceUrl": { "type": "string", "format": "uri", "x-ui": { "label": "Reference URL" } }
+      },
+      "required": ["referenceTitle", "referenceUrl"]
+    },
+    "HardStatistic": {
+      "type": "object",
+      "x-ui": { "label": "Hard Statistic", "order": ["statisticTitle", "statisticValue"] },
+      "properties": {
+        "statisticTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Statistic Title" } },
+        "statisticValue": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Statistic Value" } }
+      },
+      "required": ["statisticTitle", "statisticValue"]
+    },
+    "FrontierProject": {
+      "type": "object",
+      "x-ui": {
+        "label": "Frontier Project",
+        "order": [
+          "projectTitle",
+          "category",
+          "projectDescription",
+          "projectNotes",
+          "externalReference",
+          "gallery",
+          "hardStatistic"
+        ]
+      },
+      "properties": {
+        "projectTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Title" } },
+        "category": {
+          "type": "string",
+          "enum": ["ArtHack10", "ArtHack17"],
+          "x-ui": { "label": "Category", "widget": "select" }
+        },
+        "projectDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Project Description" } },
+        "projectNotes": {
+          "type": "object",
+          "x-ui": {
+            "label": "Project Notes",
+            "order": [
+              "noteTopLeft",
+              "noteTopMiddle",
+              "noteTopRight",
+              "noteBottomLeft",
+              "noteBottomMiddle",
+              "noteBottomRight"
+            ]
+          },
+          "properties": {
+            "noteTopLeft": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Top-Left" } },
+            "noteTopMiddle": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Top-Middle" } },
+            "noteTopRight": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Top-Right" } },
+            "noteBottomLeft": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Bottom-Left" } },
+            "noteBottomMiddle": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Bottom-Middle" } },
+            "noteBottomRight": { "$ref": "#/$defs/ProjectNote", "x-ui": { "label": "Note Bottom-Right" } }
+          },
+          "required": [
+            "noteTopLeft",
+            "noteTopMiddle",
+            "noteTopRight",
+            "noteBottomLeft",
+            "noteBottomMiddle",
+            "noteBottomRight"
+          ]
+        },
+        "externalReference": { "$ref": "#/$defs/ExternalReference", "x-ui": { "label": "External Reference" } },
+        "gallery": {
+          "type": "array",
+          "x-ui": { "label": "Gallery", "addLabel": "Upload new image to gallery" },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "hardStatistic": { "$ref": "#/$defs/HardStatistic", "x-ui": { "label": "Hard Statistic" } }
+      },
+      "required": [
+        "projectTitle",
+        "category",
+        "projectDescription",
+        "projectNotes",
+        "externalReference",
+        "gallery",
+        "hardStatistic"
+      ]
+    }
+  }
+}
