@@ -507,6 +507,7 @@ _DEWA_LABELS = {
     "navbar": "Navbar",
     "hero": "Hero",
     "limitedEditionProjects": "Limited Edition Projects",
+    "dewaSignatureProjects": "Dewa Signature Projects",
     "moto": "Moto",
     "whatWeDo": "What We Do",
     "dewaCapital": "Dewa Capital",
@@ -524,6 +525,7 @@ _DEWA_ORDER = [
     "navbar",
     "hero",
     "limitedEditionProjects",
+    "dewaSignatureProjects",
     "moto",
     "whatWeDo",
     "dewaCapital",
@@ -539,6 +541,7 @@ _DEWA_ORDER = [
 
 _DEWA_DETECT_KEYS = {
     "limitedEditionProjects",
+    "dewaSignatureProjects",
     "moto",
     "whatWeDo",
     "dewaCapital",

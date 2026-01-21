@@ -1,0 +1,10 @@
+{
+  "hero": {
+    "backgroundImage": { "url": "" },
+    "heroSectionTitle": { "en": "", "es": "" },
+    "heroMainText": { "en": "", "es": "" }
+  },
+  "dewaSignatureProjects": {
+    "projectsList": []
+  }
+}
