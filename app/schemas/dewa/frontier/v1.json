@@ -127,7 +127,12 @@
         "projectTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Title" } },
         "category": {
           "type": "string",
-          "enum": ["ArtHack10", "ArtHack17"],
+          "enum": [
+            "Industrial Parks",
+            "Industrial Portfolios",
+            "Frontier Projects - BTS",
+            "Frontier Projects - SPECS"
+          ],
           "x-ui": { "label": "Category", "widget": "select" }
         },
         "projectDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Project Description" } },
