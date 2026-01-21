@@ -1234,10 +1234,30 @@
       }
       host.innerHTML='<div class="text-muted">No schema fields available.</div>'; return;
     }
-    keys.forEach(k=>{
-      if(k==='type' && (props[k]?.const || (Array.isArray(props[k]?.enum) && props[k].enum.length===1))) return;
-      renderField(k, props[k], secData ? secData[k] : undefined, host);
-    });
+      const getEntryFallback = (panelKey, propKey)=>{
+        try{
+          const ed = window.__ENTRY_DATA__ || {};
+          const sources = [ed, ed.__draft].filter(s=>s && typeof s === 'object');
+          for(const src of sources){
+            const panelObj = src?.[panelKey];
+            if(panelObj && typeof panelObj === 'object' && propKey in panelObj){
+              return panelObj[propKey];
+            }
+          }
+        }catch(_){}
+        return undefined;
+      };
+      keys.forEach(k=>{
+        if(k==='type' && (props[k]?.const || (Array.isArray(props[k]?.enum) && props[k].enum.length===1))) return;
+        let val = secData ? secData[k] : undefined;
+        if(panelKey && (props[k]?.type === 'array' || props[k]?.items)){
+          const fallback = getEntryFallback(panelKey, k);
+          if((!Array.isArray(val) || val.length === 0) && Array.isArray(fallback) && fallback.length){
+            val = fallback;
+          }
+        }
+        renderField(k, props[k], val, host);
+      });
   }
 
   function serializeAutoForm(panel){
