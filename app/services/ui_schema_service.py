@@ -506,6 +506,7 @@ _ANRO_ORDER = [
 _DEWA_LABELS = {
     "navbar": "Navbar",
     "hero": "Hero",
+    "limitedEditionProjects": "Limited Edition Projects",
     "moto": "Moto",
     "whatWeDo": "What We Do",
     "dewaCapital": "Dewa Capital",
@@ -522,6 +523,7 @@ _DEWA_LABELS = {
 _DEWA_ORDER = [
     "navbar",
     "hero",
+    "limitedEditionProjects",
     "moto",
     "whatWeDo",
     "dewaCapital",
@@ -536,6 +538,7 @@ _DEWA_ORDER = [
 ]
 
 _DEWA_DETECT_KEYS = {
+    "limitedEditionProjects",
     "moto",
     "whatWeDo",
     "dewaCapital",
