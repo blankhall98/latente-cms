@@ -962,7 +962,7 @@
     }
 
     if(t==='array'){
-      const box=document.createElement('div'); box.className='z2h-repeater';
+      const box=document.createElement('div'); box.className='z2h-repeater'; box.dataset.arrayPath = path;
       wrap.appendChild(lab);
       const list=document.createElement('div'); list.className='repeater-grid';
       const itemsSchema=schema.items||{};
@@ -1082,7 +1082,8 @@
         rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
         body.appendChild(rm); row.appendChild(body); list.appendChild(row); setDirty(true);
       });
-      wrap.appendChild(list); wrap.appendChild(add); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+      box.appendChild(list);
+      wrap.appendChild(box); wrap.appendChild(add); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
     const box=document.createElement('div'); box.className='card p-3';
@@ -1264,13 +1265,21 @@
     const obj={};
     const type = panel.getAttribute('data-section-type') || '';
     if(type) obj.type = type;
-    panel.querySelectorAll('[name^="af:"]').forEach(inp=>{
+    const fields = Array.from(panel.querySelectorAll('[name^="af:"]'));
+    fields.forEach(inp=>{
       const path=inp.name.slice(3);
       let v;
       if(inp.type==='checkbox') v=inp.checked;
       else if(inp.type==='number') v=(inp.value===''? null : (inp.step==='1'? parseInt(inp.value,10) : parseFloat(inp.value)));
       else v=inp.value;
       setDeep(obj, path.replace(/\./g,'.'), v);
+    });
+    const hasArrayInputs = (path)=>fields.some(el=>el.name.startsWith(`af:${path}[`));
+    panel.querySelectorAll('.z2h-repeater[data-array-path]').forEach(rep=>{
+      const path = rep.dataset.arrayPath || '';
+      if(!path) return;
+      if(hasArrayInputs(path)) return;
+      setDeep(obj, path, []);
     });
     return obj;
   }
