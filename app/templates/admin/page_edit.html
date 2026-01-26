@@ -1265,6 +1265,7 @@
     const obj={};
     const type = panel.getAttribute('data-section-type') || '';
     if(type) obj.type = type;
+    reindexRepeaterInputs(panel);
     const fields = Array.from(panel.querySelectorAll('[name^="af:"]'));
     fields.forEach(inp=>{
       const path=inp.name.slice(3);
@@ -1282,6 +1283,35 @@
       setDeep(obj, path, []);
     });
     return obj;
+  }
+
+  function escapeRegExp(value){
+    return (value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function reindexRepeaterInputs(panel){
+    const repeaters = Array.from(panel.querySelectorAll('.z2h-repeater[data-array-path]'));
+    repeaters.forEach(rep=>{
+      const basePath = rep.dataset.arrayPath || '';
+      const list = rep.querySelector('.repeater-grid');
+      if(!basePath || !list) return;
+      const items = Array.from(list.children).filter(el=>el.classList && el.classList.contains('repeater-item'));
+      if(!items.length) return;
+      const esc = escapeRegExp(basePath);
+      const nameRe = new RegExp(`^af:${esc}\\[\\d+\\]`);
+      const pathRe = new RegExp(`^${esc}\\[\\d+\\]`);
+      items.forEach((item, idx)=>{
+        item.querySelectorAll(`[name^="af:${basePath}["]`).forEach(inp=>{
+          inp.name = inp.name.replace(nameRe, `af:${basePath}[${idx}]`);
+        });
+        item.querySelectorAll('.z2h-repeater[data-array-path]').forEach(child=>{
+          const cpath = child.dataset.arrayPath || '';
+          if(cpath.startsWith(basePath + '[')){
+            child.dataset.arrayPath = cpath.replace(pathRe, `${basePath}[${idx}]`);
+          }
+        });
+      });
+    });
   }
 
   function isPlainObject(o){ return o && typeof o==='object' && !Array.isArray(o); }
