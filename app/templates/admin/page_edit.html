@@ -1069,7 +1069,7 @@
       });
       const add=document.createElement('button'); add.type='button'; add.className='btn btn-soft-success btn-sm mt-2'; add.textContent= (ui.addLabel||'Add');
       add.addEventListener('click', ()=>{
-        const idx=list.querySelectorAll('.repeater-item').length;
+        const idx = Array.from(list.children).filter(el=>el.classList?.contains('repeater-item')).length;
         const row=document.createElement('div'); row.className='repeater-item card p-3 mb-2';
         const hdr=document.createElement('div'); hdr.className='d-flex justify-content-between align-items-center mb-2';
         const title=document.createElement('div'); title.className='fw-semibold'; title.textContent=`${lab.textContent||'Item'} ${idx+1}`;
