@@ -282,6 +282,64 @@ def _render_object_page_data(data: Any) -> dict:
     return data
 
 
+def _is_effectively_empty(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip() == ""
+    if isinstance(value, (int, float, bool)):
+        return False
+    if isinstance(value, list):
+        return all(_is_effectively_empty(v) for v in value)
+    if isinstance(value, dict):
+        if not value:
+            return True
+        return all(_is_effectively_empty(v) for v in value.values())
+    return False
+
+
+def _is_blank_project(obj: Any) -> bool:
+    if obj is None:
+        return True
+    if not isinstance(obj, dict):
+        return False
+    if not obj:
+        return True
+    for k, v in obj.items():
+        if k == "category":
+            continue
+        if not _is_effectively_empty(v):
+            return False
+    return True
+
+
+def _sanitize_dewa_projects_payload(data: Any) -> Any:
+    if not isinstance(data, dict):
+        return data
+    keys = {
+        "limitedEditionProjects",
+        "dewaSignatureProjects",
+        "frontierProjects",
+        "arthaLegacyProjects",
+    }
+    for key in keys:
+        block = data.get(key)
+        if not isinstance(block, dict):
+            continue
+        lst = block.get("projectsList")
+        if not isinstance(lst, list):
+            continue
+        cleaned = []
+        for item in lst:
+            if item is None:
+                continue
+            if isinstance(item, dict) and _is_blank_project(item):
+                continue
+            cleaned.append(item)
+        block["projectsList"] = cleaned
+    return data
+
+
 def _normalize_privacy_payload(payload: Any, existing: dict | None = None) -> dict:
     """
     Ensure privacy policy payload is a simple object with a string body and optional seo/replace.
@@ -1126,6 +1184,10 @@ def page_edit_post(
     if isinstance(merged, dict) and "__draft" in merged:
         merged.pop("__draft", None)
 
+    # Clean DEWA project lists to avoid null/blank reappearing items
+    if (active or {}).get("slug") == "dewa":
+        merged = _sanitize_dewa_projects_payload(merged)
+
     # Persist (draft vs root)
     is_published_now = (getattr(entry, "status", "draft") == "published")
     if getattr(section, "key", "") == "projects":
@@ -1344,6 +1406,10 @@ def admin_publish_page(
     # Home: publish merged view to keep featured projects and other blocks visible
     elif getattr(section, "key", "") == "home":
         candidate = _render_home_data(data_now)
+
+    # Clean DEWA project lists before publish to avoid resurrecting blank items
+    if (active or {}).get("slug") == "dewa":
+        candidate = _sanitize_dewa_projects_payload(candidate)
 
     # Allow publish if either sections[] has content OR object-style has meaningful blocks
     has_sections = isinstance(candidate.get("sections"), list) and len(candidate["sections"]) > 0
