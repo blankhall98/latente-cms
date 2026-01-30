@@ -1282,11 +1282,52 @@
       if(hasArrayInputs(path)) return;
       setDeep(obj, path, []);
     });
+    scrubDewaProjectLists(panel, obj);
     return obj;
   }
 
   function escapeRegExp(value){
     return (value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function isEffectivelyEmpty(val){
+    if(val === null || val === undefined) return true;
+    if(typeof val === 'string') return val.trim()==='';
+    if(typeof val === 'number' || typeof val === 'boolean') return false;
+    if(Array.isArray(val)) return val.every(isEffectivelyEmpty);
+    if(val && typeof val === 'object'){
+      const keys = Object.keys(val);
+      if(!keys.length) return true;
+      return keys.every(k=>isEffectivelyEmpty(val[k]));
+    }
+    return false;
+  }
+
+  function isBlankProjectItem(item){
+    if(!item || typeof item !== 'object' || Array.isArray(item)) return true;
+    const keys = Object.keys(item);
+    if(!keys.length) return true;
+    for(const k of keys){
+      if(k === 'category') continue;
+      if(!isEffectivelyEmpty(item[k])) return false;
+    }
+    return true;
+  }
+
+  function scrubDewaProjectLists(panel, obj){
+    const tenant = (root?.dataset?.tenant || '').trim().toLowerCase();
+    if(tenant !== 'dewa') return;
+    const key = (panel.getAttribute('data-section-key') || '').trim();
+    const targets = new Set([
+      'limitedEditionProjects',
+      'dewaSignatureProjects',
+      'frontierProjects',
+      'arthaLegacyProjects'
+    ]);
+    if(!targets.has(key)) return;
+    if(!obj || typeof obj !== 'object') return;
+    if(!Array.isArray(obj.projectsList)) return;
+    obj.projectsList = obj.projectsList.filter(item => item != null && !isBlankProjectItem(item));
   }
 
   function reindexRepeaterInputs(panel){
@@ -1359,7 +1400,8 @@
       const seedEl = panel.querySelector('.z2h-sec-json');
       if(seedEl){ try{ prev = JSON.parse(seedEl.textContent||'{}')||{}; }catch{} }
 
-      const hasAuto = panel.querySelector('[name^="af:"]')!=null;
+      const hasAutoRepeaters = panel.querySelector('.z2h-repeater[data-array-path]')!=null;
+      const hasAuto = (panel.querySelector('[name^="af:"]')!=null) || hasAutoRepeaters;
       let patch = hasAuto ? serializeAutoForm(panel) : {};
 
       if(!hasAuto){

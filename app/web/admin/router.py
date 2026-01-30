@@ -1184,9 +1184,8 @@ def page_edit_post(
     if isinstance(merged, dict) and "__draft" in merged:
         merged.pop("__draft", None)
 
-    # Clean DEWA project lists to avoid null/blank reappearing items
-    if (active or {}).get("slug") == "dewa":
-        merged = _sanitize_dewa_projects_payload(merged)
+    # Clean project lists (DEWA keys only) to avoid null/blank reappearing items
+    merged = _sanitize_dewa_projects_payload(merged)
 
     # Persist (draft vs root)
     is_published_now = (getattr(entry, "status", "draft") == "published")
@@ -1407,9 +1406,8 @@ def admin_publish_page(
     elif getattr(section, "key", "") == "home":
         candidate = _render_home_data(data_now)
 
-    # Clean DEWA project lists before publish to avoid resurrecting blank items
-    if (active or {}).get("slug") == "dewa":
-        candidate = _sanitize_dewa_projects_payload(candidate)
+    # Clean project lists (DEWA keys only) before publish to avoid resurrecting blank items
+    candidate = _sanitize_dewa_projects_payload(candidate)
 
     # Allow publish if either sections[] has content OR object-style has meaningful blocks
     has_sections = isinstance(candidate.get("sections"), list) and len(candidate["sections"]) > 0
