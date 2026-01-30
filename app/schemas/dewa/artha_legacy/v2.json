@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://latente.app/schemas/dewa/artha_legacy/v1.json",
-  "title": "DEWA - Artha Legacy v1",
+  "$id": "https://latente.app/schemas/dewa/artha_legacy/v2.json",
+  "title": "DEWA - Artha Legacy v2",
   "type": "object",
   "x-ui": { "label": "Artha Legacy", "order": ["hero", "arthaLegacyProjects"] },
   "properties": {
@@ -113,7 +113,7 @@
         "projectTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Title" } },
         "category": {
           "type": "string",
-          "enum": ["ArtHack10", "ArtHack17"],
+          "enum": ["ARTHACK10", "ARTH5CK17"],
           "x-ui": { "label": "Category", "widget": "select" }
         },
         "projectDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Project Description" } },
