@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/home/v2.json",
+  "title": "DEWA - Home v2",
+  "type": "object",
+  "x-ui": { "label": "Home", "order": ["hero", "moto", "whatWeDo", "dewaCapital", "businessUnits"] },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["backgroundImage", "heroText"] },
+      "properties": {
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background Image" } },
+        "heroText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Text" } }
+      },
+      "required": ["backgroundImage", "heroText"]
+    },
+    "moto": {
+      "type": "object",
+      "x-ui": { "label": "Moto", "order": ["motoText"] },
+      "properties": {
+        "motoText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Moto Text" } }
+      },
+      "required": ["motoText"]
+    },
+    "whatWeDo": {
+      "type": "object",
+      "x-ui": {
+        "label": "What We Do",
+        "order": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "sectionImage", "ourFirm"]
+      },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "sectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Image" } },
+        "ourFirm": { "$ref": "#/$defs/Link", "x-ui": { "label": "Our Firm" } }
+      },
+      "required": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "sectionImage", "ourFirm"]
+    },
+    "dewaCapital": {
+      "type": "object",
+      "x-ui": {
+        "label": "Dewa Capital",
+        "order": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "sectionAnimation", "getInTouch"]
+      },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "sectionAnimation": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Animation" } },
+        "getInTouch": { "$ref": "#/$defs/Link", "x-ui": { "label": "Get In Touch" } }
+      },
+      "required": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "sectionAnimation", "getInTouch"]
+    },
+    "businessUnits": {
+      "type": "object",
+      "x-ui": {
+        "label": "Business Units",
+        "order": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "projects", "meetOurTeam"]
+      },
+      "properties": {
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "projects": {
+          "type": "object",
+          "x-ui": {
+            "label": "Projects Section",
+            "order": ["frontier", "limitedEdition", "dewaSignature", "arthaLegacy"]
+          },
+          "properties": {
+            "frontier": { "$ref": "#/$defs/Project", "x-ui": { "label": "Frontier" } },
+            "limitedEdition": { "$ref": "#/$defs/Project", "x-ui": { "label": "Limited Edition" } },
+            "dewaSignature": { "$ref": "#/$defs/Project", "x-ui": { "label": "Dewa Signature" } },
+            "arthaLegacy": { "$ref": "#/$defs/Project", "x-ui": { "label": "Artha Legacy" } }
+          },
+          "required": ["frontier", "limitedEdition", "dewaSignature", "arthaLegacy"]
+        },
+        "meetOurTeam": { "$ref": "#/$defs/Link", "x-ui": { "label": "Meet Our Team" } }
+      },
+      "required": ["sectionTitle", "sectionMainText", "sectionSecondaryText", "projects", "meetOurTeam"]
+    }
+  },
+  "required": ["hero", "moto", "whatWeDo", "dewaCapital", "businessUnits"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link", "order": ["text", "href"] },
+      "properties": {
+        "text": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Link Text" } },
+        "href": { "type": "string", "x-ui": { "label": "Link Href" } }
+      },
+      "required": ["text", "href"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "Project": {
+      "type": "object",
+      "x-ui": {
+        "label": "Project",
+        "order": [
+          "projectSectionTitle",
+          "projectSectionSubtitle",
+          "projectSectionImage",
+          "projectSectionImageText"
+        ]
+      },
+      "properties": {
+        "projectSectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Section Title" } },
+        "projectSectionSubtitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Section Subtitle" } },
+        "projectSectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Project Section Image" } },
+        "projectSectionImageText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Project Section Image Text" } }
+      },
+      "required": [
+        "projectSectionTitle",
+        "projectSectionSubtitle",
+        "projectSectionImage",
+        "projectSectionImageText"
+      ]
+    }
+  }
+}
