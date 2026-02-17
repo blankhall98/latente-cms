@@ -366,6 +366,37 @@ def _render_object_page_data(data: Any) -> dict:
     return data
 
 
+def _deep_merge_skip_empty_strings(base: Any, override: Any) -> Any:
+    if isinstance(base, dict) and isinstance(override, dict):
+        out = dict(base)
+        for k, v in override.items():
+            out[k] = _deep_merge_skip_empty_strings(base.get(k), v)
+        return out
+
+    if isinstance(base, list) and isinstance(override, list):
+        return override
+
+    if isinstance(override, str) and override == "" and base is not None:
+        return base
+
+    return override if override is not None else base
+
+
+def _render_owa_object_page_data(data: Any) -> dict:
+    """
+    OWA object pages: merge draft over root, but do not let empty draft strings
+    override non-empty published values.
+    """
+    if not isinstance(data, dict):
+        return {}
+    draft = data.get("__draft") if isinstance(data.get("__draft"), dict) else None
+    if draft:
+        merged = _deep_merge_skip_empty_strings(data, draft)
+        merged.pop("__draft", None)
+        return merged
+    return data
+
+
 def _resolve_local_schema_ref(root_schema: dict, ref: Any) -> dict | None:
     if not isinstance(ref, str) or not ref.startswith("#/"):
         return None
@@ -1146,7 +1177,10 @@ def page_edit_get(
     elif section.key == "home":
         working_data = _render_home_data(base_data)
     else:
-        working_data = _render_object_page_data(base_data) if is_published else base_data
+        if _is_owa_active(active) and section.key != "landing_pages":
+            working_data = _render_owa_object_page_data(base_data) if is_published else base_data
+        else:
+            working_data = _render_object_page_data(base_data) if is_published else base_data
 
     # UI JSON Schema (enriched) for auto-form
     try:
@@ -1499,6 +1533,9 @@ def page_edit_post(
     if getattr(section, "key", "") == "home":
         # Home: use merged view (draft over root) so featuredProjects don't vanish
         working_base = _render_home_data(base_data)
+    elif _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        # OWA object pages: use merged view where empty draft strings do not override root.
+        working_base = _render_owa_object_page_data(base_data) if is_published_now else (base_data if isinstance(base_data, dict) else {})
     if isinstance(working_base, dict) and "__draft" in working_base:
         working_base = {k: v for k, v in working_base.items() if k != "__draft"}
     if getattr(section, "key", "") == "home" and home_supports_featured:
@@ -1782,6 +1819,8 @@ def admin_publish_page(
     # Home: publish merged view to keep featured projects and other blocks visible
     elif getattr(section, "key", "") == "home":
         candidate = _render_home_data(data_now)
+    elif _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        candidate = _render_owa_object_page_data(data_now)
 
     if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
         ss_active = _get_active_schema(db, section.id)
