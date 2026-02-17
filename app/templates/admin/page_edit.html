@@ -1165,11 +1165,39 @@
     return {type:'object', properties:{}};
   }
 
+  function isEmptyForPanel(v){
+    if(v == null) return true;
+    if(typeof v === 'string') return v.trim() === '';
+    if(Array.isArray(v)) return v.length === 0;
+    if(typeof v === 'object') return Object.keys(v).length === 0;
+    return false;
+  }
+
+  function getPanelValueFromEntry(panelKey){
+    if(!panelKey) return undefined;
+    try{
+      const ed = window.__ENTRY_DATA__ || {};
+      const rootVal = (ed && typeof ed === 'object') ? ed[panelKey] : undefined;
+      const draftObj = (ed && typeof ed === 'object' && ed.__draft && typeof ed.__draft === 'object') ? ed.__draft : null;
+      const draftVal = draftObj ? draftObj[panelKey] : undefined;
+      if(draftVal !== undefined && !isEmptyForPanel(draftVal)) return draftVal;
+      if(rootVal !== undefined && !isEmptyForPanel(rootVal)) return rootVal;
+      if(draftVal !== undefined) return draftVal;
+      return rootVal;
+    }catch(_){
+      return undefined;
+    }
+  }
+
     function renderSectionAutoForm(panel, schemaUI, secData){
       const host=panel.querySelector('.z2h-autoform'); if(!host) return;
       host.innerHTML='';
       const panelKey=(panel.getAttribute('data-section-key')||'').trim();
       let sub=null;
+      const panelFallback = getPanelValueFromEntry(panelKey);
+      if(isEmptyForPanel(secData) && panelFallback !== undefined){
+        secData = panelFallback;
+      }
       let arrayVal = (panelKey && secData && Array.isArray(secData[panelKey])) ? secData[panelKey] : secData;
       let isArrayData = Array.isArray(arrayVal);
 
@@ -1234,6 +1262,12 @@
       let val = secData;
       if(panelKey && val && typeof val === 'object' && !Array.isArray(val) && val[panelKey] !== undefined){
         val = val[panelKey];
+      }
+      if(isEmptyForPanel(val) && panelFallback !== undefined){
+        val = panelFallback;
+        if(panelKey && val && typeof val === 'object' && !Array.isArray(val) && val[panelKey] !== undefined){
+          val = val[panelKey];
+        }
       }
       renderField(panelKey || 'section', sub, val, host);
       const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
