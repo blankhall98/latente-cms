@@ -814,6 +814,44 @@
     return sectionsDef;
   }
 
+  function firstNestedStringValue(val){
+    if(typeof val === 'string') return val;
+    if(!val || typeof val !== 'object') return null;
+    for(const k of ['value','text','title','label','name','en','es','url','href']){
+      const v = val[k];
+      if(typeof v === 'string') return v;
+    }
+    for(const v of Object.values(val)){
+      const found = firstNestedStringValue(v);
+      if(typeof found === 'string') return found;
+    }
+    return null;
+  }
+
+  function coerceStringFieldValue(path, raw){
+    if(raw == null) return '';
+    if(typeof raw === 'string'){
+      return raw.trim() === '[object Object]' ? '' : raw;
+    }
+    if(typeof raw === 'number' || typeof raw === 'boolean') return String(raw);
+    if(Array.isArray(raw)){
+      return raw.map(v=>coerceStringFieldValue(path, v)).filter(v=>v!=='').join(', ');
+    }
+    if(typeof raw === 'object'){
+      const leaf = (path || '').split('.').pop() || '';
+      if(leaf && typeof raw[leaf] === 'string'){
+        const v = raw[leaf];
+        return v.trim() === '[object Object]' ? '' : v;
+      }
+      const nested = firstNestedStringValue(raw);
+      if(typeof nested === 'string'){
+        return nested.trim() === '[object Object]' ? '' : nested;
+      }
+      return '';
+    }
+    return String(raw);
+  }
+
   /* ===== Autoform: renderField with image/video & hidden support ===== */
   function renderField(path, schema, value, parent){
     const t=(schema && schema.type)|| (schema?.enum && 'string') || 'object';
@@ -921,7 +959,7 @@
       const isTextarea = !!ui.textarea;
       if(isTextarea){
         const ta=document.createElement('textarea'); ta.className='form-control z2h-dirty textarea-lg';
-        ta.name=NAME; ta.placeholder=placeholder; if(value!=null) ta.value=String(value); if(readOnly) ta.readOnly=true;
+        ta.name=NAME; ta.placeholder=placeholder; ta.value=coerceStringFieldValue(path, value); if(readOnly) ta.readOnly=true;
         if(ui.rows){ ta.rows = parseInt(ui.rows,10) || 6; }
         if(maxLen){ ta.maxLength=maxLen; ta.classList.add('z2h-count'); ta.dataset.max=String(maxLen); if(!ta.id) ta.id=autoId; }
         wrap.appendChild(lab); wrap.appendChild(ta);
@@ -935,7 +973,7 @@
         }
         wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
       }
-      const inp=document.createElement('input'); inp.type='text'; inp.className='form-control z2h-dirty'; inp.name=NAME; inp.placeholder=placeholder; if(value!=null) inp.value=String(value); if(readOnly) inp.readOnly=true;
+      const inp=document.createElement('input'); inp.type='text'; inp.className='form-control z2h-dirty'; inp.name=NAME; inp.placeholder=placeholder; inp.value=coerceStringFieldValue(path, value); if(readOnly) inp.readOnly=true;
       if(maxLen){ inp.maxLength=maxLen; inp.classList.add('z2h-count'); inp.dataset.max=String(maxLen); if(!inp.id) inp.id=autoId; }
       wrap.appendChild(lab); wrap.appendChild(inp);
       if(maxLen){
