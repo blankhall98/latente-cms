@@ -13,7 +13,7 @@ import json
 from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query, UploadFile, File
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, and_, func, not_, or_
+from sqlalchemy import select, and_, func, not_, or_, case
 from sqlalchemy.orm import Session
 
 from app.core.settings import settings
@@ -69,6 +69,19 @@ _UPLOAD_TENANT_FOLDER_MAP = {
     "dewa": "dewa-cms",
 }
 
+_OWA_SECTION_DASHBOARD_ORDER = [
+    "pop_up",
+    "hero",
+    "moto_text",
+    "discover_owa",
+    "therapies",
+    "memberships",
+    "moto_image",
+    "events",
+    "moto_final_text",
+    "footer",
+]
+
 
 def _parse_upload_tenant_slugs(raw: str) -> set[str]:
     cleaned = (raw or "").strip().lower()
@@ -99,6 +112,18 @@ def _upload_context(active: dict | None) -> dict:
 
 def _is_owa_active(active: dict | None) -> bool:
     return ((active or {}).get("slug") or "").strip().lower() == "owa"
+
+
+def _section_order_case_for_tenant_slug(tenant_slug: str | None):
+    slug = (tenant_slug or "").strip().lower()
+    if slug != "owa":
+        return None
+    order_map = {k: i for i, k in enumerate(_OWA_SECTION_DASHBOARD_ORDER)}
+    return case(order_map, value=Section.key, else_=len(order_map) + 100)
+
+
+def _section_order_case_for_active(active: dict | None):
+    return _section_order_case_for_tenant_slug((active or {}).get("slug"))
 
 
 _AGE_BUCKETS: list[tuple[str, int | None, int | None]] = [
@@ -814,10 +839,14 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         {"label": "Projects", "value": str(projects_count), "suffix": "available"},
     ]
 
-    try:
-        order_cols = [Entry.updated_at.desc().nullslast(), Entry.id.desc()]
-    except Exception:
-        order_cols = [Entry.id.desc()]
+    order_case = _section_order_case_for_active(active)
+    if order_case is not None:
+        order_cols = [order_case.asc(), Entry.id.asc()]
+    else:
+        try:
+            order_cols = [Entry.updated_at.desc().nullslast(), Entry.id.desc()]
+        except Exception:
+            order_cols = [Entry.id.desc()]
 
     recent_query = (
         select(Entry, Section)
@@ -1016,16 +1045,23 @@ def pages_list(
 
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
 
-    try:
-        order_cols = [Entry.updated_at.desc().nullslast(), Entry.id.desc()]
-    except Exception:
-        order_cols = [Entry.id.desc()]
+    order_case = _section_order_case_for_active(active)
+    if order_case is not None:
+        order_cols = [order_case.asc(), Entry.id.asc()]
+    else:
+        try:
+            order_cols = [Entry.updated_at.desc().nullslast(), Entry.id.desc()]
+        except Exception:
+            order_cols = [Entry.id.desc()]
     rows = db.execute(base.order_by(*order_cols).limit(per_page).offset(offset)).all()
 
-    sects_query = select(Section.id, Section.name).where(Section.tenant_id == tid)
+    sects_query = select(Section.id, Section.name, Section.key).where(Section.tenant_id == tid)
     if _is_owa_active(active):
         sects_query = sects_query.where(Section.key != "landing_pages")
-    sects = db.execute(sects_query.order_by(Section.name.asc())).all()
+    if order_case is not None:
+        sects = db.execute(sects_query.order_by(order_case.asc(), Section.name.asc())).all()
+    else:
+        sects = db.execute(sects_query.order_by(Section.name.asc())).all()
 
     items = []
     for e, s in rows:
@@ -1049,7 +1085,7 @@ def pages_list(
             "user": user,
             "active_tenant": active,
             "items": items,
-            "sections": [{"id": sid, "name": sname} for sid, sname in sects],
+            "sections": [{"id": sid, "name": sname} for sid, sname, _ in sects],
             "filters": {
                 "q": q or "",
                 "status": (status_param or "").lower(),
@@ -1884,11 +1920,15 @@ def sections_json(
     """
     _require_web_user(request)
 
-    rows = db.execute(
-        select(Section.id, Section.key, Section.name)
-        .where(Section.tenant_id == tenant_id)
-        .order_by(Section.name.asc())
-    ).all()
+    tenant_slug = db.scalar(select(Tenant.slug).where(Tenant.id == tenant_id))
+    order_case = _section_order_case_for_tenant_slug(tenant_slug)
+
+    query = select(Section.id, Section.key, Section.name).where(Section.tenant_id == tenant_id)
+    if order_case is not None:
+        query = query.order_by(order_case.asc(), Section.name.asc())
+    else:
+        query = query.order_by(Section.name.asc())
+    rows = db.execute(query).all()
 
     data = [{"id": int(i), "key": k, "name": n} for (i, k, n) in rows]
     return JSONResponse({"sections": data})

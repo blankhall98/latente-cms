@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/moto_final_text/v1.json",
+  "title": "OWA - Moto Final Text v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Moto Final Text",
+    "order": ["motoFinalText"]
+  },
+  "properties": {
+    "motoFinalText": {
+      "type": "string",
+      "x-ui": {
+        "label": "Moto Final Text",
+        "textarea": true
+      }
+    }
+  },
+  "required": ["motoFinalText"]
+}
