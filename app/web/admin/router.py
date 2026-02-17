@@ -366,6 +366,206 @@ def _render_object_page_data(data: Any) -> dict:
     return data
 
 
+def _resolve_local_schema_ref(root_schema: dict, ref: Any) -> dict | None:
+    if not isinstance(ref, str) or not ref.startswith("#/"):
+        return None
+    node: Any = root_schema
+    for part in ref[2:].split("/"):
+        if isinstance(node, dict) and part in node:
+            node = node[part]
+        else:
+            return None
+    return node if isinstance(node, dict) else None
+
+
+def _schema_node(schema_node: Any, root_schema: dict) -> dict:
+    if not isinstance(schema_node, dict):
+        return {}
+    if "$ref" in schema_node:
+        target = _resolve_local_schema_ref(root_schema, schema_node.get("$ref"))
+        if isinstance(target, dict):
+            merged = dict(target)
+            for k, v in schema_node.items():
+                if k != "$ref":
+                    merged[k] = v
+            return merged
+    return schema_node
+
+
+def _pick_first_string(value: Any, preferred_keys: tuple[str, ...] = ()) -> str | None:
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, dict):
+        return None
+
+    for key in preferred_keys:
+        candidate = value.get(key)
+        if isinstance(candidate, str):
+            return candidate
+
+    for key in ("value", "text", "title", "label", "name", "url", "href", "en", "es"):
+        candidate = value.get(key)
+        if isinstance(candidate, str):
+            return candidate
+
+    for candidate in value.values():
+        if isinstance(candidate, str):
+            return candidate
+        nested = _pick_first_string(candidate)
+        if isinstance(nested, str):
+            return nested
+    return None
+
+
+def _normalize_owa_value(
+    value: Any,
+    schema_node: Any,
+    root_schema: dict,
+    *,
+    key_hint: str | None = None,
+) -> Any:
+    node = _schema_node(schema_node, root_schema)
+    if not node:
+        return value
+
+    raw_type = node.get("type")
+    if isinstance(raw_type, list):
+        schema_type = next((t for t in raw_type if isinstance(t, str) and t != "null"), None)
+    else:
+        schema_type = raw_type if isinstance(raw_type, str) else None
+
+    if schema_type == "string":
+        raw = value
+        if (
+            key_hint
+            and isinstance(raw, dict)
+            and key_hint in raw
+            and set(raw.keys()).issubset({"type", key_hint})
+        ):
+            raw = raw.get(key_hint)
+
+        if isinstance(raw, str):
+            return "" if raw.strip() == "[object Object]" else raw
+
+        picked = _pick_first_string(raw, (key_hint,) if key_hint else ())
+        if isinstance(picked, str):
+            return "" if picked.strip() == "[object Object]" else picked
+
+        if raw is None:
+            return ""
+        return str(raw)
+
+    if schema_type == "integer":
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return int(value)
+        if isinstance(value, str):
+            txt = value.strip()
+            if not txt:
+                return None
+            try:
+                return int(float(txt))
+            except Exception:
+                return None
+        return None
+
+    if schema_type == "number":
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            txt = value.strip()
+            if not txt:
+                return None
+            try:
+                return float(txt)
+            except Exception:
+                return None
+        return None
+
+    if schema_type == "boolean":
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            txt = value.strip().lower()
+            if txt in {"true", "1", "yes", "y", "on"}:
+                return True
+            if txt in {"false", "0", "no", "n", "off"}:
+                return False
+        return bool(value)
+
+    if schema_type == "array":
+        src = value
+        if (
+            key_hint
+            and isinstance(src, dict)
+            and key_hint in src
+            and isinstance(src.get(key_hint), list)
+        ):
+            src = src.get(key_hint)
+        if not isinstance(src, list):
+            return []
+        item_schema = node.get("items") or {}
+        return [
+            _normalize_owa_value(item, item_schema, root_schema, key_hint=None)
+            for item in src
+            if item is not None
+        ]
+
+    props = node.get("properties") if isinstance(node.get("properties"), dict) else None
+    if schema_type == "object" or isinstance(props, dict):
+        props = props or {}
+        src = value
+        if (
+            key_hint
+            and isinstance(src, dict)
+            and key_hint in src
+            and set(src.keys()).issubset({"type", key_hint})
+        ):
+            src = src.get(key_hint)
+        if not isinstance(src, dict):
+            src = {}
+
+        out: dict[str, Any] = {}
+        for prop_key, prop_schema in props.items():
+            if prop_key in src:
+                out[prop_key] = _normalize_owa_value(
+                    src.get(prop_key), prop_schema, root_schema, key_hint=prop_key
+                )
+
+        # Keep required const/enum type markers only when schema actually defines them.
+        if "type" in props and "type" not in out:
+            type_node = _schema_node(props.get("type"), root_schema)
+            if "const" in type_node:
+                out["type"] = type_node.get("const")
+            elif isinstance(type_node.get("enum"), list) and len(type_node["enum"]) == 1:
+                out["type"] = type_node["enum"][0]
+
+        return out
+
+    return value
+
+
+def _normalize_owa_payload(payload: Any, json_schema: dict) -> dict:
+    if not isinstance(payload, dict):
+        return {}
+    if not isinstance(json_schema, dict):
+        return dict(payload)
+
+    normalized = _normalize_owa_value(payload, json_schema, json_schema, key_hint=None)
+    out = normalized if isinstance(normalized, dict) else {}
+
+    # Preserve editor meta keys that may live outside strict section schema.
+    for k in ("seo", "replace"):
+        if k in payload and k not in out:
+            out[k] = payload[k]
+    return out
+
+
 def _is_effectively_empty(value: Any) -> bool:
     if value is None:
         return True
@@ -960,6 +1160,8 @@ def page_edit_get(
     # Initial model (defaults merged with current data)
     ss = _get_active_schema(db, section.id)
     json_schema = _extract_schema_dict(ss)
+    if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        working_data = _normalize_owa_payload(working_data or {}, json_schema)
     form_model, _ = _build_form_model_from_active_schema(json_schema, working_data or {})
 
     replace_val = bool((form_model.get("replace") or False))
@@ -1118,6 +1320,9 @@ def page_edit_post(
         )
 
     # --- Minimal validation (pluggable)
+    if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        parsed = _normalize_owa_payload(parsed, json_schema)
+
     errors = _validate_against_schema(json_schema, parsed)
     if errors:
         sections = parsed.get("sections") or []
