@@ -1524,6 +1524,9 @@ def page_edit_post(
     if isinstance(merged, dict) and "__draft" in merged:
         merged.pop("__draft", None)
 
+    if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        merged = _normalize_owa_payload(merged, json_schema)
+
     # Clean project lists (DEWA keys only) to avoid null/blank reappearing items
     merged = _sanitize_dewa_projects_payload(merged)
 
@@ -1576,6 +1579,8 @@ def page_edit_post(
         working_after = _render_object_page_data(current_base)
     else:
         working_after = current_base
+    if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        working_after = _normalize_owa_payload(working_after, json_schema)
 
     if getattr(section, "key", "") == "privacy_policy":
         sections_ui = [{
@@ -1777,6 +1782,11 @@ def admin_publish_page(
     # Home: publish merged view to keep featured projects and other blocks visible
     elif getattr(section, "key", "") == "home":
         candidate = _render_home_data(data_now)
+
+    if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
+        ss_active = _get_active_schema(db, section.id)
+        candidate_schema = _extract_schema_dict(ss_active)
+        candidate = _normalize_owa_payload(candidate, candidate_schema)
 
     # Clean project lists (DEWA keys only) before publish to avoid resurrecting blank items
     candidate = _sanitize_dewa_projects_payload(candidate)
