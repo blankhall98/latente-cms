@@ -13,7 +13,7 @@ import json
 from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query, UploadFile, File
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, and_, func, or_
+from sqlalchemy import select, and_, func, not_, or_
 from sqlalchemy.orm import Session
 
 from app.core.settings import settings
@@ -95,6 +95,10 @@ def _upload_context(active: dict | None) -> dict:
         "upload_url": "/admin/uploads",
         "upload_max_mb": int(getattr(settings, "UPLOAD_MAX_MB", 0) or 0),
     }
+
+
+def _is_owa_active(active: dict | None) -> bool:
+    return ((active or {}).get("slug") or "").strip().lower() == "owa"
 
 
 _AGE_BUCKETS: list[tuple[str, int | None, int | None]] = [
@@ -554,11 +558,24 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     ) or 0
 
     PUBLISHED = "published"
-    pages_published = db.scalar(
-        select(func.count(Entry.id)).where(
-            and_(Entry.tenant_id == tenant_id, Entry.status == PUBLISHED)
-        )
-    ) or 0
+    if _is_owa_active(active):
+        pages_published = db.scalar(
+            select(func.count(Entry.id))
+            .join(Section, Section.id == Entry.section_id)
+            .where(
+                and_(
+                    Entry.tenant_id == tenant_id,
+                    Entry.status == PUBLISHED,
+                    not_(and_(Section.key == "landing_pages", Entry.slug == "home")),
+                )
+            )
+        ) or 0
+    else:
+        pages_published = db.scalar(
+            select(func.count(Entry.id)).where(
+                and_(Entry.tenant_id == tenant_id, Entry.status == PUBLISHED)
+            )
+        ) or 0
 
     kpis = [
         {"label": "Pages", "value": str(pages_published), "suffix": "published"},
@@ -571,13 +588,14 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     except Exception:
         order_cols = [Entry.id.desc()]
 
-    rows = db.execute(
+    recent_query = (
         select(Entry, Section)
         .join(Section, Section.id == Entry.section_id)
         .where(Entry.tenant_id == tenant_id)
-        .order_by(*order_cols)
-        .limit(5)
-    ).all()
+    )
+    if _is_owa_active(active):
+        recent_query = recent_query.where(not_(and_(Section.key == "landing_pages", Entry.slug == "home")))
+    rows = db.execute(recent_query.order_by(*order_cols).limit(5)).all()
 
     recent_entries = []
     for e, s in rows:
@@ -737,6 +755,8 @@ def pages_list(
         .join(Section, Section.id == Entry.section_id)
         .where(Entry.tenant_id == tid)
     )
+    if _is_owa_active(active):
+        base = base.where(not_(and_(Section.key == "landing_pages", Entry.slug == "home")))
 
     VALID_STATUS = {"published", "draft", "archived"}
     if status_param:
@@ -771,9 +791,10 @@ def pages_list(
         order_cols = [Entry.id.desc()]
     rows = db.execute(base.order_by(*order_cols).limit(per_page).offset(offset)).all()
 
-    sects = db.execute(
-        select(Section.id, Section.name).where(Section.tenant_id == tid).order_by(Section.name.asc())
-    ).all()
+    sects_query = select(Section.id, Section.name).where(Section.tenant_id == tid)
+    if _is_owa_active(active):
+        sects_query = sects_query.where(Section.key != "landing_pages")
+    sects = db.execute(sects_query.order_by(Section.name.asc())).all()
 
     items = []
     for e, s in rows:
