@@ -563,7 +563,34 @@ _DEWA_DETECT_KEYS = {
 }
 
 
-def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _schema_object_order_and_labels(schema: Dict[str, Any] | None) -> Tuple[List[str], Dict[str, str]]:
+    if not isinstance(schema, dict):
+        return [], {}
+    props = schema.get("properties")
+    if not isinstance(props, dict):
+        return [], {}
+
+    required = _extract_required(schema)
+    root_ui = schema.get("x-ui") or schema.get("ui") or {}
+    order = _ordered_fields(props, required, root_ui)
+
+    labels: Dict[str, str] = {}
+    for key, node in props.items():
+        if not isinstance(node, dict):
+            continue
+        xui = node.get("x-ui") or node.get("ui") or {}
+        label = xui.get("label") if isinstance(xui, dict) else None
+        if not label:
+            label = node.get("title")
+        if isinstance(label, str) and label.strip():
+            labels[key] = label.strip()
+    return order, labels
+
+
+def build_sections_ui_fallback_for_object_page(
+    data: Dict[str, Any],
+    schema: Dict[str, Any] | None = None,
+) -> List[Dict[str, Any]]:
     """
     Convierte una página estilo objeto (keys de primer nivel) al structure sections_ui
     esperado por templates/admin/page_edit.html. No modifica los datos en sí.
@@ -572,13 +599,19 @@ def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dic
     if not isinstance(data, dict):
         return sections_ui
 
+    schema_order, schema_labels = _schema_object_order_and_labels(schema)
+
     order = _ANRO_ORDER
-    labels = _ANRO_LABELS
+    labels = dict(_ANRO_LABELS)
     ignore: set[str] = set()
     if any(k in data for k in _DEWA_DETECT_KEYS):
         order = _DEWA_ORDER
-        labels = _DEWA_LABELS
+        labels = dict(_DEWA_LABELS)
         ignore.add("featuredProjects")
+
+    if schema_order:
+        order = schema_order
+        labels.update(schema_labels)
 
     known = [k for k in order if k in data]
     extras = [
@@ -589,9 +622,9 @@ def build_sections_ui_fallback_for_object_page(data: Dict[str, Any]) -> List[Dic
 
     for idx, key in enumerate(keys):
         sec = data.get(key) if key in data else {}
+        label = labels.get(key, key.replace("_", " ").title())
         if isinstance(sec, dict) and "type" not in sec:
-            sec = {"type": labels.get(key, key), **sec}
-        label = labels.get(key, key.title())
+            sec = {"type": label, **sec}
         sections_ui.append({
             "index": idx,
             "label": f"{idx+1:02d} - {label}",

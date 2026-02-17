@@ -1264,7 +1264,7 @@ def page_edit_get(
             sections_ui.append({"index": i, "label": label, "sec": sec, "key": (sec or {}).get("type") })
     else:
         # Fallback for object-style pages (ANRO)
-        sections_ui = build_sections_ui_fallback_for_object_page(form_model)
+        sections_ui = build_sections_ui_fallback_for_object_page(form_model, json_schema)
 
     if getattr(section, "key", "") == "home":
         entry_json_for_client = _render_home_data(entry.data)
@@ -1357,7 +1357,7 @@ def page_edit_post(
                 "sec": (blk or {}),
             } for i, blk in enumerate(sections)]
         else:
-            sections_ui = build_sections_ui_fallback_for_object_page(data)
+            sections_ui = build_sections_ui_fallback_for_object_page(data, json_schema)
 
         return templates.TemplateResponse(
             "admin/page_edit.html",
@@ -1404,7 +1404,7 @@ def page_edit_post(
                 "sec": (blk or {}),
             } for i, blk in enumerate(sections)]
         else:
-            sections_ui = build_sections_ui_fallback_for_object_page(parsed)
+            sections_ui = build_sections_ui_fallback_for_object_page(parsed, json_schema)
 
         return templates.TemplateResponse(
             "admin/page_edit.html",
@@ -1520,7 +1520,7 @@ def page_edit_post(
             "index": i,
             "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
             "sec": (blk or {}),
-        } for i, blk in enumerate(base_data.get("sections") or [])] or build_sections_ui_fallback_for_object_page(base_data)
+        } for i, blk in enumerate(base_data.get("sections") or [])] or build_sections_ui_fallback_for_object_page(base_data, json_schema)
 
         return templates.TemplateResponse(
             "admin/page_edit.html",
@@ -1665,7 +1665,7 @@ def page_edit_post(
     elif getattr(section, "key", "") == "home":
         wa = _render_home_data(entry.data)
         working_after = wa  # ensure initial_json and SEO values reflect merged view
-        sections_ui = build_sections_ui_fallback_for_object_page(wa)
+        sections_ui = build_sections_ui_fallback_for_object_page(wa, json_schema)
     elif getattr(section, "key", "") == "projects":
         sections_ui = [{
             "index": 0,
@@ -1679,7 +1679,7 @@ def page_edit_post(
             "index": i,
             "label": f"{i+1:02d} - {(blk or {}).get('type','Section')}" + (f" | { (blk or {}).get('heading','') }" if (blk or {}).get('heading') else ""),
             "sec": (blk or {}),
-        } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after)
+        } for i, blk in enumerate(sections)] or build_sections_ui_fallback_for_object_page(working_after, json_schema)
 
     if getattr(section, "key", "") == "home":
         entry_json_for_client = _render_home_data(entry.data)
