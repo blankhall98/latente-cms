@@ -1,0 +1,3 @@
+{
+  "notes": "Public endpoint for the OWA web pop-up: POST /api/v1/owa/popup-submissions"
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/pop_up/v1.json",
+  "title": "OWA - Pop Up v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Pop-Up",
+    "order": ["notes"]
+  },
+  "properties": {
+    "notes": {
+      "type": "string",
+      "x-ui": {
+        "label": "Internal Notes",
+        "textarea": true
+      }
+    }
+  },
+  "required": []
+}

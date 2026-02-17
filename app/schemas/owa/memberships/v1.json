@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/memberships/v1.json",
+  "title": "OWA - Memberships v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Memberships",
+    "order": ["pageTitle", "pageDescription", "membershipsList", "bookButton"]
+  },
+  "properties": {
+    "pageTitle": { "type": "string", "x-ui": { "label": "Page Title" } },
+    "pageDescription": { "type": "string", "x-ui": { "label": "Page Description", "textarea": true } },
+    "membershipsList": {
+      "type": "array",
+      "x-ui": { "label": "Memberships", "addLabel": "Add Membership" },
+      "items": { "$ref": "#/$defs/Membership" }
+    },
+    "bookButton": { "$ref": "#/$defs/Button", "x-ui": { "label": "Book Button" } }
+  },
+  "required": ["pageTitle", "pageDescription", "membershipsList", "bookButton"],
+  "$defs": {
+    "Membership": {
+      "type": "object",
+      "x-ui": {
+        "label": "Membership Card",
+        "order": ["membershipTitle", "price", "description", "benefits"]
+      },
+      "properties": {
+        "membershipTitle": { "type": "string", "x-ui": { "label": "Membership Title" } },
+        "price": { "type": "string", "x-ui": { "label": "Price" } },
+        "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "benefits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "x-ui": { "label": "Benefits", "addLabel": "Add Benefit" }
+        }
+      },
+      "required": ["membershipTitle", "price", "description", "benefits"]
+    },
+    "Button": {
+      "type": "object",
+      "x-ui": { "label": "Button", "order": ["text", "url"] },
+      "properties": {
+        "text": { "type": "string", "x-ui": { "label": "Button Text" } },
+        "url": { "type": "string", "x-ui": { "label": "Button URL" } }
+      },
+      "required": ["text", "url"]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/footer/v1.json",
+  "title": "OWA - Footer v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Footer",
+    "order": ["getInTouch", "connect"]
+  },
+  "properties": {
+    "getInTouch": {
+      "type": "object",
+      "x-ui": {
+        "label": "GET IN TOUCH",
+        "order": ["physicalAddress", "contactEmail", "contactPhone"]
+      },
+      "properties": {
+        "physicalAddress": { "type": "string", "x-ui": { "label": "Physical Address", "textarea": true } },
+        "contactEmail": { "type": "string", "x-ui": { "label": "Contact Email" } },
+        "contactPhone": { "type": "string", "x-ui": { "label": "Contact Phone" } }
+      },
+      "required": ["physicalAddress", "contactEmail", "contactPhone"]
+    },
+    "connect": {
+      "type": "object",
+      "x-ui": {
+        "label": "CONNECT",
+        "order": ["instagram", "spotify"]
+      },
+      "properties": {
+        "instagram": { "type": "string", "x-ui": { "label": "Instagram URL" } },
+        "spotify": { "type": "string", "x-ui": { "label": "Spotify URL" } }
+      },
+      "required": ["instagram", "spotify"]
+    }
+  },
+  "required": ["getInTouch", "connect"]
+}

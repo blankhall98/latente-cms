@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/events/v1.json",
+  "title": "OWA - Events v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Events",
+    "order": ["pageTitle", "pageDescription", "eventsList"]
+  },
+  "properties": {
+    "pageTitle": { "type": "string", "x-ui": { "label": "Page Title" } },
+    "pageDescription": { "type": "string", "x-ui": { "label": "Page Description", "textarea": true } },
+    "eventsList": {
+      "type": "array",
+      "x-ui": { "label": "Events", "addLabel": "Add Event Card" },
+      "items": { "$ref": "#/$defs/EventCard" }
+    }
+  },
+  "required": ["pageTitle", "pageDescription", "eventsList"],
+  "$defs": {
+    "EventCard": {
+      "type": "object",
+      "x-ui": {
+        "label": "Event Card",
+        "order": ["eventImage", "date", "eventName", "organizer", "time", "price", "linkText", "linkUrl"]
+      },
+      "properties": {
+        "eventImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Event Image" } },
+        "date": { "type": "string", "x-ui": { "label": "Date" } },
+        "eventName": { "type": "string", "x-ui": { "label": "Event Name" } },
+        "organizer": { "type": "string", "x-ui": { "label": "Organizer" } },
+        "time": { "type": "string", "x-ui": { "label": "Time" } },
+        "price": { "type": "string", "x-ui": { "label": "Price" } },
+        "linkText": { "type": "string", "x-ui": { "label": "Link Text" } },
+        "linkUrl": { "type": "string", "x-ui": { "label": "Link URL" } }
+      },
+      "required": ["eventImage", "date", "eventName", "organizer", "time", "price", "linkText", "linkUrl"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "pageTitle": "DISCOVER OWA",
+  "pageDescription": "",
+  "discoverSections": [
+    {
+      "cardTitle": "",
+      "cardDescription": "",
+      "cardLinkText": "",
+      "cardLinkUrl": "",
+      "cardBackgroundImage": {
+        "url": ""
+      }
+    },
+    {
+      "cardTitle": "",
+      "cardDescription": "",
+      "cardLinkText": "",
+      "cardLinkUrl": "",
+      "cardBackgroundImage": {
+        "url": ""
+      }
+    },
+    {
+      "cardTitle": "",
+      "cardDescription": "",
+      "cardLinkText": "",
+      "cardLinkUrl": "",
+      "cardBackgroundImage": {
+        "url": ""
+      }
+    },
+    {
+      "cardTitle": "",
+      "cardDescription": "",
+      "cardLinkText": "",
+      "cardLinkUrl": "",
+      "cardBackgroundImage": {
+        "url": ""
+      }
+    }
+  ]
+}

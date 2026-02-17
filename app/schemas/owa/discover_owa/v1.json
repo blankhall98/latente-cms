@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/discover_owa/v1.json",
+  "title": "OWA - Discover OWA v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Discover OWA",
+    "order": ["pageTitle", "pageDescription", "discoverSections"]
+  },
+  "properties": {
+    "pageTitle": { "type": "string", "x-ui": { "label": "Page Title" } },
+    "pageDescription": { "type": "string", "x-ui": { "label": "Page Description", "textarea": true } },
+    "discoverSections": {
+      "type": "array",
+      "x-ui": { "label": "Discover Sections", "addLabel": "Add Discover Card" },
+      "items": { "$ref": "#/$defs/DiscoverCard" }
+    }
+  },
+  "required": ["pageTitle", "pageDescription", "discoverSections"],
+  "$defs": {
+    "DiscoverCard": {
+      "type": "object",
+      "x-ui": {
+        "label": "Discover Card",
+        "order": ["cardTitle", "cardDescription", "cardLinkText", "cardLinkUrl", "cardBackgroundImage"]
+      },
+      "properties": {
+        "cardTitle": { "type": "string", "x-ui": { "label": "Card Title" } },
+        "cardDescription": { "type": "string", "x-ui": { "label": "Card Description", "textarea": true } },
+        "cardLinkText": { "type": "string", "x-ui": { "label": "Card Link Text" } },
+        "cardLinkUrl": { "type": "string", "x-ui": { "label": "Card Link URL" } },
+        "cardBackgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Card Background Image" } }
+      },
+      "required": ["cardTitle", "cardDescription", "cardLinkText", "cardLinkUrl", "cardBackgroundImage"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

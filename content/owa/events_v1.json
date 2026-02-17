@@ -1,0 +1,54 @@
+{
+  "pageTitle": "",
+  "pageDescription": "",
+  "eventsList": [
+    {
+      "eventImage": {
+        "url": ""
+      },
+      "date": "",
+      "eventName": "",
+      "organizer": "",
+      "time": "",
+      "price": "",
+      "linkText": "",
+      "linkUrl": ""
+    },
+    {
+      "eventImage": {
+        "url": ""
+      },
+      "date": "",
+      "eventName": "",
+      "organizer": "",
+      "time": "",
+      "price": "",
+      "linkText": "",
+      "linkUrl": ""
+    },
+    {
+      "eventImage": {
+        "url": ""
+      },
+      "date": "",
+      "eventName": "",
+      "organizer": "",
+      "time": "",
+      "price": "",
+      "linkText": "",
+      "linkUrl": ""
+    },
+    {
+      "eventImage": {
+        "url": ""
+      },
+      "date": "",
+      "eventName": "",
+      "organizer": "",
+      "time": "",
+      "price": "",
+      "linkText": "",
+      "linkUrl": ""
+    }
+  ]
+}

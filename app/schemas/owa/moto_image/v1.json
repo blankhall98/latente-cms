@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/moto_image/v1.json",
+  "title": "OWA - Moto Image v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Moto Image",
+    "order": ["motoImage"]
+  },
+  "properties": {
+    "motoImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Moto Background Image" } }
+  },
+  "required": ["motoImage"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

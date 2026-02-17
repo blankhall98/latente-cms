@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/therapies/v1.json",
+  "title": "OWA - Therapies v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Therapies",
+    "order": ["pageTitle", "pageDescription", "therapiesList", "bookButton"]
+  },
+  "properties": {
+    "pageTitle": { "type": "string", "x-ui": { "label": "Page Title" } },
+    "pageDescription": { "type": "string", "x-ui": { "label": "Page Description", "textarea": true } },
+    "therapiesList": {
+      "type": "array",
+      "x-ui": { "label": "Therapies", "addLabel": "Add Therapy" },
+      "items": { "$ref": "#/$defs/Therapy" }
+    },
+    "bookButton": { "$ref": "#/$defs/Button", "x-ui": { "label": "Book Button" } }
+  },
+  "required": ["pageTitle", "pageDescription", "therapiesList", "bookButton"],
+  "$defs": {
+    "Therapy": {
+      "type": "object",
+      "x-ui": {
+        "label": "Therapy",
+        "order": ["therapyName", "therapyDescription", "benefits", "therapyImage"]
+      },
+      "properties": {
+        "therapyName": { "type": "string", "x-ui": { "label": "Therapy Name" } },
+        "therapyDescription": { "type": "string", "x-ui": { "label": "Therapy Description", "textarea": true } },
+        "benefits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "x-ui": { "label": "Benefits", "addLabel": "Add Benefit" }
+        },
+        "therapyImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Therapy Image" } }
+      },
+      "required": ["therapyName", "therapyDescription", "benefits", "therapyImage"]
+    },
+    "Button": {
+      "type": "object",
+      "x-ui": { "label": "Button", "order": ["text", "url"] },
+      "properties": {
+        "text": { "type": "string", "x-ui": { "label": "Button Text" } },
+        "url": { "type": "string", "x-ui": { "label": "Button URL" } }
+      },
+      "required": ["text", "url"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

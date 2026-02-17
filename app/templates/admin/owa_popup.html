@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}OWA Pop-Up Submissions · {{ active_tenant and active_tenant.name or "Project" }} · Latente CMS{% endblock %}
+
+{% block extra_head %}
+<style>
+  .owa-head {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1rem 1.2rem;
+    background: #fff;
+    margin-bottom: 1rem;
+  }
+  .owa-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: .75rem;
+    margin-bottom: 1rem;
+  }
+  .owa-kpi {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    padding: .8rem 1rem;
+  }
+  .owa-kpi .v {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-1);
+  }
+  .owa-kpi .k {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-2);
+  }
+  .owa-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .owa-bar-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 60px;
+    gap: .6rem;
+    align-items: center;
+    margin-bottom: .45rem;
+  }
+  .owa-track {
+    height: 10px;
+    border-radius: 999px;
+    background: #f1ede5;
+    overflow: hidden;
+  }
+  .owa-fill {
+    height: 100%;
+    background: #6e9ee6;
+    border-radius: 999px;
+  }
+  .owa-table-wrap {
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .owa-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 780px;
+  }
+  .owa-table th, .owa-table td {
+    border-bottom: 1px solid var(--border);
+    padding: .55rem .65rem;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .owa-table th {
+    background: #faf7f1;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #748197;
+  }
+  .owa-endpoint {
+    padding: .7rem .8rem;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: #fcfaf6;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="owa-head d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <div>
+      <a class="small text-decoration-none" href="/admin/pages">← Back to pages</a>
+      <h1 class="h5 m-0 mt-1">OWA Pop-Up Submissions</h1>
+      <p class="text-muted small m-0">Public form captures and demographics dashboard.</p>
+    </div>
+    <span class="badge text-bg-light">Section: {{ page.section_name }}</span>
+  </div>
+
+  <div class="owa-card">
+    <h2 class="h6 mb-2">Front-End Endpoint</h2>
+    <div class="owa-endpoint mb-2">
+      <div><strong>Method:</strong> <code>POST</code></div>
+      <div><strong>URL:</strong> <code>{{ popup_endpoint }}</code></div>
+    </div>
+    <div class="small text-muted">Accepted keys: <code>email</code> (or <code>emailAddress</code>), <code>gender</code>, <code>birth_date</code> (or <code>birthDate</code>, format <code>YYYY-MM-DD</code>).</div>
+  </div>
+
+  <div class="owa-kpi-grid">
+    <div class="owa-kpi">
+      <div class="k">Total People</div>
+      <div class="v">{{ popup_metrics.total_submissions }}</div>
+    </div>
+    <div class="owa-kpi">
+      <div class="k">Age Buckets</div>
+      <div class="v">{{ popup_metrics.age_buckets|length }}</div>
+    </div>
+    <div class="owa-kpi">
+      <div class="k">Gender Groups</div>
+      <div class="v">{{ popup_metrics.gender_distribution|length }}</div>
+    </div>
+  </div>
+
+  <div class="owa-card">
+    <h2 class="h6 mb-3">Age Histogram</h2>
+    {% for label, count in popup_metrics.age_histogram.items() %}
+      <div class="owa-bar-row">
+        <div>{{ label }}</div>
+        <div class="owa-track">
+          <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+        </div>
+        <div>{{ count }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="owa-card">
+    <h2 class="h6 mb-3">Gender Distribution</h2>
+    {% for label, count in popup_metrics.gender_distribution.items() %}
+      <div class="owa-bar-row">
+        <div>{{ label }}</div>
+        <div class="owa-track">
+          <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+        </div>
+        <div>{{ count }}</div>
+      </div>
+    {% else %}
+      <p class="text-muted small m-0">No data yet.</p>
+    {% endfor %}
+  </div>
+
+  <div class="owa-card">
+    <h2 class="h6 mb-3">Gender × Age Distribution</h2>
+    <div class="owa-table-wrap">
+      <table class="owa-table">
+        <thead>
+          <tr>
+            <th>Gender</th>
+            {% for bucket in popup_metrics.age_buckets %}
+              <th>{{ bucket }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for gender, counts in popup_metrics.gender_age_distribution.items() %}
+            <tr>
+              <td>{{ gender }}</td>
+              {% for bucket in popup_metrics.age_buckets %}
+                <td>{{ counts.get(bucket, 0) }}</td>
+              {% endfor %}
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="{{ popup_metrics.age_buckets|length + 1 }}" class="text-muted">No data yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="owa-card">
+    <h2 class="h6 mb-3">Stored Submissions</h2>
+    <div class="owa-table-wrap">
+      <table class="owa-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Gender</th>
+            <th>Birth Date</th>
+            <th>Age</th>
+            <th>Submitted At</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in popup_metrics.rows %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.email }}</td>
+              <td>{{ row.gender_raw }}</td>
+              <td>{{ row.birth_date }}</td>
+              <td>{{ row.age }}</td>
+              <td>{% if row.created_at %}{{ row.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+              <td>
+                <form method="post" action="/admin/pages/{{ page.id }}/popup-submissions/{{ row.id }}/delete" onsubmit="return confirm('Delete this submission?');">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-muted">No submissions yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

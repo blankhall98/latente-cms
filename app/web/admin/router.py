@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from collections import defaultdict
 import os
 import re
 import time
@@ -19,6 +20,7 @@ from app.core.settings import settings
 from app.db.session import get_db
 from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
+from app.models.owa_popup import OwaPopupSubmission
 
 # Enriched JSON Schema (with x-ui) for the auto-form
 from app.services.ui_schema_service import (
@@ -92,6 +94,84 @@ def _upload_context(active: dict | None) -> dict:
         "upload_enabled": _uploads_enabled_for_tenant(active),
         "upload_url": "/admin/uploads",
         "upload_max_mb": int(getattr(settings, "UPLOAD_MAX_MB", 0) or 0),
+    }
+
+
+_AGE_BUCKETS: list[tuple[str, int | None, int | None]] = [
+    ("<18", None, 17),
+    ("18-24", 18, 24),
+    ("25-34", 25, 34),
+    ("35-44", 35, 44),
+    ("45-54", 45, 54),
+    ("55-64", 55, 64),
+    ("65+", 65, None),
+]
+
+
+def _age_from_birth_date(birth_date: date) -> int:
+    today = date.today()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+
+def _age_bucket_label(age: int) -> str:
+    for label, min_age, max_age in _AGE_BUCKETS:
+        if min_age is not None and age < min_age:
+            continue
+        if max_age is not None and age > max_age:
+            continue
+        return label
+    return "Unknown"
+
+
+def _normalize_gender_label(raw_gender: str) -> str:
+    v = (raw_gender or "").strip().lower()
+    if v in {"m", "male", "man", "hombre", "masculino"}:
+        return "Male"
+    if v in {"f", "female", "woman", "mujer", "femenino"}:
+        return "Female"
+    if "non" in v:
+        return "Non-binary"
+    if v in {"prefer not to say", "prefer_not_to_say", "prefer-not-to-say", "na", "n/a"}:
+        return "Prefer not to say"
+    return "Other"
+
+
+def _build_owa_popup_metrics(submissions: list[OwaPopupSubmission]) -> dict[str, Any]:
+    age_hist = {label: 0 for label, _, _ in _AGE_BUCKETS}
+    gender_counts: dict[str, int] = defaultdict(int)
+    gender_age_counts: dict[str, dict[str, int]] = defaultdict(lambda: {label: 0 for label, _, _ in _AGE_BUCKETS})
+    rows: list[dict[str, Any]] = []
+
+    for submission in submissions:
+        age = _age_from_birth_date(submission.birth_date)
+        age_bucket = _age_bucket_label(age)
+        gender = _normalize_gender_label(submission.gender)
+
+        age_hist[age_bucket] = age_hist.get(age_bucket, 0) + 1
+        gender_counts[gender] += 1
+        gender_age_counts[gender][age_bucket] = gender_age_counts[gender].get(age_bucket, 0) + 1
+
+        rows.append(
+            {
+                "id": int(submission.id),
+                "email": submission.email,
+                "gender_raw": submission.gender,
+                "gender_norm": gender,
+                "birth_date": submission.birth_date.isoformat(),
+                "age": age,
+                "created_at": submission.created_at,
+            }
+        )
+
+    return {
+        "total_submissions": len(submissions),
+        "age_histogram": age_hist,
+        "gender_distribution": dict(sorted(gender_counts.items(), key=lambda item: item[0])),
+        "gender_age_distribution": {
+            gender: values for gender, values in sorted(gender_age_counts.items(), key=lambda item: item[0])
+        },
+        "age_buckets": [label for label, _, _ in _AGE_BUCKETS],
+        "rows": rows,
     }
 
 
@@ -802,6 +882,37 @@ def page_edit_get(
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
+    if section.key == "pop_up":
+        submissions = db.scalars(
+            select(OwaPopupSubmission)
+            .where(OwaPopupSubmission.tenant_id == tid)
+            .order_by(OwaPopupSubmission.created_at.desc())
+        ).all()
+        metrics = _build_owa_popup_metrics(submissions)
+        ss = _get_active_schema(db, section.id)
+
+        return templates.TemplateResponse(
+            "admin/owa_popup.html",
+            {
+                "request": request,
+                "user": {"id": int(user["id"]), "email": user.get("email")},
+                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+                "is_superadmin": is_superadmin,
+                "page": {
+                    "id": entry.id,
+                    "slug": entry.slug,
+                    "title": "OWA Pop-Up Submissions",
+                    "status": entry.status,
+                    "section_name": section.name,
+                    "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                    "schema_version": (ss.version if ss else entry.schema_version),
+                    "section_id": int(section.id),
+                },
+                "popup_endpoint": f"{settings.API_V1_STR}/owa/popup-submissions",
+                "popup_metrics": metrics,
+            },
+        )
+
     # If page is published and has __draft, edit the draft (except projects)
     base_data = entry.data or {}
     is_published = (getattr(entry, "status", "draft") == "published")
@@ -914,6 +1025,9 @@ def page_edit_post(
         return RedirectResponse(url="/admin/projects", status_code=302)
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
+
+    if section.key == "pop_up":
+        return RedirectResponse(url=f"/admin/pages/{entry_id}/edit", status_code=302)
 
     # UI JSON Schema (also for POST)
     try:
@@ -1299,6 +1413,38 @@ def page_edit_post(
             **_upload_context(active),
         },
     )
+
+
+@router.post("/admin/pages/{entry_id}/popup-submissions/{submission_id}/delete")
+def owa_popup_submission_delete(
+    entry_id: int,
+    submission_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    _require_web_user(request)
+    active = _get_active_tenant(request)
+    tid = int((active or {}).get("id") or 0)
+    if not tid:
+        return RedirectResponse(url="/admin/projects", status_code=302)
+
+    entry, section = _load_entry_or_404(db, entry_id, tid)
+    if section.key != "pop_up":
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    row = db.scalar(
+        select(OwaPopupSubmission).where(
+            and_(
+                OwaPopupSubmission.id == submission_id,
+                OwaPopupSubmission.tenant_id == tid,
+            )
+        )
+    )
+    if row:
+        db.delete(row)
+        db.commit()
+
+    return RedirectResponse(url=f"/admin/pages/{entry_id}/edit", status_code=302)
 
 
 # --------------------------- Admin Uploads (session-based) ---------------------------

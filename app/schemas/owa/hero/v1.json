@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/hero/v1.json",
+  "title": "OWA - Hero v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Hero",
+    "order": ["heroBackgroundImage", "heroText", "heroButton"]
+  },
+  "properties": {
+    "heroBackgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hero Background Image" } },
+    "heroText": { "type": "string", "x-ui": { "label": "Hero Text", "textarea": true } },
+    "heroButton": { "$ref": "#/$defs/Button", "x-ui": { "label": "Hero Button" } }
+  },
+  "required": ["heroBackgroundImage", "heroText", "heroButton"],
+  "$defs": {
+    "Button": {
+      "type": "object",
+      "x-ui": { "label": "Button", "order": ["text", "href"] },
+      "properties": {
+        "text": { "type": "string", "x-ui": { "label": "Button Text" } },
+        "href": { "type": "string", "x-ui": { "label": "Button URL" } }
+      },
+      "required": ["text", "href"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}
