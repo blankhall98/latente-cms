@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/newsroom/v1.json",
+  "title": "DEWA - Newsroom v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Newsroom",
+    "order": ["pageEnabled", "hero", "prosperityReports", "inTheNews", "pressKits"]
+  },
+  "properties": {
+    "pageEnabled": {
+      "type": "boolean",
+      "x-ui": { "label": "Show Page" }
+    },
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["isEnabled", "heroImage", "heroText"] },
+      "properties": {
+        "isEnabled": { "type": "boolean", "x-ui": { "label": "Show Section" } },
+        "heroImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hero Image" } },
+        "heroText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Text" } }
+      },
+      "required": ["isEnabled", "heroImage", "heroText"]
+    },
+    "prosperityReports": {
+      "type": "object",
+      "x-ui": {
+        "label": "Prosperity Reports",
+        "order": ["isEnabled", "sectionTitle", "sectionSubtitle", "sectionDescription", "yearReports"]
+      },
+      "properties": {
+        "isEnabled": { "type": "boolean", "x-ui": { "label": "Show Section" } },
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionSubtitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Subtitle" } },
+        "sectionDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Description" } },
+        "yearReports": {
+          "type": "array",
+          "x-ui": { "label": "Year Reports", "addLabel": "Add year report" },
+          "items": { "$ref": "#/$defs/YearReport" }
+        }
+      },
+      "required": ["isEnabled", "sectionTitle", "sectionSubtitle", "sectionDescription", "yearReports"]
+    },
+    "inTheNews": {
+      "type": "object",
+      "x-ui": { "label": "In the News", "order": ["isEnabled", "sectionTitle", "newsList", "loadMore"] },
+      "properties": {
+        "isEnabled": { "type": "boolean", "x-ui": { "label": "Show Section" } },
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "newsList": {
+          "type": "array",
+          "x-ui": { "label": "News", "addLabel": "Add news item" },
+          "items": { "$ref": "#/$defs/NewsItem" }
+        },
+        "loadMore": {
+          "type": "object",
+          "x-ui": { "label": "Load More", "order": ["loadMoreText"] },
+          "properties": {
+            "loadMoreText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Load More Text" } }
+          },
+          "required": ["loadMoreText"]
+        }
+      },
+      "required": ["isEnabled", "sectionTitle", "newsList", "loadMore"]
+    },
+    "pressKits": {
+      "type": "object",
+      "x-ui": {
+        "label": "Press Kits",
+        "order": [
+          "isEnabled",
+          "sectionTitle",
+          "sectionSubtitle",
+          "sectionDescription",
+          "sectionImage",
+          "download",
+          "getInTouch",
+          "backHome"
+        ]
+      },
+      "properties": {
+        "isEnabled": { "type": "boolean", "x-ui": { "label": "Show Section" } },
+        "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
+        "sectionSubtitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Subtitle" } },
+        "sectionDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Description" } },
+        "sectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Image" } },
+        "download": {
+          "type": "object",
+          "x-ui": { "label": "Download", "order": ["downloadText", "downloadLink"] },
+          "properties": {
+            "downloadText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Download Text" } },
+            "downloadLink": { "type": "string", "format": "uri", "x-ui": { "label": "Download Link" } }
+          },
+          "required": ["downloadText", "downloadLink"]
+        },
+        "getInTouch": {
+          "type": "object",
+          "x-ui": { "label": "Get In Touch", "order": ["getInTouchText", "getInTouchLink"] },
+          "properties": {
+            "getInTouchText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Get In Touch Text" } },
+            "getInTouchLink": { "type": "string", "format": "uri", "x-ui": { "label": "Get In Touch Link" } }
+          },
+          "required": ["getInTouchText", "getInTouchLink"]
+        },
+        "backHome": {
+          "type": "object",
+          "x-ui": { "label": "Back Home", "order": ["backHomeText"] },
+          "properties": {
+            "backHomeText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Back Home Text" } }
+          },
+          "required": ["backHomeText"]
+        }
+      },
+      "required": [
+        "isEnabled",
+        "sectionTitle",
+        "sectionSubtitle",
+        "sectionDescription",
+        "sectionImage",
+        "download",
+        "getInTouch",
+        "backHome"
+      ]
+    }
+  },
+  "required": ["pageEnabled", "hero", "prosperityReports", "inTheNews", "pressKits"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "QuarterReport": {
+      "type": "object",
+      "x-ui": { "label": "Quarter Report", "order": ["reportName", "reportLink"] },
+      "properties": {
+        "reportName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Report Name" } },
+        "reportLink": { "type": "string", "format": "uri", "x-ui": { "label": "Report Link" } }
+      },
+      "required": ["reportName", "reportLink"]
+    },
+    "YearReport": {
+      "type": "object",
+      "x-ui": { "label": "Year Report", "order": ["year", "q1Report", "q2Report", "q3Report", "q4Report"] },
+      "properties": {
+        "year": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Year" } },
+        "q1Report": { "$ref": "#/$defs/QuarterReport", "x-ui": { "label": "Q1 Report" } },
+        "q2Report": { "$ref": "#/$defs/QuarterReport", "x-ui": { "label": "Q2 Report" } },
+        "q3Report": { "$ref": "#/$defs/QuarterReport", "x-ui": { "label": "Q3 Report" } },
+        "q4Report": { "$ref": "#/$defs/QuarterReport", "x-ui": { "label": "Q4 Report" } }
+      },
+      "required": ["year", "q1Report", "q2Report", "q3Report", "q4Report"]
+    },
+    "ReadMore": {
+      "type": "object",
+      "x-ui": { "label": "Read More", "order": ["readMoreText", "readMoreLink"] },
+      "properties": {
+        "readMoreText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Read More Text" } },
+        "readMoreLink": { "type": "string", "format": "uri", "x-ui": { "label": "Read More Link" } }
+      },
+      "required": ["readMoreText", "readMoreLink"]
+    },
+    "NewsItem": {
+      "type": "object",
+      "x-ui": { "label": "News Item", "order": ["newsTitle", "publisher", "date", "readMore"] },
+      "properties": {
+        "newsTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "News Title" } },
+        "publisher": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Publisher" } },
+        "date": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Date" } },
+        "readMore": { "$ref": "#/$defs/ReadMore", "x-ui": { "label": "Read More" } }
+      },
+      "required": ["newsTitle", "publisher", "date", "readMore"]
+    }
+  }
+}

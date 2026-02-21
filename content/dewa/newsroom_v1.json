@@ -1,0 +1,41 @@
+{
+  "pageEnabled": true,
+  "hero": {
+    "isEnabled": true,
+    "heroImage": { "url": "" },
+    "heroText": { "en": "", "es": "" }
+  },
+  "prosperityReports": {
+    "isEnabled": true,
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionSubtitle": { "en": "", "es": "" },
+    "sectionDescription": { "en": "", "es": "" },
+    "yearReports": []
+  },
+  "inTheNews": {
+    "isEnabled": true,
+    "sectionTitle": { "en": "", "es": "" },
+    "newsList": [],
+    "loadMore": {
+      "loadMoreText": { "en": "", "es": "" }
+    }
+  },
+  "pressKits": {
+    "isEnabled": true,
+    "sectionTitle": { "en": "", "es": "" },
+    "sectionSubtitle": { "en": "", "es": "" },
+    "sectionDescription": { "en": "", "es": "" },
+    "sectionImage": { "url": "" },
+    "download": {
+      "downloadText": { "en": "", "es": "" },
+      "downloadLink": ""
+    },
+    "getInTouch": {
+      "getInTouchText": { "en": "", "es": "" },
+      "getInTouchLink": ""
+    },
+    "backHome": {
+      "backHomeText": { "en": "", "es": "" }
+    }
+  }
+}
