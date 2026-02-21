@@ -49,7 +49,7 @@
         "sectionTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Title" } },
         "newsList": {
           "type": "array",
-          "x-ui": { "label": "News", "addLabel": "Add news item" },
+          "x-ui": { "label": "News", "addLabel": "Add news item", "itemTitlePath": "newsTitle.en" },
           "items": { "$ref": "#/$defs/NewsItem" }
         },
         "loadMore": {

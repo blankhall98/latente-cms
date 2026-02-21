@@ -1100,12 +1100,16 @@
           // If schema metadata is missing on runtime, keep Year Reports user-friendly.
           const fallbackYearPath = getLabelText(getDeepValue(item, 'year.en')) || getLabelText(getDeepValue(item, 'year'));
           if(fallbackYearPath) return fallbackYearPath;
+          const fallbackNewsPath = getLabelText(getDeepValue(item, 'newsTitle.en')) || getLabelText(getDeepValue(item, 'newsTitle'));
+          if(fallbackNewsPath) return fallbackNewsPath;
           const projectTitle = getLabelText(item.projectTitle);
           if(projectTitle) return projectTitle;
           const title = getLabelText(item.title) || getLabelText(item.name) || getLabelText(item.label);
           return title || fallback;
         };
-        const defaultItemLabelPath = path.endsWith('.yearReports') ? 'year.en' : '';
+        const defaultItemLabelPath = path.endsWith('.yearReports')
+          ? 'year.en'
+          : (path.endsWith('.newsList') ? 'newsTitle.en' : '');
         const itemLabelPath = String(ui.itemTitlePath || ui.itemLabelPath || defaultItemLabelPath).trim();
 
         // Default repeater with collapsible items
