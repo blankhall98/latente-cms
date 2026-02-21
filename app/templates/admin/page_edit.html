@@ -1082,20 +1082,31 @@
           }
           return '';
         };
-        const getItemLabel = (item, fallback)=>{
+        const getDeepValue = (obj, dotPath)=>{
+          if(!obj || typeof obj !== 'object') return undefined;
+          if(!dotPath || typeof dotPath !== 'string') return undefined;
+          return dotPath.split('.').reduce((acc, part)=>{
+            if(acc == null || typeof acc !== 'object') return undefined;
+            return acc[part];
+          }, obj);
+        };
+        const getItemLabel = (item, fallback, itemLabelPath)=>{
           if(!item || typeof item !== 'object') return fallback;
+          const fromPath = getLabelText(getDeepValue(item, itemLabelPath));
+          if(fromPath) return fromPath;
           const projectTitle = getLabelText(item.projectTitle);
           if(projectTitle) return projectTitle;
           const title = getLabelText(item.title) || getLabelText(item.name) || getLabelText(item.label);
           return title || fallback;
         };
+        const itemLabelPath = String(ui.itemTitlePath || ui.itemLabelPath || '').trim();
 
         // Default repeater with collapsible items
         (Array.isArray(value)?value:[]).forEach((v,idx)=>{
           const row=document.createElement('div'); row.className='repeater-item card p-3 mb-2';
           const hdr=document.createElement('div'); hdr.className='d-flex justify-content-between align-items-center mb-2';
           const title=document.createElement('div'); title.className='fw-semibold';
-          title.textContent = getItemLabel(v, `${lab.textContent || 'Item'} ${idx+1}`);
+          title.textContent = getItemLabel(v, `${lab.textContent || 'Item'} ${idx+1}`, itemLabelPath);
           const toggle=document.createElement('button'); toggle.type='button'; toggle.className='btn btn-sm btn-outline'; toggle.textContent='Expand/Collapse';
           const body=document.createElement('div'); body.className='repeater-body d-none';
         toggle.addEventListener('click', ()=>{ body.classList.toggle('d-none'); });

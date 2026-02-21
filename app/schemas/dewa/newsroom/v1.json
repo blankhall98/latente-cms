@@ -35,7 +35,7 @@
         "sectionDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Description" } },
         "yearReports": {
           "type": "array",
-          "x-ui": { "label": "Year Reports", "addLabel": "Add year report" },
+          "x-ui": { "label": "Year Reports", "addLabel": "Add year report", "itemTitlePath": "year.en" },
           "items": { "$ref": "#/$defs/YearReport" }
         }
       },
