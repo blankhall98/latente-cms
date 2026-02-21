@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/dewa_legacy/v2.json",
+  "title": "DEWA - Dewa Legacy v2",
+  "type": "object",
+  "x-ui": { "label": "Dewa Legacy", "order": ["hero", "mainText", "dewaLegacyProjects"] },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["backgroundImage", "heroTitle"] },
+      "properties": {
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background Image" } },
+        "heroTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Hero Title" } }
+      },
+      "required": ["backgroundImage", "heroTitle"]
+    },
+    "mainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Main Text" } },
+    "dewaLegacyProjects": {
+      "type": "object",
+      "x-ui": { "label": "Dewa Legacy Projects", "order": ["projectsList"] },
+      "properties": {
+        "projectsList": {
+          "type": "array",
+          "x-ui": { "label": "List of Dewa Legacy Projects", "addLabel": "Add new Dewa Legacy Project" },
+          "items": { "$ref": "#/$defs/DewaLegacyProject" }
+        }
+      },
+      "required": ["projectsList"]
+    }
+  },
+  "required": ["hero", "mainText", "dewaLegacyProjects"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "ProjectIndicator": {
+      "type": "object",
+      "x-ui": { "label": "Indicator", "order": ["indicatorName", "indicatorValue"] },
+      "properties": {
+        "indicatorName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Indicator Name" } },
+        "indicatorValue": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Indicator Value" } }
+      },
+      "required": ["indicatorName", "indicatorValue"]
+    },
+    "DewaLegacyProject": {
+      "type": "object",
+      "x-ui": {
+        "label": "Dewa Legacy Project",
+        "order": [
+          "projectTitle",
+          "projectLocation",
+          "projectDescription",
+          "projectDisplayImage",
+          "exploreInPictures",
+          "gallery",
+          "indicators"
+        ]
+      },
+      "properties": {
+        "projectTitle": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Title" } },
+        "projectLocation": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Project Location" } },
+        "projectDescription": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Project Description" } },
+        "projectDisplayImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Project Display Image" } },
+        "exploreInPictures": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Explore In Pictures" } },
+        "gallery": {
+          "type": "array",
+          "x-ui": { "label": "Gallery", "addLabel": "Upload new image to gallery" },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "indicators": {
+          "type": "array",
+          "x-ui": { "label": "Indicators", "addLabel": "Add indicator" },
+          "items": { "$ref": "#/$defs/ProjectIndicator" }
+        }
+      },
+      "required": [
+        "projectTitle",
+        "projectLocation",
+        "projectDescription",
+        "projectDisplayImage",
+        "exploreInPictures",
+        "gallery",
+        "indicators"
+      ]
+    }
+  }
+}
+
