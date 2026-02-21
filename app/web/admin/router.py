@@ -661,6 +661,7 @@ def _sanitize_dewa_projects_payload(data: Any) -> Any:
         "dewaSignatureProjects",
         "frontierProjects",
         "arthaLegacyProjects",
+        "dewaLegacyProjects",
     }
     for key in keys:
         block = data.get(key)

@@ -1,0 +1,13 @@
+{
+  "hero": {
+    "backgroundImage": { "url": "" },
+    "heroTitle": { "en": "", "es": "" }
+  },
+  "mainText": {
+    "en": "Tracing the foundations of DEWA -- a curated record of the ventures that delivered results, lessons, and lasting perspective.",
+    "es": ""
+  },
+  "dewaLegacyProjects": {
+    "projectsList": []
+  }
+}
