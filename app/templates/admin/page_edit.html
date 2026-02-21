@@ -1074,11 +1074,14 @@
         const getLabelText = (val)=>{
           if(val == null) return '';
           if(typeof val === 'string') return val.trim();
+          if(typeof val === 'number' || typeof val === 'boolean') return String(val).trim();
           if(typeof val === 'object'){
             const en = val.en;
             if(typeof en === 'string' && en.trim()) return en.trim();
+            if(typeof en === 'number' || typeof en === 'boolean') return String(en).trim();
             const es = val.es;
             if(typeof es === 'string' && es.trim()) return es.trim();
+            if(typeof es === 'number' || typeof es === 'boolean') return String(es).trim();
           }
           return '';
         };
@@ -1094,12 +1097,16 @@
           if(!item || typeof item !== 'object') return fallback;
           const fromPath = getLabelText(getDeepValue(item, itemLabelPath));
           if(fromPath) return fromPath;
+          // If schema metadata is missing on runtime, keep Year Reports user-friendly.
+          const fallbackYearPath = getLabelText(getDeepValue(item, 'year.en')) || getLabelText(getDeepValue(item, 'year'));
+          if(fallbackYearPath) return fallbackYearPath;
           const projectTitle = getLabelText(item.projectTitle);
           if(projectTitle) return projectTitle;
           const title = getLabelText(item.title) || getLabelText(item.name) || getLabelText(item.label);
           return title || fallback;
         };
-        const itemLabelPath = String(ui.itemTitlePath || ui.itemLabelPath || '').trim();
+        const defaultItemLabelPath = path.endsWith('.yearReports') ? 'year.en' : '';
+        const itemLabelPath = String(ui.itemTitlePath || ui.itemLabelPath || defaultItemLabelPath).trim();
 
         // Default repeater with collapsible items
         (Array.isArray(value)?value:[]).forEach((v,idx)=>{
