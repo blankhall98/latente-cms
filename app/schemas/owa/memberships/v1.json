@@ -23,12 +23,13 @@
       "type": "object",
       "x-ui": {
         "label": "Membership Card",
-        "order": ["membershipTitle", "price", "description", "benefits"]
+        "order": ["membershipTitle", "price", "description", "backgroundImage", "benefits"]
       },
       "properties": {
         "membershipTitle": { "type": "string", "x-ui": { "label": "Membership Title" } },
         "price": { "type": "string", "x-ui": { "label": "Price" } },
         "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background Image" } },
         "benefits": {
           "type": "array",
           "items": { "type": "string" },
@@ -45,6 +46,23 @@
         "url": { "type": "string", "x-ui": { "label": "Button URL" } }
       },
       "required": ["text", "url"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
     }
   }
 }
