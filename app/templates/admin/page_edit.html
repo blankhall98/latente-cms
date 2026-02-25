@@ -1111,6 +1111,24 @@
           ? 'year.en'
           : (path.endsWith('.newsList') ? 'newsTitle.en' : '');
         const itemLabelPath = String(ui.itemTitlePath || ui.itemLabelPath || defaultItemLabelPath).trim();
+        const parsedMaxItems = Number(schema.maxItems);
+        const maxItems = Number.isFinite(parsedMaxItems) && parsedMaxItems >= 0 ? Math.floor(parsedMaxItems) : null;
+        const countRepeaterItems = ()=>Array.from(list.children).filter(el=>el.classList?.contains('repeater-item')).length;
+        const maxItemsHint = document.createElement('div');
+        maxItemsHint.className = 'text-muted small mt-1';
+        if(maxItems !== null){
+          maxItemsHint.textContent = `Maximum ${maxItems} items reached.`;
+          maxItemsHint.style.display = 'none';
+        }
+        let add = null;
+        const updateAddAvailability = ()=>{
+          if(!add || maxItems === null) return;
+          const reached = countRepeaterItems() >= maxItems;
+          add.disabled = reached;
+          add.setAttribute('aria-disabled', reached ? 'true' : 'false');
+          add.title = reached ? `Maximum ${maxItems} items reached` : '';
+          maxItemsHint.style.display = reached ? '' : 'none';
+        };
 
         // Default repeater with collapsible items
         (Array.isArray(value)?value:[]).forEach((v,idx)=>{
@@ -1124,12 +1142,16 @@
         hdr.appendChild(title); hdr.appendChild(toggle); row.appendChild(hdr);
         renderField(`${path}[${idx}]`, itemsSchema, v, body);
         const rm=document.createElement('button'); rm.type='button'; rm.className='btn btn-soft-danger btn-sm mt-2'; rm.textContent='Remove';
-        rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
+        rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); updateAddAvailability(); });
         body.appendChild(rm); row.appendChild(body); list.appendChild(row);
       });
-      const add=document.createElement('button'); add.type='button'; add.className='btn btn-soft-success btn-sm mt-2'; add.textContent= (ui.addLabel||'Add');
+      add=document.createElement('button'); add.type='button'; add.className='btn btn-soft-success btn-sm mt-2'; add.textContent= (ui.addLabel||'Add');
       add.addEventListener('click', ()=>{
-        const idx = Array.from(list.children).filter(el=>el.classList?.contains('repeater-item')).length;
+        const idx = countRepeaterItems();
+        if(maxItems !== null && idx >= maxItems){
+          updateAddAvailability();
+          return;
+        }
         const row=document.createElement('div'); row.className='repeater-item card p-3 mb-2';
         const hdr=document.createElement('div'); hdr.className='d-flex justify-content-between align-items-center mb-2';
         const title=document.createElement('div'); title.className='fw-semibold'; title.textContent=`${lab.textContent||'Item'} ${idx+1}`;
@@ -1139,11 +1161,14 @@
         hdr.appendChild(title); hdr.appendChild(toggle); row.appendChild(hdr);
         renderField(`${path}[${idx}]`, itemsSchema, null, body);
         const rm=document.createElement('button'); rm.type='button'; rm.className='btn btn-soft-danger btn-sm mt-2'; rm.textContent='Remove';
-        rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); });
-        body.appendChild(rm); row.appendChild(body); list.appendChild(row); setDirty(true);
+        rm.addEventListener('click', ()=>{ row.remove(); setDirty(true); updateAddAvailability(); });
+        body.appendChild(rm); row.appendChild(body); list.appendChild(row); setDirty(true); updateAddAvailability();
       });
       box.appendChild(list);
-      wrap.appendChild(box); wrap.appendChild(add); wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
+      wrap.appendChild(box); wrap.appendChild(add);
+      if(maxItems !== null) wrap.appendChild(maxItemsHint);
+      updateAddAvailability();
+      wrap.insertAdjacentHTML('beforeend', hint); parent.appendChild(wrap); return;
     }
 
     const box=document.createElement('div'); box.className='card p-3';
