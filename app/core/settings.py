@@ -129,6 +129,13 @@ class Settings(BaseSettings):
     UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "15"))
     UPLOAD_TENANT_SLUGS: str = os.getenv("UPLOAD_TENANT_SLUGS", "anro")
 
+    # ====== Mailchimp (OWA newsletter) ======
+    MAILCHIMP_API_KEY: str | None = os.getenv("MAILCHIMP_API_KEY")
+    MAILCHIMP_AUDIENCE_ID: str | None = os.getenv("MAILCHIMP_AUDIENCE_ID")
+    # Optional. If omitted, code will infer it from API key suffix (e.g. us21).
+    MAILCHIMP_SERVER_PREFIX: str | None = os.getenv("MAILCHIMP_SERVER_PREFIX")
+    MAILCHIMP_TIMEOUT_SECONDS: float = float(os.getenv("MAILCHIMP_TIMEOUT_SECONDS", "10"))
+
     # ============== Webhooks (Paso 20) ==============
     WEBHOOKS_ENABLED: bool = os.getenv("WEBHOOKS_ENABLED", "false").lower() == "true"
     WEBHOOKS_TIMEOUT_SECONDS: float = float(os.getenv("WEBHOOKS_TIMEOUT_SECONDS", "3"))

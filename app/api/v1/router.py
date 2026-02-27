@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from .endpoints import health, content
 from app.api.v1.endpoints import schemas as schemas_endpoints
 from app.api.v1.endpoints import owa_popup as owa_popup_endpoints
+from app.api.v1.endpoints import owa_newsletter as owa_newsletter_endpoints
 from app.api.v1 import auth as auth_endpoints
 
 from app.api.v1.endpoints import users as users_endpoints
@@ -25,3 +26,4 @@ api_router.include_router(schemas_endpoints.router)    # /schemas
 
 # OWA pop-up public submit endpoint
 api_router.include_router(owa_popup_endpoints.router)  # /owa/popup-submissions
+api_router.include_router(owa_newsletter_endpoints.router)  # /owa/newsletter-subscriptions
