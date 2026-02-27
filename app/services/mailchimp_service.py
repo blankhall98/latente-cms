@@ -67,6 +67,7 @@ def subscribe_email(email: str) -> dict[str, Any]:
             url,
             auth=("anystring", api_key),
             json=payload,
+            params={"skip_merge_validation": "true"},
             timeout=timeout,
         )
     except httpx.RequestError as exc:
@@ -77,6 +78,9 @@ def subscribe_email(email: str) -> dict[str, Any]:
         try:
             body = response.json()
             detail = body.get("detail") or body.get("title")
+            if not detail and isinstance(body.get("errors"), list) and body["errors"]:
+                first_err = body["errors"][0]
+                detail = first_err.get("message") or first_err.get("field")
         except Exception:
             detail = response.text[:200]
         raise MailchimpRequestError(
