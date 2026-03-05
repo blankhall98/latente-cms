@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/faq/v1.json",
+  "title": "OWA - FAQ v1",
+  "type": "object",
+  "x-ui": {
+    "label": "FAQ",
+    "order": ["pageTitle", "pageDescription", "faqs"]
+  },
+  "properties": {
+    "pageTitle": {
+      "type": "string",
+      "x-ui": { "label": "Page Title" }
+    },
+    "pageDescription": {
+      "type": "string",
+      "x-ui": { "label": "Page Description", "textarea": true }
+    },
+    "faqs": {
+      "type": "array",
+      "x-ui": {
+        "label": "FAQs",
+        "addLabel": "Add FAQ",
+        "itemTitlePath": "question"
+      },
+      "items": { "$ref": "#/$defs/FaqItem" }
+    }
+  },
+  "required": ["pageTitle", "pageDescription", "faqs"],
+  "$defs": {
+    "FaqItem": {
+      "type": "object",
+      "x-ui": {
+        "label": "FAQ Item",
+        "order": ["question", "answer"]
+      },
+      "properties": {
+        "question": {
+          "type": "string",
+          "x-ui": { "label": "Question" }
+        },
+        "answer": {
+          "type": "string",
+          "x-ui": { "label": "Answer", "textarea": true }
+        }
+      },
+      "required": ["question", "answer"]
+    }
+  }
+}

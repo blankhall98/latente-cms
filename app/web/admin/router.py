@@ -78,6 +78,7 @@ _OWA_SECTION_DASHBOARD_ORDER = [
     "memberships",
     "moto_image",
     "events",
+    "faq",
     "moto_final_text",
     "footer",
 ]
