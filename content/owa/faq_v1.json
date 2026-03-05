@@ -44,7 +44,7 @@
     },
     {
       "question": "Who should consult a doctor before booking?",
-      "answer": "We recommend prior medical approval for individuals with:\ncardiovascular conditions\nuncontrolled high blood pressure\npregnancy\nchronic respiratory issues\npacemakers or medical implants\nAny pre-existing medical condition"
+      "answer": "We recommend prior medical approval for individuals with:<ul><li>Cardiovascular conditions</li><li>Uncontrolled high blood pressure</li><li>Pregnancy</li><li>Chronic respiratory issues</li><li>Pacemakers or medical implants</li><li>Any pre-existing medical condition</li></ul>"
     },
     {
       "question": "What are the benefits of the sauna?",
@@ -56,7 +56,7 @@
     },
     {
       "question": "Is there a social sauna and a private sauna?",
-      "answer": "Yes.\nSocial Roof Top Sauna: up to 13 guests.\nPrivate Sauna: cabins for 1-6 guests.\nBoth allow you to unwind at your own pace."
+      "answer": "Yes.<ul><li>Social Roof Top Sauna: up to 13 guests.</li><li>Private Sauna: cabins for 1-6 guests.</li></ul>Both allow you to unwind at your own pace."
     },
     {
       "question": "What should I know before entering?",
@@ -92,7 +92,7 @@
     },
     {
       "question": "What are the benefits of the Zero Gravity Chair?",
-      "answer": "Reduces spinal pressure By elevating the legs and aligning the body at a neutral\nangle, the chair decompresses the spine, easing tension in the lower back and\nsupporting overall postural alignment.\nRelieves joint and muscle tension The weightless position distributes body weight\nevenly, reducing pressure on joints and allowing muscles to relax without effort.\nImproves circulation Raising the legs above heart level supports venous return and\nhelps oxygenate tissues more efficiently, leaving the body feeling lighter and energized.\nPromotes deep relaxation The reclined, supported posture activates the\nparasympathetic nervous system, helping the body shift out of stress responses and into\nrestorative calm.\nEncourages restorative sleep Because it reduces physical discomfort and calms the\nnervous system, many people enter a meditative or sleep-like state during the\nexperience.\nSupports recovery Lower physical tension + improved circulation = faster recovery from\nfatigue, workouts, and everyday stress.\nEnhances mental clarity The deep state of rest improves focus and leaves the mind\nrefreshed, similar to a short restorative nap."
+      "answer": "<ul><li><strong>Reduces spinal pressure:</strong> By elevating the legs and aligning the body at a neutral angle, the chair decompresses the spine, easing tension in the lower back and supporting overall postural alignment.</li><li><strong>Relieves joint and muscle tension:</strong> The weightless position distributes body weight evenly, reducing pressure on joints and allowing muscles to relax without effort.</li><li><strong>Improves circulation:</strong> Raising the legs above heart level supports venous return and helps oxygenate tissues more efficiently, leaving the body feeling lighter and energized.</li><li><strong>Promotes deep relaxation:</strong> The reclined, supported posture activates the parasympathetic nervous system, helping the body shift out of stress responses and into restorative calm.</li><li><strong>Encourages restorative sleep:</strong> Because it reduces physical discomfort and calms the nervous system, many people enter a meditative or sleep-like state during the experience.</li><li><strong>Supports recovery:</strong> Lower physical tension plus improved circulation supports faster recovery from fatigue, workouts, and everyday stress.</li><li><strong>Enhances mental clarity:</strong> The deep state of rest improves focus and leaves the mind refreshed, similar to a short restorative nap.</li></ul>"
     },
     {
       "question": "What is Shiftwave?",
@@ -112,7 +112,7 @@
     },
     {
       "question": "What are the benefits?",
-      "answer": "Reduces water retention and swelling Pressotherapy stimulates the lymphatic system\nthrough rhythmic compression, helping the body mobilize excess fluid and reduce\nswelling in the legs, abdomen, and arms. This creates a sense of lightness and improved\nmobility.\nImproves lymphatic drainage The sequential pressure patterns support the natural\nmovement of lymph--your body's detox pathway--helping clear metabolic waste, reduce\nstagnation, and support immune function.\nBoosts circulation and metabolic flow By promoting blood flow in the extremities,\npressotherapy enhances oxygen and nutrient delivery to tissues. This results in quicker\nrecovery, better skin vitality, and an overall feeling of rejuvenation.\nEnhances post-workout recovery The compression mimics many of the benefits of\nsports massage, decreasing muscle soreness, reducing inflammation, and accelerating\nrecovery after training or intense physical activity.\nSupports detoxification Improved lymphatic movement helps flush toxins and\nmetabolic byproducts from the body more efficiently, supporting overall detox processes\nwithout strain.\nImproves skin tone and elasticity Better circulation and reduced fluid retention can\nvisibly improve the appearance of the skin, enhancing texture, tone, and elasticity over\ntime.\nPromotes deep relaxation The gentle, rhythmic nature of the compression encourages\nthe body to shift into parasympathetic mode, easing stress and helping the nervous\nsystem settle into a restorative state.\nProvides a non-invasive alternative to body contour treatments While not a medical\naesthetic procedure, pressotherapy can gently support contouring and shaping effects\nby reducing excess fluid and improving tissue health--without pain, needles, or\ndowntime."
+      "answer": "<ul><li><strong>Reduces water retention and swelling:</strong> Pressotherapy stimulates the lymphatic system through rhythmic compression, helping the body mobilize excess fluid and reduce swelling in the legs, abdomen, and arms.</li><li><strong>Improves lymphatic drainage:</strong> Sequential pressure patterns support the natural movement of lymph, helping clear metabolic waste, reduce stagnation, and support immune function.</li><li><strong>Boosts circulation and metabolic flow:</strong> By promoting blood flow in the extremities, pressotherapy enhances oxygen and nutrient delivery to tissues and supports faster recovery.</li><li><strong>Enhances post-workout recovery:</strong> The compression mimics many benefits of sports massage, decreasing soreness, reducing inflammation, and accelerating recovery after training.</li><li><strong>Supports detoxification:</strong> Improved lymphatic movement helps flush toxins and metabolic byproducts more efficiently.</li><li><strong>Improves skin tone and elasticity:</strong> Better circulation and reduced fluid retention can improve skin texture, tone, and elasticity over time.</li><li><strong>Promotes deep relaxation:</strong> The gentle rhythmic compression helps the body shift into a restorative parasympathetic state.</li><li><strong>Provides a non-invasive contouring support option:</strong> Pressotherapy can support shaping effects by reducing excess fluid and improving tissue health, without pain, needles, or downtime.</li></ul>"
     },
     {
       "question": "Is it invasive?",
@@ -124,7 +124,7 @@
     },
     {
       "question": "What's the difference between Core, Signature, and Black?",
-      "answer": "Core: 8 social sessions/month (60 min) + 10% discount on specialized services\nSignature: 10 social sessions/month (60 min) + 2 private sessions (90 min) + 2 Shiftwave\nsessions (30 min) + 15% discount on specialized services\nBlack: 12 social sessions/month (60 min) + 4 private sessions (90 min) + 4 Shiftwave sessions\n(30 min) + 20% discount on specialized services\nEach tier includes monthly social sauna sessions and discounts on specialized services. Higher\ntiers add private sauna sessions and Shiftwave sessions. Specialized therapies (hyperbaric\nchamber, acupuncture, massage, biomagnetism, pressotherapy) are available as add-ons or at\na member discount."
+      "answer": "<ul><li><strong>Core:</strong> 8 social sessions/month (60 min) + 10% discount on specialized services.</li><li><strong>Signature:</strong> 10 social sessions/month (60 min) + 2 private sessions (90 min) + 2 Shiftwave sessions (30 min) + 15% discount on specialized services.</li><li><strong>Black:</strong> 12 social sessions/month (60 min) + 4 private sessions (90 min) + 4 Shiftwave sessions (30 min) + 20% discount on specialized services.</li></ul>Each tier includes monthly social sauna sessions and discounts on specialized services. Higher tiers add private sauna and Shiftwave sessions. Specialized therapies (hyperbaric chamber, acupuncture, massage, biomagnetism, and pressotherapy) are available as add-ons or at a member discount."
     },
     {
       "question": "Do visits include all therapies?",
