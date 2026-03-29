@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block title %}OWA Pop-Up Submissions · {{ active_tenant and active_tenant.name or "Project" }} · Latente CMS{% endblock %}
+{% block title %}OWA Pop-Up · {{ active_tenant and active_tenant.name or "Project" }} · Latente CMS{% endblock %}
 
 {% block extra_head %}
+{% set initial = (popup_content or {}).get("initialState", {}) %}
+{% set success = (popup_content or {}).get("successState", {}) %}
 <style>
   .owa-head {
     border: 1px solid var(--border);
@@ -9,6 +11,183 @@
     padding: 1rem 1.2rem;
     background: #fff;
     margin-bottom: 1rem;
+  }
+  .owa-subtle {
+    color: var(--text-2);
+    font-size: .92rem;
+  }
+  .owa-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 1rem;
+  }
+  .owa-stack {
+    display: grid;
+    gap: 1rem;
+  }
+  .owa-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .owa-card:last-child {
+    margin-bottom: 0;
+  }
+  .owa-card h2,
+  .owa-card h3 {
+    margin-bottom: .25rem;
+  }
+  .owa-toolbar {
+    display: flex;
+    gap: .6rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .owa-status {
+    border-radius: 999px;
+    padding: .25rem .65rem;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: #f4f6f8;
+    color: #3b4450;
+  }
+  .owa-status.published {
+    background: #eefaf3;
+    border-color: #d6f4e2;
+    color: #175e37;
+  }
+  .owa-status.draft {
+    background: #fff8ea;
+    border-color: #ffe5b3;
+    color: #7a520c;
+  }
+  .owa-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .9rem;
+  }
+  .owa-form-grid .full {
+    grid-column: 1 / -1;
+  }
+  .owa-form-hint {
+    color: var(--text-2);
+    font-size: .82rem;
+  }
+  .owa-url-row {
+    display: flex;
+    gap: .55rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .owa-url-row input[type="text"] {
+    flex: 1 1 260px;
+  }
+  .owa-preview-panel {
+    position: sticky;
+    top: 84px;
+  }
+  .owa-preview-card {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    background: #151515;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, .08);
+  }
+  .owa-preview-label {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-2);
+    margin-bottom: .45rem;
+  }
+  .owa-preview-initial {
+    display: grid;
+    grid-template-columns: 1.05fr .85fr;
+    min-height: 360px;
+    background: #111;
+  }
+  .owa-preview-copy {
+    background: #f4f1ec;
+    color: #222;
+    padding: 1.6rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .owa-preview-headline {
+    font-size: clamp(1.6rem, 2.6vw, 2.25rem);
+    line-height: 1.15;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    white-space: pre-line;
+  }
+  .owa-preview-body {
+    font-size: .95rem;
+    line-height: 1.6;
+    white-space: pre-line;
+    max-width: 32ch;
+  }
+  .owa-preview-disclaimer {
+    margin-top: 1.1rem;
+    font-size: .72rem;
+    line-height: 1.45;
+    color: #6f6c68;
+    white-space: pre-line;
+  }
+  .owa-preview-image {
+    background: linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), #221814 center/cover no-repeat;
+    min-height: 220px;
+  }
+  .owa-preview-success {
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.25rem;
+    background: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), #050505 center/cover no-repeat;
+    color: #fff;
+  }
+  .owa-preview-success .owa-preview-body {
+    color: rgba(255,255,255,.76);
+  }
+  .owa-preview-star {
+    font-size: 1.6rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+  .owa-media-thumb {
+    margin-top: .75rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f7f7f7;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .owa-media-thumb img {
+    display: block;
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+  }
+  .owa-media-empty {
+    color: var(--text-2);
+    font-size: .88rem;
+    padding: 1rem;
+    text-align: center;
   }
   .owa-kpi-grid {
     display: grid;
@@ -32,13 +211,6 @@
     text-transform: uppercase;
     letter-spacing: .08em;
     color: var(--text-2);
-  }
-  .owa-card {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: #fff;
-    padding: 1rem;
-    margin-bottom: 1rem;
   }
   .owa-bar-row {
     display: grid;
@@ -88,140 +260,481 @@
     border-radius: 10px;
     background: #fcfaf6;
   }
+  @media (max-width: 991.98px) {
+    .owa-grid {
+      grid-template-columns: 1fr;
+    }
+    .owa-preview-panel {
+      position: static;
+    }
+  }
+  @media (max-width: 767.98px) {
+    .owa-form-grid {
+      grid-template-columns: 1fr;
+    }
+    .owa-preview-initial {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="container">
-  <div class="owa-head d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+<section class="container"
+         id="owa-popup-editor"
+         data-entry-id="{{ page.id }}"
+         data-section-key="{{ page.section_key }}"
+         data-upload-enabled="{{ '1' if upload_enabled else '0' }}"
+         data-upload-url="{{ upload_url|default('') }}"
+         data-upload-max-mb="{{ upload_max_mb|default('0') }}">
+  <div class="owa-head d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
       <a class="small text-decoration-none" href="/admin/pages">← Back to pages</a>
-      <h1 class="h5 m-0 mt-1">OWA Pop-Up Submissions</h1>
-      <p class="text-muted small m-0">Public form captures and demographics dashboard.</p>
+      <h1 class="h5 m-0 mt-1">OWA Pop-Up</h1>
+      <p class="owa-subtle m-0">Edit the visible copy and backgrounds, while keeping the submission fields and analytics intact.</p>
     </div>
-    <span class="badge text-bg-light">Section: {{ page.section_name }}</span>
-  </div>
-
-  <div class="owa-card">
-    <h2 class="h6 mb-2">Front-End Endpoint</h2>
-    <div class="owa-endpoint mb-2">
-      <div><strong>Method:</strong> <code>POST</code></div>
-      <div><strong>URL:</strong> <code>{{ popup_endpoint }}</code></div>
-    </div>
-    <div class="small text-muted">Accepted keys: <code>email</code> (or <code>emailAddress</code>), <code>gender</code>, <code>birth_date</code> (or <code>birthDate</code>, format <code>YYYY-MM-DD</code>).</div>
-  </div>
-
-  <div class="owa-kpi-grid">
-    <div class="owa-kpi">
-      <div class="k">Total People</div>
-      <div class="v">{{ popup_metrics.total_submissions }}</div>
-    </div>
-    <div class="owa-kpi">
-      <div class="k">Age Buckets</div>
-      <div class="v">{{ popup_metrics.age_buckets|length }}</div>
-    </div>
-    <div class="owa-kpi">
-      <div class="k">Gender Groups</div>
-      <div class="v">{{ popup_metrics.gender_distribution|length }}</div>
+    <div class="owa-toolbar">
+      <span id="owa-status" class="owa-status {{ (page.status or '')|lower }}">{{ page.status or 'draft' }}</span>
+      <button type="submit" class="btn btn-cta" form="owa-popup-form">Save</button>
+      <button type="button" class="btn btn-outline" id="owa-publish-btn" title="Save changes first">Publish</button>
+      <a class="btn btn-outline" href="/admin/pages">Cancel</a>
     </div>
   </div>
 
-  <div class="owa-card">
-    <h2 class="h6 mb-3">Age Histogram</h2>
-    {% for label, count in popup_metrics.age_histogram.items() %}
-      <div class="owa-bar-row">
-        <div>{{ label }}</div>
-        <div class="owa-track">
-          <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+  {% if ok_message %}
+    <div class="alert alert-success" role="alert">{{ ok_message }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <div class="owa-grid">
+    <div class="owa-stack">
+      <form id="owa-popup-form" method="post" action="/admin/pages/{{ page.id }}/edit" novalidate>
+        <div class="owa-card">
+          <h2 class="h6">Front-End Endpoint</h2>
+          <p class="owa-subtle mb-3">The form fields remain fixed. These content fields only control the text and background assets shown before and after submission.</p>
+          <div class="owa-endpoint mb-2">
+            <div><strong>Method:</strong> <code>POST</code></div>
+            <div><strong>URL:</strong> <code>{{ popup_endpoint }}</code></div>
+          </div>
+          <div class="small text-muted">Accepted keys: <code>email</code> (or <code>emailAddress</code>), <code>gender</code>, <code>birth_date</code> (or <code>birthDate</code>, format <code>YYYY-MM-DD</code>).</div>
         </div>
-        <div>{{ count }}</div>
-      </div>
-    {% endfor %}
-  </div>
 
-  <div class="owa-card">
-    <h2 class="h6 mb-3">Gender Distribution</h2>
-    {% for label, count in popup_metrics.gender_distribution.items() %}
-      <div class="owa-bar-row">
-        <div>{{ label }}</div>
-        <div class="owa-track">
-          <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+        <div class="owa-card">
+          <h2 class="h6">Initial Pop-Up</h2>
+          <p class="owa-form-hint mb-3">This is the first state visitors see, before they submit the form.</p>
+          <div class="owa-form-grid">
+            <div class="full">
+              <label class="form-label" for="popup_initial_headline">Headline</label>
+              <textarea class="form-control" id="popup_initial_headline" name="popup_initial_headline" rows="3">{{ initial.get("headline", "") }}</textarea>
+            </div>
+            <div class="full">
+              <label class="form-label" for="popup_initial_description">Description</label>
+              <textarea class="form-control" id="popup_initial_description" name="popup_initial_description" rows="4">{{ initial.get("description", "") }}</textarea>
+            </div>
+            <div class="full">
+              <label class="form-label" for="popup_initial_disclaimer">Disclaimer</label>
+              <textarea class="form-control" id="popup_initial_disclaimer" name="popup_initial_disclaimer" rows="3">{{ initial.get("disclaimer", "") }}</textarea>
+            </div>
+            <div class="full">
+              <label class="form-label" for="popup_initial_background_image_url">Background Image</label>
+              <div class="owa-url-row">
+                <input type="text" class="form-control" id="popup_initial_background_image_url" name="popup_initial_background_image_url" value="{{ initial.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
+                <input type="file" class="d-none" id="popup_initial_background_image_file" accept="image/*">
+                <button type="button" class="btn btn-outline" data-upload-target="popup_initial_background_image_url" data-upload-file="popup_initial_background_image_file" data-upload-field="initialState-backgroundImage-url">Upload image</button>
+                <button type="button" class="btn btn-outline-danger" data-clear-target="popup_initial_background_image_url">Remove</button>
+              </div>
+              <div class="owa-media-thumb mt-2" id="popup_initial_background_thumb">
+                {% if initial.get('backgroundImage', {}).get('url') %}
+                  <img src="{{ initial.get('backgroundImage', {}).get('url') }}" alt="Initial background preview">
+                {% else %}
+                  <div class="owa-media-empty">No image uploaded yet.</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
         </div>
-        <div>{{ count }}</div>
+
+        <div class="owa-card">
+          <h2 class="h6">Success State</h2>
+          <p class="owa-form-hint mb-3">This is the confirmation state shown after a successful submission.</p>
+          <div class="owa-form-grid">
+            <div class="full">
+              <label class="form-label" for="popup_success_headline">Headline</label>
+              <textarea class="form-control" id="popup_success_headline" name="popup_success_headline" rows="2">{{ success.get("headline", "") }}</textarea>
+            </div>
+            <div class="full">
+              <label class="form-label" for="popup_success_description">Description</label>
+              <textarea class="form-control" id="popup_success_description" name="popup_success_description" rows="3">{{ success.get("description", "") }}</textarea>
+            </div>
+            <div class="full">
+              <label class="form-label" for="popup_success_background_image_url">Background Image</label>
+              <div class="owa-url-row">
+                <input type="text" class="form-control" id="popup_success_background_image_url" name="popup_success_background_image_url" value="{{ success.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
+                <input type="file" class="d-none" id="popup_success_background_image_file" accept="image/*">
+                <button type="button" class="btn btn-outline" data-upload-target="popup_success_background_image_url" data-upload-file="popup_success_background_image_file" data-upload-field="successState-backgroundImage-url">Upload image</button>
+                <button type="button" class="btn btn-outline-danger" data-clear-target="popup_success_background_image_url">Remove</button>
+              </div>
+              <div class="owa-media-thumb mt-2" id="popup_success_background_thumb">
+                {% if success.get('backgroundImage', {}).get('url') %}
+                  <img src="{{ success.get('backgroundImage', {}).get('url') }}" alt="Success background preview">
+                {% else %}
+                  <div class="owa-media-empty">No image uploaded yet.</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="owa-card">
+          <h2 class="h6">Internal Notes</h2>
+          <textarea class="form-control" id="popup_notes" name="popup_notes" rows="3">{{ (popup_content or {}).get("notes", "") }}</textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="owa-preview-panel">
+      <div class="owa-card">
+        <h2 class="h6">Live Preview</h2>
+        <p class="owa-form-hint mb-3">Approximate admin preview of the two visual states.</p>
+
+        <div class="owa-preview-label">Initial Pop-Up</div>
+        <div class="owa-preview-card mb-3">
+          <div class="owa-preview-initial">
+            <div class="owa-preview-copy">
+              <div class="owa-preview-headline" id="preview-initial-headline">{{ initial.get("headline", "") }}</div>
+              <div class="owa-preview-body" id="preview-initial-description">{{ initial.get("description", "") }}</div>
+              <div class="owa-preview-disclaimer" id="preview-initial-disclaimer">{{ initial.get("disclaimer", "") }}</div>
+            </div>
+            <div class="owa-preview-image" id="preview-initial-image" {% if initial.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), url('{{ initial.get('backgroundImage', {}).get('url') }}');"{% endif %}></div>
+          </div>
+        </div>
+
+        <div class="owa-preview-label">Success State</div>
+        <div class="owa-preview-card">
+          <div class="owa-preview-success" id="preview-success-image" {% if success.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), url('{{ success.get('backgroundImage', {}).get('url') }}');"{% endif %}>
+            <div>
+              <div class="owa-preview-star">✦</div>
+              <div class="owa-preview-headline" id="preview-success-headline">{{ success.get("headline", "") }}</div>
+              <div class="owa-preview-body" id="preview-success-description">{{ success.get("description", "") }}</div>
+            </div>
+          </div>
+        </div>
       </div>
-    {% else %}
-      <p class="text-muted small m-0">No data yet.</p>
-    {% endfor %}
+    </div>
   </div>
 
   <div class="owa-card">
-    <h2 class="h6 mb-3">Gender × Age Distribution</h2>
-    <div class="owa-table-wrap">
-      <table class="owa-table">
-        <thead>
-          <tr>
-            <th>Gender</th>
-            {% for bucket in popup_metrics.age_buckets %}
-              <th>{{ bucket }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for gender, counts in popup_metrics.gender_age_distribution.items() %}
-            <tr>
-              <td>{{ gender }}</td>
-              {% for bucket in popup_metrics.age_buckets %}
-                <td>{{ counts.get(bucket, 0) }}</td>
+    <h2 class="h6 mb-3">Submission Analytics</h2>
+    <div class="owa-kpi-grid">
+      <div class="owa-kpi">
+        <div class="k">Total People</div>
+        <div class="v">{{ popup_metrics.total_submissions }}</div>
+      </div>
+      <div class="owa-kpi">
+        <div class="k">Age Buckets</div>
+        <div class="v">{{ popup_metrics.age_buckets|length }}</div>
+      </div>
+      <div class="owa-kpi">
+        <div class="k">Gender Groups</div>
+        <div class="v">{{ popup_metrics.gender_distribution|length }}</div>
+      </div>
+    </div>
+
+    <div class="owa-stack">
+      <div class="owa-card">
+        <h3 class="h6 mb-3">Age Histogram</h3>
+        {% for label, count in popup_metrics.age_histogram.items() %}
+          <div class="owa-bar-row">
+            <div>{{ label }}</div>
+            <div class="owa-track">
+              <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+            </div>
+            <div>{{ count }}</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="owa-card">
+        <h3 class="h6 mb-3">Gender Distribution</h3>
+        {% for label, count in popup_metrics.gender_distribution.items() %}
+          <div class="owa-bar-row">
+            <div>{{ label }}</div>
+            <div class="owa-track">
+              <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+            </div>
+            <div>{{ count }}</div>
+          </div>
+        {% else %}
+          <p class="text-muted small m-0">No data yet.</p>
+        {% endfor %}
+      </div>
+
+      <div class="owa-card">
+        <h3 class="h6 mb-3">Gender × Age Distribution</h3>
+        <div class="owa-table-wrap">
+          <table class="owa-table">
+            <thead>
+              <tr>
+                <th>Gender</th>
+                {% for bucket in popup_metrics.age_buckets %}
+                  <th>{{ bucket }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for gender, counts in popup_metrics.gender_age_distribution.items() %}
+                <tr>
+                  <td>{{ gender }}</td>
+                  {% for bucket in popup_metrics.age_buckets %}
+                    <td>{{ counts.get(bucket, 0) }}</td>
+                  {% endfor %}
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="{{ popup_metrics.age_buckets|length + 1 }}" class="text-muted">No data yet.</td>
+                </tr>
               {% endfor %}
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="{{ popup_metrics.age_buckets|length + 1 }}" class="text-muted">No data yet.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-  <div class="owa-card">
-    <h2 class="h6 mb-3">Stored Submissions</h2>
-    <div class="owa-table-wrap">
-      <table class="owa-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Gender</th>
-            <th>Birth Date</th>
-            <th>Age</th>
-            <th>Submitted At</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in popup_metrics.rows %}
-            <tr>
-              <td>{{ row.id }}</td>
-              <td>{{ row.email }}</td>
-              <td>{{ row.gender_raw }}</td>
-              <td>{{ row.birth_date }}</td>
-              <td>{{ row.age }}</td>
-              <td>{% if row.created_at %}{{ row.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
-              <td>
-                <form method="post" action="/admin/pages/{{ page.id }}/popup-submissions/{{ row.id }}/delete" onsubmit="return confirm('Delete this submission?');">
-                  <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
-                </form>
-              </td>
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="7" class="text-muted">No submissions yet.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="owa-card">
+        <h3 class="h6 mb-3">Stored Submissions</h3>
+        <div class="owa-table-wrap">
+          <table class="owa-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Gender</th>
+                <th>Birth Date</th>
+                <th>Age</th>
+                <th>Submitted At</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in popup_metrics.rows %}
+                <tr>
+                  <td>{{ row.id }}</td>
+                  <td>{{ row.email }}</td>
+                  <td>{{ row.gender_raw }}</td>
+                  <td>{{ row.birth_date }}</td>
+                  <td>{{ row.age }}</td>
+                  <td>{% if row.created_at %}{{ row.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+                  <td>
+                    <form method="post" action="/admin/pages/{{ page.id }}/popup-submissions/{{ row.id }}/delete" onsubmit="return confirm('Delete this submission?');">
+                      <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="7" class="text-muted">No submissions yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </section>
+
+<script>
+  (function(){
+    const root = document.getElementById('owa-popup-editor');
+    const form = document.getElementById('owa-popup-form');
+    const publishBtn = document.getElementById('owa-publish-btn');
+    const statusChip = document.getElementById('owa-status');
+    const uploadEnabled = root?.dataset?.uploadEnabled === '1';
+    const uploadUrl = root?.dataset?.uploadUrl || '';
+    const uploadMaxMb = parseFloat(root?.dataset?.uploadMaxMb || '0') || 0;
+    const entryId = root?.dataset?.entryId || '';
+    const sectionKey = root?.dataset?.sectionKey || '';
+    let isDirty = false;
+
+    function setDirty(nextValue){
+      isDirty = !!nextValue;
+      if(publishBtn){
+        publishBtn.disabled = isDirty;
+        publishBtn.title = isDirty ? 'Save changes first' : 'Publish';
+      }
+    }
+
+    async function uploadMedia(file, fieldPath){
+      if(!uploadEnabled || !uploadUrl){
+        throw new Error('Uploads are not configured for this project.');
+      }
+      if(uploadMaxMb > 0 && file.size > (uploadMaxMb * 1024 * 1024)){
+        throw new Error(`File too large. Max ${uploadMaxMb}MB.`);
+      }
+      const fd = new FormData();
+      fd.append('file', file, file.name || 'upload');
+      fd.append('field', fieldPath);
+      fd.append('kind', 'image');
+      if(entryId) fd.append('entry_id', entryId);
+      if(sectionKey) fd.append('section_key', sectionKey);
+
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch' }
+      });
+      if(!res.ok){
+        let message = 'Upload failed.';
+        try{
+          const payload = await res.json();
+          if(payload && payload.detail) message = payload.detail;
+        }catch(_){}
+        throw new Error(message);
+      }
+      const payload = await res.json();
+      if(!payload || !payload.url) throw new Error('Upload failed.');
+      return payload.url;
+    }
+
+    function setThumb(thumbId, url){
+      const host = document.getElementById(thumbId);
+      if(!host) return;
+      if(url){
+        host.innerHTML = `<img src="${url}" alt="Uploaded image preview">`;
+      }else{
+        host.innerHTML = '<div class="owa-media-empty">No image uploaded yet.</div>';
+      }
+    }
+
+    function updatePreview(){
+      const initialHeadline = document.getElementById('popup_initial_headline')?.value || '';
+      const initialDescription = document.getElementById('popup_initial_description')?.value || '';
+      const initialDisclaimer = document.getElementById('popup_initial_disclaimer')?.value || '';
+      const initialImage = document.getElementById('popup_initial_background_image_url')?.value || '';
+      const successHeadline = document.getElementById('popup_success_headline')?.value || '';
+      const successDescription = document.getElementById('popup_success_description')?.value || '';
+      const successImage = document.getElementById('popup_success_background_image_url')?.value || '';
+
+      const initialHeadlinePreview = document.getElementById('preview-initial-headline');
+      const initialDescriptionPreview = document.getElementById('preview-initial-description');
+      const initialDisclaimerPreview = document.getElementById('preview-initial-disclaimer');
+      const initialImagePreview = document.getElementById('preview-initial-image');
+      const successHeadlinePreview = document.getElementById('preview-success-headline');
+      const successDescriptionPreview = document.getElementById('preview-success-description');
+      const successImagePreview = document.getElementById('preview-success-image');
+
+      if(initialHeadlinePreview) initialHeadlinePreview.textContent = initialHeadline;
+      if(initialDescriptionPreview) initialDescriptionPreview.textContent = initialDescription;
+      if(initialDisclaimerPreview) initialDisclaimerPreview.textContent = initialDisclaimer;
+      if(successHeadlinePreview) successHeadlinePreview.textContent = successHeadline;
+      if(successDescriptionPreview) successDescriptionPreview.textContent = successDescription;
+
+      if(initialImagePreview){
+        initialImagePreview.style.backgroundImage = initialImage
+          ? `linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), url("${initialImage}")`
+          : 'linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), none';
+      }
+      if(successImagePreview){
+        successImagePreview.style.backgroundImage = successImage
+          ? `linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), url("${successImage}")`
+          : 'linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), none';
+      }
+      setThumb('popup_initial_background_thumb', initialImage);
+      setThumb('popup_success_background_thumb', successImage);
+    }
+
+    root?.querySelectorAll('input, textarea').forEach((el) => {
+      el.addEventListener('input', () => {
+        setDirty(true);
+        updatePreview();
+      });
+      el.addEventListener('change', () => {
+        setDirty(true);
+        updatePreview();
+      });
+    });
+
+    root?.querySelectorAll('[data-upload-target]').forEach((btn) => {
+      const inputId = btn.getAttribute('data-upload-target');
+      const fileId = btn.getAttribute('data-upload-file');
+      const fieldPath = btn.getAttribute('data-upload-field') || 'popup-image';
+      const target = document.getElementById(inputId);
+      const fileInput = document.getElementById(fileId);
+      if(!target || !fileInput) return;
+
+      btn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if(!file) return;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Uploading...';
+        try{
+          const url = await uploadMedia(file, fieldPath);
+          target.value = url;
+          setDirty(true);
+          updatePreview();
+        }catch(err){
+          alert(err?.message || 'Upload failed.');
+        }finally{
+          btn.disabled = false;
+          btn.textContent = original;
+          fileInput.value = '';
+        }
+      });
+    });
+
+    root?.querySelectorAll('[data-clear-target]').forEach((btn) => {
+      const inputId = btn.getAttribute('data-clear-target');
+      const target = document.getElementById(inputId);
+      if(!target) return;
+      btn.addEventListener('click', () => {
+        target.value = '';
+        setDirty(true);
+        updatePreview();
+      });
+    });
+
+    form?.addEventListener('submit', () => {
+      setDirty(false);
+    });
+
+    publishBtn?.addEventListener('click', async () => {
+      if(isDirty){
+        return;
+      }
+      const original = publishBtn.textContent;
+      publishBtn.disabled = true;
+      publishBtn.textContent = 'Publishing...';
+      publishBtn.setAttribute('aria-busy', 'true');
+      try{
+        const res = await fetch(`/admin/pages/${entryId}/publish`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'fetch' },
+          credentials: 'same-origin'
+        });
+        const payload = await res.json().catch(() => ({}));
+        if(!res.ok || !payload.ok){
+          throw new Error(payload?.detail || payload?.message || 'Publish failed.');
+        }
+        if(statusChip){
+          statusChip.textContent = 'published';
+          statusChip.classList.add('published');
+          statusChip.classList.remove('draft');
+        }
+        window.location.reload();
+      }catch(err){
+        alert(err?.message || 'Publish failed.');
+        publishBtn.disabled = false;
+        publishBtn.textContent = original;
+        publishBtn.removeAttribute('aria-busy');
+      }
+    });
+
+    updatePreview();
+    setDirty(false);
+  })();
+</script>
 {% endblock %}

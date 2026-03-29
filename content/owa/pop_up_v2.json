@@ -1,0 +1,18 @@
+{
+  "notes": "Public endpoint for the OWA web pop-up: POST /api/v1/owa/popup-submissions",
+  "initialState": {
+    "headline": "MODERN TRAINING GROUND\nFOR BEING HUMAN",
+    "description": "NOTHING EXTRA. NOTHING SUPERFICIAL.\nJUST SCIENCE-DRIVEN WELLBEING, COMMUNITY,\nAND PRACTICE. JOIN TO RECEIVE UPDATES AND\nMEMBER BENEFITS.",
+    "disclaimer": "By submitting this form, you consent to receive marketing messages from OWA.\nUnsubscribe at any time. Privacy Policy & Terms.",
+    "backgroundImage": {
+      "url": ""
+    }
+  },
+  "successState": {
+    "headline": "YOU'RE IN.",
+    "description": "Welcome to the community.\nExpect something worth opening.",
+    "backgroundImage": {
+      "url": ""
+    }
+  }
+}

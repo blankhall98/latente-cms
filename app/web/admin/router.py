@@ -205,6 +205,61 @@ def _build_owa_popup_metrics(submissions: list[OwaPopupSubmission]) -> dict[str,
     }
 
 
+def _owa_popup_template_response(
+    *,
+    request: Request,
+    db: Session,
+    user: dict,
+    active: dict,
+    is_superadmin: bool,
+    entry: Entry,
+    section: Section,
+    popup_content: dict[str, Any] | None = None,
+    ok_message: str | None = None,
+    error: str | None = None,
+    status_code: int = 200,
+):
+    submissions = db.scalars(
+        select(OwaPopupSubmission)
+        .where(OwaPopupSubmission.tenant_id == int(active["id"]))
+        .order_by(OwaPopupSubmission.created_at.desc())
+    ).all()
+    metrics = _build_owa_popup_metrics(submissions)
+    ss = _get_active_schema(db, section.id)
+    json_schema = _extract_schema_dict(ss)
+
+    current_content = popup_content if isinstance(popup_content, dict) else _render_owa_popup_data(entry.data or {})
+    if json_schema:
+        current_content = _normalize_owa_payload(current_content, json_schema)
+
+    return templates.TemplateResponse(
+        "admin/owa_popup.html",
+        {
+            "request": request,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": "OWA Pop-Up",
+                "status": entry.status,
+                "section_name": section.name,
+                "section_key": getattr(section, "key", getattr(section, "name", "Section")),
+                "schema_version": (ss.version if ss else entry.schema_version),
+                "section_id": int(section.id),
+            },
+            "popup_endpoint": f"{settings.API_V1_STR}/owa/popup-submissions",
+            "popup_metrics": metrics,
+            "popup_content": current_content,
+            "ok_message": ok_message,
+            "error": error,
+            **_upload_context(active),
+        },
+        status_code=status_code,
+    )
+
+
 def _safe_segment(value: str, default: str) -> str:
     cleaned = _SEGMENT_RE.sub("-", (value or "").strip())
     cleaned = cleaned.strip("-_")
@@ -421,6 +476,49 @@ def _render_owa_object_page_data(data: Any) -> dict:
         merged.pop("__draft", None)
         return merged
     return data
+
+
+def _default_owa_popup_content() -> dict[str, Any]:
+    return {
+        "notes": "Public endpoint for the OWA web pop-up: POST /api/v1/owa/popup-submissions",
+        "initialState": {
+            "headline": "MODERN TRAINING GROUND\nFOR BEING HUMAN",
+            "description": (
+                "NOTHING EXTRA. NOTHING SUPERFICIAL.\n"
+                "JUST SCIENCE-DRIVEN WELLBEING, COMMUNITY,\n"
+                "AND PRACTICE. JOIN TO RECEIVE UPDATES AND\n"
+                "MEMBER BENEFITS."
+            ),
+            "disclaimer": (
+                "By submitting this form, you consent to receive marketing messages from OWA.\n"
+                "Unsubscribe at any time. Privacy Policy & Terms."
+            ),
+            "backgroundImage": {"url": ""},
+        },
+        "successState": {
+            "headline": "YOU'RE IN.",
+            "description": "Welcome to the community.\nExpect something worth opening.",
+            "backgroundImage": {"url": ""},
+        },
+    }
+
+
+def _render_owa_popup_data(data: Any) -> dict[str, Any]:
+    """
+    OWA pop-up editor: merge draft over root without the "skip empty strings" behavior,
+    so editors can intentionally clear content or images.
+    """
+    defaults = _default_owa_popup_content()
+    if not isinstance(data, dict):
+        return defaults
+
+    root = dict(data)
+    root.pop("__draft", None)
+    draft = data.get("__draft") if isinstance(data.get("__draft"), dict) else None
+    merged = _deep_merge(root, draft) if draft else root
+    if isinstance(merged, dict):
+        merged.pop("__draft", None)
+    return _deep_merge(defaults, merged if isinstance(merged, dict) else {})
 
 
 def _resolve_local_schema_ref(root_schema: dict, ref: Any) -> dict | None:
@@ -1173,34 +1271,14 @@ def page_edit_get(
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
     if section.key == "pop_up":
-        submissions = db.scalars(
-            select(OwaPopupSubmission)
-            .where(OwaPopupSubmission.tenant_id == tid)
-            .order_by(OwaPopupSubmission.created_at.desc())
-        ).all()
-        metrics = _build_owa_popup_metrics(submissions)
-        ss = _get_active_schema(db, section.id)
-
-        return templates.TemplateResponse(
-            "admin/owa_popup.html",
-            {
-                "request": request,
-                "user": {"id": int(user["id"]), "email": user.get("email")},
-                "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
-                "is_superadmin": is_superadmin,
-                "page": {
-                    "id": entry.id,
-                    "slug": entry.slug,
-                    "title": "OWA Pop-Up Submissions",
-                    "status": entry.status,
-                    "section_name": section.name,
-                    "section_key": getattr(section, "key", getattr(section, "name", "Section")),
-                    "schema_version": (ss.version if ss else entry.schema_version),
-                    "section_id": int(section.id),
-                },
-                "popup_endpoint": f"{settings.API_V1_STR}/owa/popup-submissions",
-                "popup_metrics": metrics,
-            },
+        return _owa_popup_template_response(
+            request=request,
+            db=db,
+            user=user,
+            active=active,
+            is_superadmin=is_superadmin,
+            entry=entry,
+            section=section,
         )
 
     # If page is published and has __draft, edit the draft (except projects)
@@ -1310,7 +1388,15 @@ def page_edit_post(
     entry_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    content_json: str = Form(...),
+    content_json: str = Form(""),
+    popup_notes: str = Form(""),
+    popup_initial_headline: str = Form(""),
+    popup_initial_description: str = Form(""),
+    popup_initial_disclaimer: str = Form(""),
+    popup_initial_background_image_url: str = Form(""),
+    popup_success_headline: str = Form(""),
+    popup_success_description: str = Form(""),
+    popup_success_background_image_url: str = Form(""),
 ):
     user = _require_web_user(request)
     is_superadmin = bool(user.get("is_superadmin"))
@@ -1322,7 +1408,72 @@ def page_edit_post(
     entry, section = _load_entry_or_404(db, entry_id, tid)
 
     if section.key == "pop_up":
-        return RedirectResponse(url=f"/admin/pages/{entry_id}/edit", status_code=302)
+        ss = _get_active_schema(db, section.id)
+        json_schema = _extract_schema_dict(ss)
+        active_version = (ss.version if ss else entry.schema_version)
+
+        popup_payload = {
+            "notes": popup_notes or "",
+            "initialState": {
+                "headline": popup_initial_headline or "",
+                "description": popup_initial_description or "",
+                "disclaimer": popup_initial_disclaimer or "",
+                "backgroundImage": {"url": popup_initial_background_image_url or ""},
+            },
+            "successState": {
+                "headline": popup_success_headline or "",
+                "description": popup_success_description or "",
+                "backgroundImage": {"url": popup_success_background_image_url or ""},
+            },
+        }
+        if json_schema:
+            popup_payload = _normalize_owa_payload(popup_payload, json_schema)
+
+        errors = _validate_against_schema(json_schema, popup_payload)
+        if errors:
+            return _owa_popup_template_response(
+                request=request,
+                db=db,
+                user=user,
+                active=active,
+                is_superadmin=is_superadmin,
+                entry=entry,
+                section=section,
+                popup_content=popup_payload,
+                error="Schema validation failed: " + "; ".join(errors[:5]),
+                status_code=422,
+            )
+
+        base_data = entry.data or {}
+        for meta_key in ("seo", "replace"):
+            if meta_key in base_data and meta_key not in popup_payload:
+                popup_payload[meta_key] = base_data[meta_key]
+
+        is_published_now = (getattr(entry, "status", "draft") == "published")
+        if is_published_now:
+            base_clean = dict(base_data) if isinstance(base_data, dict) else {}
+            base_clean.pop("__draft", None)
+            base_clean["__draft"] = popup_payload
+            entry.data = base_clean
+        else:
+            entry.data = popup_payload
+
+        entry.schema_version = active_version
+        entry.updated_at = datetime.now(timezone.utc)
+        db.add(entry)
+        db.commit()
+        db.refresh(entry)
+
+        return _owa_popup_template_response(
+            request=request,
+            db=db,
+            user=user,
+            active=active,
+            is_superadmin=is_superadmin,
+            entry=entry,
+            section=section,
+            ok_message="Changes saved.",
+        )
 
     # UI JSON Schema (also for POST)
     try:
@@ -1854,6 +2005,8 @@ def admin_publish_page(
     # Projects: publish merged view (root + draft) so we don't lose published items
     if getattr(section, "key", "") == "projects":
         candidate = _render_projects_data(data_now)
+    elif getattr(section, "key", "") == "pop_up":
+        candidate = _render_owa_popup_data(data_now)
     # Home: publish merged view to keep featured projects and other blocks visible
     elif getattr(section, "key", "") == "home":
         candidate = _render_home_data(data_now)
