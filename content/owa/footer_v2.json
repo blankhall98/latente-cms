@@ -5,7 +5,7 @@
   "getInTouch": {
     "sectionTitle": "GET IN TOUCH",
     "address": {
-      "label": "Sinaloa 49 Col. Roma Norte\nMéxico, CDMX. CP. 6700",
+      "label": "Sinaloa 49 Col. Roma Norte\nMexico, CDMX. CP. 6700",
       "href": ""
     },
     "email": {
@@ -61,6 +61,6 @@
       "label": "Creative Strategy @ Latente",
       "href": "https://latentestudio.com"
     },
-    "rightsReserved": "© All rights reserved"
+    "rightsReserved": "All rights reserved"
   }
 }
