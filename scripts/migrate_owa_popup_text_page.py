@@ -17,7 +17,6 @@ from app.models.content import Entry, Section, SectionSchema
 
 def _default_popup_text() -> dict:
     return {
-        "title": "Pop-Up Text",
         "initialState": {
             "headline": "MODERN TRAINING GROUND\nFOR BEING HUMAN",
             "description": (
@@ -72,7 +71,6 @@ def _extract_popup_text_payload(source: dict | None) -> dict:
     merged = _deep_merge(
         defaults,
         {
-            "title": "Pop-Up Text",
             "initialState": root.get("initialState") or {},
             "successState": root.get("successState") or {},
         },
@@ -83,7 +81,6 @@ def _extract_popup_text_payload(source: dict | None) -> dict:
         merged["__draft"] = _deep_merge(
             defaults,
             {
-                "title": "Pop-Up Text",
                 "initialState": draft.get("initialState") or {},
                 "successState": draft.get("successState") or {},
             },
