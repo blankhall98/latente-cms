@@ -1,0 +1,66 @@
+{
+  "logo": {
+    "url": ""
+  },
+  "getInTouch": {
+    "sectionTitle": "GET IN TOUCH",
+    "address": {
+      "label": "Sinaloa 49 Col. Roma Norte\nMéxico, CDMX. CP. 6700",
+      "href": ""
+    },
+    "email": {
+      "label": "hello@owawellness.com",
+      "href": "mailto:hello@owawellness.com"
+    },
+    "phone": {
+      "label": "+52 555 505 7158",
+      "href": "tel:+525555057158"
+    }
+  },
+  "explore": {
+    "sectionTitle": "EXPLORE",
+    "links": [
+      { "label": "The OWA Experience", "href": "/discover-owa" },
+      { "label": "First Timers and FAQ's", "href": "/faq" },
+      { "label": "Policies", "href": "/policies" }
+    ]
+  },
+  "book": {
+    "sectionTitle": "BOOK",
+    "links": [
+      { "label": "Book a Session", "href": "/book" },
+      { "label": "Become a Member", "href": "/memberships" },
+      { "label": "Stay at OWA", "href": "/stay-at-owa" },
+      { "label": "Host Your Event", "href": "/events" },
+      { "label": "Cancel Membership", "href": "/cancel-membership" }
+    ]
+  },
+  "contact": {
+    "sectionTitle": "CONTACT",
+    "emailPlaceholder": "Email",
+    "phonePlaceholder": "Phone",
+    "messagePlaceholder": "Message",
+    "submitText": "Submit"
+  },
+  "newsletter": {
+    "sectionTitle": "NEWSLETTER",
+    "description": "Be the first to know about our new\nexperiences and collaborations",
+    "emailPlaceholder": "Email Address",
+    "submitText": "Submit"
+  },
+  "connect": {
+    "sectionTitle": "CONNECT",
+    "links": [
+      { "label": "Instagram", "href": "https://instagram.com/owawellness" },
+      { "label": "Spotify", "href": "https://spotify.com" },
+      { "label": "Careers", "href": "/careers" }
+    ]
+  },
+  "legal": {
+    "creativeStrategy": {
+      "label": "Creative Strategy @ Latente",
+      "href": "https://latentestudio.com"
+    },
+    "rightsReserved": "© All rights reserved"
+  }
+}

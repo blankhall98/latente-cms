@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/footer/v2.json",
+  "title": "OWA - Footer v2",
+  "type": "object",
+  "x-ui": {
+    "label": "Footer",
+    "order": ["logo", "getInTouch", "explore", "book", "contact", "newsletter", "connect", "legal"]
+  },
+  "properties": {
+    "logo": {
+      "$ref": "#/$defs/Image",
+      "x-ui": { "label": "Footer Logo" }
+    },
+    "getInTouch": {
+      "type": "object",
+      "x-ui": {
+        "label": "Get In Touch",
+        "order": ["sectionTitle", "address", "email", "phone"]
+      },
+      "properties": {
+        "sectionTitle": { "type": "string", "x-ui": { "label": "Section Title" } },
+        "address": { "$ref": "#/$defs/MultilineLink", "x-ui": { "label": "Address" } },
+        "email": { "$ref": "#/$defs/Link", "x-ui": { "label": "Email" } },
+        "phone": { "$ref": "#/$defs/Link", "x-ui": { "label": "Phone" } }
+      },
+      "required": ["sectionTitle", "address", "email", "phone"]
+    },
+    "explore": {
+      "type": "object",
+      "x-ui": {
+        "label": "Explore",
+        "order": ["sectionTitle", "links"]
+      },
+      "properties": {
+        "sectionTitle": { "type": "string", "x-ui": { "label": "Section Title" } },
+        "links": {
+          "type": "array",
+          "x-ui": { "label": "Explore Links", "addLabel": "Add Explore Link" },
+          "items": { "$ref": "#/$defs/Link" }
+        }
+      },
+      "required": ["sectionTitle", "links"]
+    },
+    "book": {
+      "type": "object",
+      "x-ui": {
+        "label": "Book",
+        "order": ["sectionTitle", "links"]
+      },
+      "properties": {
+        "sectionTitle": { "type": "string", "x-ui": { "label": "Section Title" } },
+        "links": {
+          "type": "array",
+          "x-ui": { "label": "Book Links", "addLabel": "Add Book Link" },
+          "items": { "$ref": "#/$defs/Link" }
+        }
+      },
+      "required": ["sectionTitle", "links"]
+    },
+    "contact": {
+      "type": "object",
+      "x-ui": {
+        "label": "Contact Form",
+        "order": ["sectionTitle", "emailPlaceholder", "phonePlaceholder", "messagePlaceholder", "submitText"]
+      },
+      "properties": {
+        "sectionTitle": { "type": "string", "x-ui": { "label": "Section Title" } },
+        "emailPlaceholder": { "type": "string", "x-ui": { "label": "Email Placeholder" } },
+        "phonePlaceholder": { "type": "string", "x-ui": { "label": "Phone Placeholder" } },
+        "messagePlaceholder": { "type": "string", "x-ui": { "label": "Message Placeholder" } },
+        "submitText": { "type": "string", "x-ui": { "label": "Submit Text" } }
+      },
+      "required": ["sectionTitle", "emailPlaceholder", "phonePlaceholder", "messagePlaceholder", "submitText"]
+    },
+    "newsletter": {
+      "type": "object",
+      "x-ui": {
+        "label": "Newsletter",
+        "order": ["sectionTitle", "description", "emailPlaceholder", "submitText"]
+      },
+      "properties": {
+        "sectionTitle": { "type": "string", "x-ui": { "label": "Section Title" } },
+        "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "emailPlaceholder": { "type": "string", "x-ui": { "label": "Email Placeholder" } },
+        "submitText": { "type": "string", "x-ui": { "label": "Submit Text" } }
+      },
+      "required": ["sectionTitle", "description", "emailPlaceholder", "submitText"]
+    },
+    "connect": {
+      "type": "object",
+      "x-ui": {
+        "label": "Connect",
+        "order": ["sectionTitle", "links"]
+      },
+      "properties": {
+        "sectionTitle": { "type": "string", "x-ui": { "label": "Section Title" } },
+        "links": {
+          "type": "array",
+          "x-ui": { "label": "Connect Links", "addLabel": "Add Connect Link" },
+          "items": { "$ref": "#/$defs/Link" }
+        }
+      },
+      "required": ["sectionTitle", "links"]
+    },
+    "legal": {
+      "type": "object",
+      "x-ui": {
+        "label": "Legal",
+        "order": ["creativeStrategy", "rightsReserved"]
+      },
+      "properties": {
+        "creativeStrategy": { "$ref": "#/$defs/Link", "x-ui": { "label": "Creative Strategy Link" } },
+        "rightsReserved": { "type": "string", "x-ui": { "label": "Rights Reserved Text" } }
+      },
+      "required": ["creativeStrategy", "rightsReserved"]
+    }
+  },
+  "required": ["logo", "getInTouch", "explore", "book", "contact", "newsletter", "connect", "legal"],
+  "$defs": {
+    "Link": {
+      "type": "object",
+      "x-ui": { "label": "Link", "order": ["label", "href"] },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Label" } },
+        "href": { "type": "string", "x-ui": { "label": "Href / URL" } }
+      },
+      "required": ["label", "href"]
+    },
+    "MultilineLink": {
+      "type": "object",
+      "x-ui": { "label": "Link", "order": ["label", "href"] },
+      "properties": {
+        "label": { "type": "string", "x-ui": { "label": "Label", "textarea": true } },
+        "href": { "type": "string", "x-ui": { "label": "Href / URL" } }
+      },
+      "required": ["label", "href"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}
