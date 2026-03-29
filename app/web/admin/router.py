@@ -71,6 +71,7 @@ _UPLOAD_TENANT_FOLDER_MAP = {
 
 _OWA_SECTION_DASHBOARD_ORDER = [
     "pop_up",
+    "pop_up_text",
     "hero",
     "moto_text",
     "discover_owa",
@@ -113,6 +114,23 @@ def _upload_context(active: dict | None) -> dict:
 
 def _is_owa_active(active: dict | None) -> bool:
     return ((active or {}).get("slug") or "").strip().lower() == "owa"
+
+
+def _entry_display_title(
+    entry: Entry,
+    section: Section,
+    active: dict | None,
+    data: Any | None = None,
+) -> str:
+    src = data if isinstance(data, dict) else (entry.data if isinstance(entry.data, dict) else {})
+    title = ""
+    if isinstance(src, dict):
+        title = (src.get("title") or src.get("name") or "").strip()
+    if title:
+        return title
+    if _is_owa_active(active) and getattr(section, "name", None):
+        return str(section.name)
+    return entry.slug or getattr(section, "name", "") or f"Page {getattr(entry, 'id', '')}"
 
 
 def _section_order_case_for_tenant_slug(tenant_slug: str | None):
@@ -214,27 +232,17 @@ def _owa_popup_template_response(
     is_superadmin: bool,
     entry: Entry,
     section: Section,
-    popup_content: dict[str, Any] | None = None,
-    popup_view: str = "text",
-    popup_text_section: str = "initial",
-    ok_message: str | None = None,
-    error: str | None = None,
-    status_code: int = 200,
 ):
-    popup_view = "analytics" if popup_view == "analytics" else "text"
-    popup_text_section = "success" if popup_text_section == "success" else "initial"
     submissions = db.scalars(
         select(OwaPopupSubmission)
         .where(OwaPopupSubmission.tenant_id == int(active["id"]))
         .order_by(OwaPopupSubmission.created_at.desc())
     ).all()
     metrics = _build_owa_popup_metrics(submissions)
+    page_data = entry.data if isinstance(entry.data, dict) else {}
+    page_title = page_data.get("title") or "Analytics"
+    analytics_note = page_data.get("notes") or "Read-only view of OWA pop-up submissions and endpoint activity."
     ss = _get_active_schema(db, section.id)
-    json_schema = _extract_schema_dict(ss)
-
-    current_content = popup_content if isinstance(popup_content, dict) else _render_owa_popup_data(entry.data or {})
-    if json_schema:
-        current_content = _normalize_owa_payload(current_content, json_schema)
 
     return templates.TemplateResponse(
         "admin/owa_popup.html",
@@ -246,25 +254,18 @@ def _owa_popup_template_response(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": "OWA Pop-Up",
+                "title": page_title,
                 "status": entry.status,
                 "section_name": section.name,
                 "section_key": getattr(section, "key", getattr(section, "name", "Section")),
                 "schema_version": (ss.version if ss else entry.schema_version),
                 "section_id": int(section.id),
             },
+            "analytics_note": analytics_note,
             "popup_endpoint": f"{settings.API_V1_STR}/owa/popup-submissions",
             "popup_metrics": metrics,
-            "popup_content": current_content,
-            "popup_initial": current_content.get("initialState", {}) if isinstance(current_content, dict) else {},
-            "popup_success": current_content.get("successState", {}) if isinstance(current_content, dict) else {},
-            "popup_view": popup_view,
-            "popup_text_section": popup_text_section,
-            "ok_message": ok_message,
-            "error": error,
             **_upload_context(active),
         },
-        status_code=status_code,
     )
 
 
@@ -484,49 +485,6 @@ def _render_owa_object_page_data(data: Any) -> dict:
         merged.pop("__draft", None)
         return merged
     return data
-
-
-def _default_owa_popup_content() -> dict[str, Any]:
-    return {
-        "notes": "Public endpoint for the OWA web pop-up: POST /api/v1/owa/popup-submissions",
-        "initialState": {
-            "headline": "MODERN TRAINING GROUND\nFOR BEING HUMAN",
-            "description": (
-                "NOTHING EXTRA. NOTHING SUPERFICIAL.\n"
-                "JUST SCIENCE-DRIVEN WELLBEING, COMMUNITY,\n"
-                "AND PRACTICE. JOIN TO RECEIVE UPDATES AND\n"
-                "MEMBER BENEFITS."
-            ),
-            "disclaimer": (
-                "By submitting this form, you consent to receive marketing messages from OWA.\n"
-                "Unsubscribe at any time. Privacy Policy & Terms."
-            ),
-            "backgroundImage": {"url": ""},
-        },
-        "successState": {
-            "headline": "YOU'RE IN.",
-            "description": "Welcome to the community.\nExpect something worth opening.",
-            "backgroundImage": {"url": ""},
-        },
-    }
-
-
-def _render_owa_popup_data(data: Any) -> dict[str, Any]:
-    """
-    OWA pop-up editor: merge draft over root without the "skip empty strings" behavior,
-    so editors can intentionally clear content or images.
-    """
-    defaults = _default_owa_popup_content()
-    if not isinstance(data, dict):
-        return defaults
-
-    root = dict(data)
-    root.pop("__draft", None)
-    draft = data.get("__draft") if isinstance(data.get("__draft"), dict) else None
-    merged = _deep_merge(root, draft) if draft else root
-    if isinstance(merged, dict):
-        merged.pop("__draft", None)
-    return _deep_merge(defaults, merged if isinstance(merged, dict) else {})
 
 
 def _resolve_local_schema_ref(root_schema: dict, ref: Any) -> dict | None:
@@ -970,7 +928,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         status_text = getattr(e.status, "value", e.status)
         section_key = getattr(s, "key", getattr(s, "name", "Section"))
         tenant_slug = active.get("slug", "")
-        title = (e.data or {}).get("title") or e.slug or f"Page {getattr(e, 'id', '')}"
+        title = _entry_display_title(e, s, active)
         recent_entries.append({
             "title": title,
             "sub": f"{section_key} / {tenant_slug} - {status_text}",
@@ -1146,10 +1104,11 @@ def pages_list(
                 or_(
                     Entry.slug.ilike(ilike_term),
                     Entry.data["title"].astext.ilike(ilike_term),
+                    Section.name.ilike(ilike_term),
                 )
             )
         except Exception:
-            base = base.where(Entry.slug.ilike(ilike_term))
+            base = base.where(or_(Entry.slug.ilike(ilike_term), Section.name.ilike(ilike_term)))
 
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
 
@@ -1173,7 +1132,7 @@ def pages_list(
 
     items = []
     for e, s in rows:
-        title = (e.data or {}).get("title") or e.slug
+        title = _entry_display_title(e, s, active)
         items.append({
             "id": e.id,
             "title": title,
@@ -1249,7 +1208,7 @@ def page_detail(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (data.get("title") or data.get("name") or entry.slug),
+                "title": _entry_display_title(entry, section, active, data),
                 "status": entry.status,
                 "section_name": section.name,
                 "updated_at": entry.updated_at,
@@ -1267,8 +1226,6 @@ def page_detail(
 def page_edit_get(
     entry_id: int,
     request: Request,
-    popup_view: str = Query("text"),
-    popup_text_section: str = Query("initial"),
     db: Session = Depends(get_db),
 ):
     user = _require_web_user(request)
@@ -1289,8 +1246,6 @@ def page_edit_get(
             is_superadmin=is_superadmin,
             entry=entry,
             section=section,
-            popup_view=popup_view,
-            popup_text_section=popup_text_section,
         )
 
     # If page is published and has __draft, edit the draft (except projects)
@@ -1375,7 +1330,7 @@ def page_edit_get(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (form_model.get("title") or form_model.get("name") or entry.slug),
+                "title": _entry_display_title(entry, section, active, form_model),
                 "status": entry.status,
                 "section_name": section.name,
                 "section_key": getattr(section, "key", getattr(section, "name", "Section")),
@@ -1401,16 +1356,6 @@ def page_edit_post(
     request: Request,
     db: Session = Depends(get_db),
     content_json: str = Form(""),
-    popup_notes: str = Form(""),
-    popup_initial_headline: str = Form(""),
-    popup_initial_description: str = Form(""),
-    popup_initial_disclaimer: str = Form(""),
-    popup_initial_background_image_url: str = Form(""),
-    popup_success_headline: str = Form(""),
-    popup_success_description: str = Form(""),
-    popup_success_background_image_url: str = Form(""),
-    popup_view: str = Form("text"),
-    popup_text_section: str = Form("initial"),
 ):
     user = _require_web_user(request)
     is_superadmin = bool(user.get("is_superadmin"))
@@ -1420,78 +1365,6 @@ def page_edit_post(
         return RedirectResponse(url="/admin/projects", status_code=302)
 
     entry, section = _load_entry_or_404(db, entry_id, tid)
-
-    if section.key == "pop_up":
-        ss = _get_active_schema(db, section.id)
-        json_schema = _extract_schema_dict(ss)
-        active_version = (ss.version if ss else entry.schema_version)
-
-        popup_payload = {
-            "notes": popup_notes or "",
-            "initialState": {
-                "headline": popup_initial_headline or "",
-                "description": popup_initial_description or "",
-                "disclaimer": popup_initial_disclaimer or "",
-                "backgroundImage": {"url": popup_initial_background_image_url or ""},
-            },
-            "successState": {
-                "headline": popup_success_headline or "",
-                "description": popup_success_description or "",
-                "backgroundImage": {"url": popup_success_background_image_url or ""},
-            },
-        }
-        if json_schema:
-            popup_payload = _normalize_owa_payload(popup_payload, json_schema)
-
-        errors = _validate_against_schema(json_schema, popup_payload)
-        if errors:
-            return _owa_popup_template_response(
-                request=request,
-                db=db,
-                user=user,
-                active=active,
-                is_superadmin=is_superadmin,
-                entry=entry,
-                section=section,
-                popup_content=popup_payload,
-                popup_view=popup_view,
-                popup_text_section=popup_text_section,
-                error="Schema validation failed: " + "; ".join(errors[:5]),
-                status_code=422,
-            )
-
-        base_data = entry.data or {}
-        for meta_key in ("seo", "replace"):
-            if meta_key in base_data and meta_key not in popup_payload:
-                popup_payload[meta_key] = base_data[meta_key]
-
-        is_published_now = (getattr(entry, "status", "draft") == "published")
-        if is_published_now:
-            base_clean = dict(base_data) if isinstance(base_data, dict) else {}
-            base_clean.pop("__draft", None)
-            base_clean["__draft"] = popup_payload
-            entry.data = base_clean
-        else:
-            entry.data = popup_payload
-
-        entry.schema_version = active_version
-        entry.updated_at = datetime.now(timezone.utc)
-        db.add(entry)
-        db.commit()
-        db.refresh(entry)
-
-        return _owa_popup_template_response(
-            request=request,
-            db=db,
-            user=user,
-            active=active,
-            is_superadmin=is_superadmin,
-            entry=entry,
-            section=section,
-            popup_view=popup_view,
-            popup_text_section=popup_text_section,
-            ok_message="Changes saved.",
-        )
 
     # UI JSON Schema (also for POST)
     try:
@@ -1540,7 +1413,7 @@ def page_edit_post(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (data.get("title") or data.get("name") or entry.slug),
+                "title": _entry_display_title(entry, section, active, data),
                 "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
@@ -1587,7 +1460,7 @@ def page_edit_post(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (parsed.get("title") or (entry.data or {}).get("title") or entry.slug),
+                "title": _entry_display_title(entry, section, active, parsed),
                 "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
@@ -1659,7 +1532,7 @@ def page_edit_post(
                 "page": {
                     "id": entry.id,
                     "slug": entry.slug,
-                    "title": (working_after or {}).get("title") or entry.slug,
+                    "title": _entry_display_title(entry, section, active, working_after),
                     "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
@@ -1703,7 +1576,7 @@ def page_edit_post(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (base_data.get("title") or entry.slug),
+                "title": _entry_display_title(entry, section, active, base_data),
                 "status": entry.status,
                     "section_name": section.name,
                     "section_key": getattr(section, "key", getattr(section, "name", "Section")),
@@ -1869,7 +1742,7 @@ def page_edit_post(
             "page": {
                 "id": entry.id,
                 "slug": entry.slug,
-                "title": (working_after or {}).get("title") or entry.slug,
+                "title": _entry_display_title(entry, section, active, working_after),
                 "status": entry.status,
                 "section_name": section.name,
                 "section_key": getattr(section, "key", getattr(section, "name", "Section")),
@@ -2023,8 +1896,6 @@ def admin_publish_page(
     # Projects: publish merged view (root + draft) so we don't lose published items
     if getattr(section, "key", "") == "projects":
         candidate = _render_projects_data(data_now)
-    elif getattr(section, "key", "") == "pop_up":
-        candidate = _render_owa_popup_data(data_now)
     # Home: publish merged view to keep featured projects and other blocks visible
     elif getattr(section, "key", "") == "home":
         candidate = _render_home_data(data_now)

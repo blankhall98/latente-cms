@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/pop_up_text/v1.json",
+  "title": "OWA - Pop-Up Text v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Pop-Up Text",
+    "order": ["title", "initialState", "successState"]
+  },
+  "properties": {
+    "title": {
+      "type": "string",
+      "default": "Pop-Up Text",
+      "x-ui": {
+        "label": "Title",
+        "hidden": true
+      }
+    },
+    "initialState": {
+      "type": "object",
+      "x-ui": {
+        "label": "Initial State",
+        "order": ["headline", "description", "disclaimer", "backgroundImage"]
+      },
+      "properties": {
+        "headline": { "type": "string", "x-ui": { "label": "Headline", "textarea": true } },
+        "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "disclaimer": { "type": "string", "x-ui": { "label": "Disclaimer", "textarea": true } },
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background Image" } }
+      },
+      "required": ["headline", "description", "disclaimer", "backgroundImage"]
+    },
+    "successState": {
+      "type": "object",
+      "x-ui": {
+        "label": "Success State",
+        "order": ["headline", "description", "backgroundImage"]
+      },
+      "properties": {
+        "headline": { "type": "string", "x-ui": { "label": "Headline", "textarea": true } },
+        "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "backgroundImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Background Image" } }
+      },
+      "required": ["headline", "description", "backgroundImage"]
+    }
+  },
+  "required": ["title", "initialState", "successState"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

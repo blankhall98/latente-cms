@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/pop_up/v3.json",
+  "title": "OWA - Analytics v3",
+  "type": "object",
+  "x-ui": {
+    "label": "Analytics",
+    "order": ["title", "notes"]
+  },
+  "properties": {
+    "title": {
+      "type": "string",
+      "default": "Analytics",
+      "x-ui": {
+        "label": "Title",
+        "hidden": true
+      }
+    },
+    "notes": {
+      "type": "string",
+      "x-ui": {
+        "label": "Internal Notes",
+        "textarea": true,
+        "hidden": true
+      }
+    }
+  },
+  "required": ["title"]
+}

@@ -32,6 +32,10 @@ def _parse_version_from_filename(p: Path) -> int | None:
 
 def _pretty_section_name(section_key: str) -> str:
     # "landing_pages" -> "Landing Pages", "home" -> "Home"
+    if section_key == "pop_up":
+        return "Pop-Up"
+    if section_key == "pop_up_text":
+        return "Pop-Up Text"
     return section_key.replace("_", " ").strip().title()
 
 
