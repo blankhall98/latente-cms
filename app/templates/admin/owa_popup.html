@@ -280,6 +280,8 @@
 {% endblock %}
 
 {% block content %}
+{% set initial = (popup_content or {}).get("initialState", {}) %}
+{% set success = (popup_content or {}).get("successState", {}) %}
 <section class="container"
          id="owa-popup-editor"
          data-entry-id="{{ page.id }}"
