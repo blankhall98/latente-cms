@@ -97,21 +97,15 @@
       </div>
 
       <nav id="z2h-side-nav" class="z2h-side-list" role="tablist" aria-orientation="vertical">
-        <!-- Item -->
-        <button type="button" class="z2h-side-item active" data-panel-id="panel-general" aria-controls="panel-general" role="tab" aria-selected="true">
-          <span class="z2h-side-deco" aria-hidden="true"></span>
-          <span class="z2h-side-label">General</span>
-        </button>
-
         {% if sections_ui and sections_ui|length > 0 %}
           {% for it in sections_ui %}
             {% set _pid  = 'panel-section-' ~ (it.index if it.index is defined else loop.index0) %}
             <button type="button"
-                    class="z2h-side-item"
+                    class="z2h-side-item{% if loop.first %} active{% endif %}"
                     data-panel-id="{{ _pid }}"
                     aria-controls="{{ _pid }}"
                     role="tab"
-                    aria-selected="false">
+                    aria-selected="{{ 'true' if loop.first else 'false' }}">
               <span class="z2h-side-deco" aria-hidden="true"></span>
               <span class="z2h-side-label">{{ it.label }}</span>
             </button>
@@ -125,39 +119,13 @@
     <!-- Main -->
     <main class="z2h-editor-panel">
       <div id="z2h-panels" class="z2h-panels p-3 p-md-4">
-
-        <!-- General -->
-        <section id="panel-general" class="z2h-panel" role="tabpanel" tabindex="-1" aria-labelledby="panel-general-label">
-          <div class="z2h-panel-head d-flex align-items-center justify-content-between mb-2">
-            <h2 id="panel-general-label" class="z2h-panel-title text-uppercase small fw-bold m-0">General</h2>
-            <span class="z2h-panel-sub text-muted">Page meta</span>
-          </div>
-
-          <div class="card z2h-roomy">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label" for="f-seo-title">SEO Title <span class="text-muted small">(~70)</span></label>
-                <input type="text" id="f-seo-title" class="form-control z2h-input-lg z2h-dirty z2h-count" maxlength="120"
-                       value="{{ seo_title|default('') }}" placeholder="Up to ~70 chars" data-max="70" autocomplete="off">
-                <div class="form-hint"><span data-for="f-seo-title">0</span>/70</div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="f-seo-desc">SEO Description <span class="text-muted small">(~160)</span></label>
-                <input type="text" id="f-seo-desc" class="form-control z2h-input-lg z2h-dirty z2h-count" maxlength="240"
-                       value="{{ seo_desc|default('') }}" placeholder="Up to ~160 chars" data-max="160" autocomplete="off">
-                <div class="form-hint"><span data-for="f-seo-desc">0</span>/160</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <!-- Panels per section -->
         {% for it in sections_ui %}
         {# Preserve primitives (avoid defaulting falsy values like "" to {}) #}
         {% set S = it.sec if it.sec is not none else {} %}
         {% set PID = 'panel-section-' ~ (it.index if it.index is defined else loop.index0) %}
         <section id="{{ PID }}"
-                 class="z2h-panel d-none"
+                 class="z2h-panel{% if not loop.first %} d-none{% endif %}"
                  role="tabpanel"
                  tabindex="-1"
                  data-section-index="{{ it.index if it.index is defined else loop.index0 }}"
@@ -386,6 +354,13 @@
   const panels=document.querySelectorAll('.z2h-panel');
   const form=document.getElementById('z2h-edit-form');
   const contentJson=document.getElementById('z2h-content-json');
+  const initialEntryData = (() => {
+    try{
+      return window.__ENTRY_DATA__ || (contentJson?.dataset?.entryData ? JSON.parse(contentJson.dataset.entryData) : null) || {};
+    }catch(_){
+      return window.__ENTRY_DATA__ || {};
+    }
+  })();
   const entryId=root?.dataset?.entryId;
   const uploadEnabled = root?.dataset?.uploadEnabled === '1';
   const uploadUrl = root?.dataset?.uploadUrl || '';
@@ -463,21 +438,22 @@
       if(pushHash){ history.replaceState(null, '', '#'+id); }
     }
   }
+  function getDefaultPanelId(){
+    return nav?.querySelector('.z2h-side-item')?.getAttribute('data-panel-id') || panels[0]?.id || '';
+  }
   (function initPanelFromHash(){
     const hash = (location.hash||'').replace('#','');
-    const target = hash && document.getElementById(hash) ? hash : 'panel-general';
-    showPanel(target, {pushHash:false});
+    const target = hash && document.getElementById(hash) ? hash : getDefaultPanelId();
+    if(target) showPanel(target, {pushHash:false});
   })();
 
-  /* FIX 1: Side-menu filter restored (keeps "General" visible) */
+  /* Side-menu filter */
   function applySideFilter(q){
     const query=(q||'').trim().toLowerCase();
     const items=[...nav.querySelectorAll('.z2h-side-item')];
     items.forEach(btn=>{
-      const pid = btn.getAttribute('data-panel-id')||'';
       const label = (btn.querySelector('.z2h-side-label')?.textContent||'').toLowerCase();
-      const isGeneral = pid === 'panel-general';
-      const match = !query || isGeneral || label.includes(query);
+      const match = !query || label.includes(query);
       btn.classList.toggle('d-none', !match);
     });
   }
@@ -708,7 +684,7 @@
 
   let SCHEMA_UI=null;
   // Inject entry.data for fallbacks (set server-side)
-  window.__ENTRY_DATA__ = window.__ENTRY_DATA__ || (document.getElementById('z2h-content-json')?.dataset?.entryData ? JSON.parse(document.getElementById('z2h-content-json').dataset.entryData) : null);
+  window.__ENTRY_DATA__ = window.__ENTRY_DATA__ || initialEntryData;
   (function(){
     try{
       const script=document.getElementById('z2h-schema-ui');
@@ -1504,11 +1480,12 @@
   function serialize(){
     const out={
       replace: false, /* standard value (toggle removed) */
-      seo: {
-        title: document.getElementById('f-seo-title')?.value || '',
-        description: document.getElementById('f-seo-desc')?.value || ''
-      }
     };
+    const preservedSeo = [initialEntryData, initialEntryData?.__draft]
+      .find(src => src && typeof src === 'object' && src.seo && typeof src.seo === 'object')?.seo;
+    if(preservedSeo !== undefined){
+      out.seo = clone(preservedSeo);
+    }
 
     const sectionPanels = Array.from(document.querySelectorAll('[data-section-index]'));
     const acc = [];
