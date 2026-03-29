@@ -252,6 +252,8 @@ def _owa_popup_template_response(
             "popup_endpoint": f"{settings.API_V1_STR}/owa/popup-submissions",
             "popup_metrics": metrics,
             "popup_content": current_content,
+            "popup_initial": current_content.get("initialState", {}) if isinstance(current_content, dict) else {},
+            "popup_success": current_content.get("successState", {}) if isinstance(current_content, dict) else {},
             "ok_message": ok_message,
             "error": error,
             **_upload_context(active),

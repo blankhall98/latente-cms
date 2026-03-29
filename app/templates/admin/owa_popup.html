@@ -2,8 +2,6 @@
 {% block title %}OWA Pop-Up · {{ active_tenant and active_tenant.name or "Project" }} · Latente CMS{% endblock %}
 
 {% block extra_head %}
-{% set initial = (popup_content or {}).get("initialState", {}) %}
-{% set success = (popup_content or {}).get("successState", {}) %}
 <style>
   .owa-head {
     border: 1px solid var(--border);
@@ -280,8 +278,6 @@
 {% endblock %}
 
 {% block content %}
-{% set initial = (popup_content or {}).get("initialState", {}) %}
-{% set success = (popup_content or {}).get("successState", {}) %}
 <section class="container"
          id="owa-popup-editor"
          data-entry-id="{{ page.id }}"
@@ -329,27 +325,27 @@
           <div class="owa-form-grid">
             <div class="full">
               <label class="form-label" for="popup_initial_headline">Headline</label>
-              <textarea class="form-control" id="popup_initial_headline" name="popup_initial_headline" rows="3">{{ initial.get("headline", "") }}</textarea>
+              <textarea class="form-control" id="popup_initial_headline" name="popup_initial_headline" rows="3">{{ popup_initial.get("headline", "") }}</textarea>
             </div>
             <div class="full">
               <label class="form-label" for="popup_initial_description">Description</label>
-              <textarea class="form-control" id="popup_initial_description" name="popup_initial_description" rows="4">{{ initial.get("description", "") }}</textarea>
+              <textarea class="form-control" id="popup_initial_description" name="popup_initial_description" rows="4">{{ popup_initial.get("description", "") }}</textarea>
             </div>
             <div class="full">
               <label class="form-label" for="popup_initial_disclaimer">Disclaimer</label>
-              <textarea class="form-control" id="popup_initial_disclaimer" name="popup_initial_disclaimer" rows="3">{{ initial.get("disclaimer", "") }}</textarea>
+              <textarea class="form-control" id="popup_initial_disclaimer" name="popup_initial_disclaimer" rows="3">{{ popup_initial.get("disclaimer", "") }}</textarea>
             </div>
             <div class="full">
               <label class="form-label" for="popup_initial_background_image_url">Background Image</label>
               <div class="owa-url-row">
-                <input type="text" class="form-control" id="popup_initial_background_image_url" name="popup_initial_background_image_url" value="{{ initial.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
+                <input type="text" class="form-control" id="popup_initial_background_image_url" name="popup_initial_background_image_url" value="{{ popup_initial.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
                 <input type="file" class="d-none" id="popup_initial_background_image_file" accept="image/*">
                 <button type="button" class="btn btn-outline" data-upload-target="popup_initial_background_image_url" data-upload-file="popup_initial_background_image_file" data-upload-field="initialState-backgroundImage-url">Upload image</button>
                 <button type="button" class="btn btn-outline-danger" data-clear-target="popup_initial_background_image_url">Remove</button>
               </div>
               <div class="owa-media-thumb mt-2" id="popup_initial_background_thumb">
-                {% if initial.get('backgroundImage', {}).get('url') %}
-                  <img src="{{ initial.get('backgroundImage', {}).get('url') }}" alt="Initial background preview">
+                {% if popup_initial.get('backgroundImage', {}).get('url') %}
+                  <img src="{{ popup_initial.get('backgroundImage', {}).get('url') }}" alt="Initial background preview">
                 {% else %}
                   <div class="owa-media-empty">No image uploaded yet.</div>
                 {% endif %}
@@ -364,23 +360,23 @@
           <div class="owa-form-grid">
             <div class="full">
               <label class="form-label" for="popup_success_headline">Headline</label>
-              <textarea class="form-control" id="popup_success_headline" name="popup_success_headline" rows="2">{{ success.get("headline", "") }}</textarea>
+              <textarea class="form-control" id="popup_success_headline" name="popup_success_headline" rows="2">{{ popup_success.get("headline", "") }}</textarea>
             </div>
             <div class="full">
               <label class="form-label" for="popup_success_description">Description</label>
-              <textarea class="form-control" id="popup_success_description" name="popup_success_description" rows="3">{{ success.get("description", "") }}</textarea>
+              <textarea class="form-control" id="popup_success_description" name="popup_success_description" rows="3">{{ popup_success.get("description", "") }}</textarea>
             </div>
             <div class="full">
               <label class="form-label" for="popup_success_background_image_url">Background Image</label>
               <div class="owa-url-row">
-                <input type="text" class="form-control" id="popup_success_background_image_url" name="popup_success_background_image_url" value="{{ success.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
+                <input type="text" class="form-control" id="popup_success_background_image_url" name="popup_success_background_image_url" value="{{ popup_success.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
                 <input type="file" class="d-none" id="popup_success_background_image_file" accept="image/*">
                 <button type="button" class="btn btn-outline" data-upload-target="popup_success_background_image_url" data-upload-file="popup_success_background_image_file" data-upload-field="successState-backgroundImage-url">Upload image</button>
                 <button type="button" class="btn btn-outline-danger" data-clear-target="popup_success_background_image_url">Remove</button>
               </div>
               <div class="owa-media-thumb mt-2" id="popup_success_background_thumb">
-                {% if success.get('backgroundImage', {}).get('url') %}
-                  <img src="{{ success.get('backgroundImage', {}).get('url') }}" alt="Success background preview">
+                {% if popup_success.get('backgroundImage', {}).get('url') %}
+                  <img src="{{ popup_success.get('backgroundImage', {}).get('url') }}" alt="Success background preview">
                 {% else %}
                   <div class="owa-media-empty">No image uploaded yet.</div>
                 {% endif %}
@@ -405,21 +401,21 @@
         <div class="owa-preview-card mb-3">
           <div class="owa-preview-initial">
             <div class="owa-preview-copy">
-              <div class="owa-preview-headline" id="preview-initial-headline">{{ initial.get("headline", "") }}</div>
-              <div class="owa-preview-body" id="preview-initial-description">{{ initial.get("description", "") }}</div>
-              <div class="owa-preview-disclaimer" id="preview-initial-disclaimer">{{ initial.get("disclaimer", "") }}</div>
+              <div class="owa-preview-headline" id="preview-initial-headline">{{ popup_initial.get("headline", "") }}</div>
+              <div class="owa-preview-body" id="preview-initial-description">{{ popup_initial.get("description", "") }}</div>
+              <div class="owa-preview-disclaimer" id="preview-initial-disclaimer">{{ popup_initial.get("disclaimer", "") }}</div>
             </div>
-            <div class="owa-preview-image" id="preview-initial-image" {% if initial.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), url('{{ initial.get('backgroundImage', {}).get('url') }}');"{% endif %}></div>
+            <div class="owa-preview-image" id="preview-initial-image" {% if popup_initial.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), url('{{ popup_initial.get('backgroundImage', {}).get('url') }}');"{% endif %}></div>
           </div>
         </div>
 
         <div class="owa-preview-label">Success State</div>
         <div class="owa-preview-card">
-          <div class="owa-preview-success" id="preview-success-image" {% if success.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), url('{{ success.get('backgroundImage', {}).get('url') }}');"{% endif %}>
+          <div class="owa-preview-success" id="preview-success-image" {% if popup_success.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), url('{{ popup_success.get('backgroundImage', {}).get('url') }}');"{% endif %}>
             <div>
               <div class="owa-preview-star">✦</div>
-              <div class="owa-preview-headline" id="preview-success-headline">{{ success.get("headline", "") }}</div>
-              <div class="owa-preview-body" id="preview-success-description">{{ success.get("description", "") }}</div>
+              <div class="owa-preview-headline" id="preview-success-headline">{{ popup_success.get("headline", "") }}</div>
+              <div class="owa-preview-body" id="preview-success-description">{{ popup_success.get("description", "") }}</div>
             </div>
           </div>
         </div>
