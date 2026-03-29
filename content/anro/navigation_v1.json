@@ -11,7 +11,8 @@
     "getInTouch": {
       "telephone": "305.300.1473",
       "contactEmail": "contact@anro.com",
-      "address": "College Station, TX"
+      "address": "College Station, TX",
+      "addressLink": ""
     },
     "letsConnect": {
       "linkedIn": "/linkedin",
