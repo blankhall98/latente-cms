@@ -45,6 +45,27 @@
     align-items: center;
     flex-wrap: wrap;
   }
+  .owa-nav {
+    display: flex;
+    gap: .55rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .owa-nav-btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text-1);
+    border-radius: 999px;
+    padding: .55rem .95rem;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .owa-nav-btn.active {
+    background: #161616;
+    border-color: #161616;
+    color: #fff;
+  }
   .owa-status {
     border-radius: 999px;
     padding: .25rem .65rem;
@@ -153,11 +174,11 @@
     justify-content: center;
     text-align: center;
     padding: 2rem 1.25rem;
-    background: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), #050505 center/cover no-repeat;
+    background: linear-gradient(180deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, .78)), #050505 center/cover no-repeat;
     color: #fff;
   }
   .owa-preview-success .owa-preview-body {
-    color: rgba(255,255,255,.76);
+    color: rgba(255, 255, 255, .76);
   }
   .owa-preview-star {
     font-size: 1.6rem;
@@ -258,6 +279,16 @@
     border-radius: 10px;
     background: #fcfaf6;
   }
+  .owa-view-panel,
+  .owa-text-panel,
+  .owa-preview-panel-item {
+    display: none;
+  }
+  .owa-view-panel.active,
+  .owa-text-panel.active,
+  .owa-preview-panel-item.active {
+    display: block;
+  }
   @media (max-width: 991.98px) {
     .owa-grid {
       grid-template-columns: 1fr;
@@ -287,9 +318,9 @@
          data-upload-max-mb="{{ upload_max_mb|default('0') }}">
   <div class="owa-head d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-      <a class="small text-decoration-none" href="/admin/pages">← Back to pages</a>
+      <a class="small text-decoration-none" href="/admin/pages">&larr; Back to pages</a>
       <h1 class="h5 m-0 mt-1">OWA Pop-Up</h1>
-      <p class="owa-subtle m-0">Edit the visible copy and backgrounds, while keeping the submission fields and analytics intact.</p>
+      <p class="owa-subtle m-0">Manage visible pop-up content separately from the collected submission analytics.</p>
     </div>
     <div class="owa-toolbar">
       <span id="owa-status" class="owa-status {{ (page.status or '')|lower }}">{{ page.status or 'draft' }}</span>
@@ -306,116 +337,139 @@
     <div class="alert alert-danger" role="alert">{{ error }}</div>
   {% endif %}
 
-  <div class="owa-grid">
-    <div class="owa-stack">
-      <form id="owa-popup-form" method="post" action="/admin/pages/{{ page.id }}/edit" novalidate>
-        <div class="owa-card">
-          <h2 class="h6">Front-End Endpoint</h2>
-          <p class="owa-subtle mb-3">The form fields remain fixed. These content fields only control the text and background assets shown before and after submission.</p>
-          <div class="owa-endpoint mb-2">
-            <div><strong>Method:</strong> <code>POST</code></div>
-            <div><strong>URL:</strong> <code>{{ popup_endpoint }}</code></div>
-          </div>
-          <div class="small text-muted">Accepted keys: <code>email</code> (or <code>emailAddress</code>), <code>gender</code>, <code>birth_date</code> (or <code>birthDate</code>, format <code>YYYY-MM-DD</code>).</div>
-        </div>
+  <div class="owa-nav" aria-label="OWA Pop-Up pages">
+    <button type="button" class="owa-nav-btn{% if popup_view == 'text' %} active{% endif %}" data-view-target="text">Pop-Up Text</button>
+    <button type="button" class="owa-nav-btn{% if popup_view == 'analytics' %} active{% endif %}" data-view-target="analytics">Analytics</button>
+  </div>
 
-        <div class="owa-card">
-          <h2 class="h6">Initial Pop-Up</h2>
-          <p class="owa-form-hint mb-3">This is the first state visitors see, before they submit the form.</p>
-          <div class="owa-form-grid">
-            <div class="full">
-              <label class="form-label" for="popup_initial_headline">Headline</label>
-              <textarea class="form-control" id="popup_initial_headline" name="popup_initial_headline" rows="3">{{ popup_initial.get("headline", "") }}</textarea>
-            </div>
-            <div class="full">
-              <label class="form-label" for="popup_initial_description">Description</label>
-              <textarea class="form-control" id="popup_initial_description" name="popup_initial_description" rows="4">{{ popup_initial.get("description", "") }}</textarea>
-            </div>
-            <div class="full">
-              <label class="form-label" for="popup_initial_disclaimer">Disclaimer</label>
-              <textarea class="form-control" id="popup_initial_disclaimer" name="popup_initial_disclaimer" rows="3">{{ popup_initial.get("disclaimer", "") }}</textarea>
-            </div>
-            <div class="full">
-              <label class="form-label" for="popup_initial_background_image_url">Background Image</label>
-              <div class="owa-url-row">
-                <input type="text" class="form-control" id="popup_initial_background_image_url" name="popup_initial_background_image_url" value="{{ popup_initial.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
-                <input type="file" class="d-none" id="popup_initial_background_image_file" accept="image/*">
-                <button type="button" class="btn btn-outline" data-upload-target="popup_initial_background_image_url" data-upload-file="popup_initial_background_image_file" data-upload-field="initialState-backgroundImage-url">Upload image</button>
-                <button type="button" class="btn btn-outline-danger" data-clear-target="popup_initial_background_image_url">Remove</button>
-              </div>
-              <div class="owa-media-thumb mt-2" id="popup_initial_background_thumb">
-                {% if popup_initial.get('backgroundImage', {}).get('url') %}
-                  <img src="{{ popup_initial.get('backgroundImage', {}).get('url') }}" alt="Initial background preview">
-                {% else %}
-                  <div class="owa-media-empty">No image uploaded yet.</div>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="owa-view-panel{% if popup_view == 'text' %} active{% endif %}" data-view-panel="text">
+    <div class="owa-grid">
+      <div class="owa-stack">
+        <form id="owa-popup-form" method="post" action="/admin/pages/{{ page.id }}/edit" novalidate>
+          <input type="hidden" name="popup_view" id="popup_view" value="{{ popup_view }}">
+          <input type="hidden" name="popup_text_section" id="popup_text_section" value="{{ popup_text_section }}">
 
-        <div class="owa-card">
-          <h2 class="h6">Success State</h2>
-          <p class="owa-form-hint mb-3">This is the confirmation state shown after a successful submission.</p>
-          <div class="owa-form-grid">
-            <div class="full">
-              <label class="form-label" for="popup_success_headline">Headline</label>
-              <textarea class="form-control" id="popup_success_headline" name="popup_success_headline" rows="2">{{ popup_success.get("headline", "") }}</textarea>
+          <div class="owa-card">
+            <h2 class="h6">Front-End Endpoint</h2>
+            <p class="owa-subtle mb-3">The form fields remain fixed. These content fields only control the text and background assets shown before and after submission.</p>
+            <div class="owa-endpoint mb-2">
+              <div><strong>Method:</strong> <code>POST</code></div>
+              <div><strong>URL:</strong> <code>{{ popup_endpoint }}</code></div>
             </div>
-            <div class="full">
-              <label class="form-label" for="popup_success_description">Description</label>
-              <textarea class="form-control" id="popup_success_description" name="popup_success_description" rows="3">{{ popup_success.get("description", "") }}</textarea>
-            </div>
-            <div class="full">
-              <label class="form-label" for="popup_success_background_image_url">Background Image</label>
-              <div class="owa-url-row">
-                <input type="text" class="form-control" id="popup_success_background_image_url" name="popup_success_background_image_url" value="{{ popup_success.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
-                <input type="file" class="d-none" id="popup_success_background_image_file" accept="image/*">
-                <button type="button" class="btn btn-outline" data-upload-target="popup_success_background_image_url" data-upload-file="popup_success_background_image_file" data-upload-field="successState-backgroundImage-url">Upload image</button>
-                <button type="button" class="btn btn-outline-danger" data-clear-target="popup_success_background_image_url">Remove</button>
-              </div>
-              <div class="owa-media-thumb mt-2" id="popup_success_background_thumb">
-                {% if popup_success.get('backgroundImage', {}).get('url') %}
-                  <img src="{{ popup_success.get('backgroundImage', {}).get('url') }}" alt="Success background preview">
-                {% else %}
-                  <div class="owa-media-empty">No image uploaded yet.</div>
-                {% endif %}
+            <div class="small text-muted">Accepted keys: <code>email</code> (or <code>emailAddress</code>), <code>gender</code>, <code>birth_date</code> (or <code>birthDate</code>, format <code>YYYY-MM-DD</code>).</div>
+          </div>
+
+          <div class="owa-nav" aria-label="Pop-Up text states">
+            <button type="button" class="owa-nav-btn{% if popup_text_section == 'initial' %} active{% endif %}" data-text-target="initial">Initial Pop-Up</button>
+            <button type="button" class="owa-nav-btn{% if popup_text_section == 'success' %} active{% endif %}" data-text-target="success">Success State</button>
+          </div>
+
+          <div class="owa-text-panel{% if popup_text_section == 'initial' %} active{% endif %}" data-text-panel="initial">
+            <div class="owa-card">
+              <h2 class="h6">Initial Pop-Up</h2>
+              <p class="owa-form-hint mb-3">This is the first state visitors see, before they submit the form.</p>
+              <div class="owa-form-grid">
+                <div class="full">
+                  <label class="form-label" for="popup_initial_headline">Headline</label>
+                  <textarea class="form-control" id="popup_initial_headline" name="popup_initial_headline" rows="3">{{ popup_initial.get("headline", "") }}</textarea>
+                </div>
+                <div class="full">
+                  <label class="form-label" for="popup_initial_description">Description</label>
+                  <textarea class="form-control" id="popup_initial_description" name="popup_initial_description" rows="4">{{ popup_initial.get("description", "") }}</textarea>
+                </div>
+                <div class="full">
+                  <label class="form-label" for="popup_initial_disclaimer">Disclaimer</label>
+                  <textarea class="form-control" id="popup_initial_disclaimer" name="popup_initial_disclaimer" rows="3">{{ popup_initial.get("disclaimer", "") }}</textarea>
+                </div>
+                <div class="full">
+                  <label class="form-label" for="popup_initial_background_image_url">Background Image</label>
+                  <div class="owa-url-row">
+                    <input type="text" class="form-control" id="popup_initial_background_image_url" name="popup_initial_background_image_url" value="{{ popup_initial.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
+                    <input type="file" class="d-none" id="popup_initial_background_image_file" accept="image/*">
+                    <button type="button" class="btn btn-outline" data-upload-target="popup_initial_background_image_url" data-upload-file="popup_initial_background_image_file" data-upload-field="initialState-backgroundImage-url">Upload image</button>
+                    <button type="button" class="btn btn-outline-danger" data-clear-target="popup_initial_background_image_url">Remove</button>
+                  </div>
+                  <div class="owa-media-thumb mt-2" id="popup_initial_background_thumb">
+                    {% if popup_initial.get('backgroundImage', {}).get('url') %}
+                      <img src="{{ popup_initial.get('backgroundImage', {}).get('url') }}" alt="Initial background preview">
+                    {% else %}
+                      <div class="owa-media-empty">No image uploaded yet.</div>
+                    {% endif %}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="owa-card">
-          <h2 class="h6">Internal Notes</h2>
-          <textarea class="form-control" id="popup_notes" name="popup_notes" rows="3">{{ (popup_content or {}).get("notes", "") }}</textarea>
-        </div>
-      </form>
-    </div>
-
-    <div class="owa-preview-panel">
-      <div class="owa-card">
-        <h2 class="h6">Live Preview</h2>
-        <p class="owa-form-hint mb-3">Approximate admin preview of the two visual states.</p>
-
-        <div class="owa-preview-label">Initial Pop-Up</div>
-        <div class="owa-preview-card mb-3">
-          <div class="owa-preview-initial">
-            <div class="owa-preview-copy">
-              <div class="owa-preview-headline" id="preview-initial-headline">{{ popup_initial.get("headline", "") }}</div>
-              <div class="owa-preview-body" id="preview-initial-description">{{ popup_initial.get("description", "") }}</div>
-              <div class="owa-preview-disclaimer" id="preview-initial-disclaimer">{{ popup_initial.get("disclaimer", "") }}</div>
+          <div class="owa-text-panel{% if popup_text_section == 'success' %} active{% endif %}" data-text-panel="success">
+            <div class="owa-card">
+              <h2 class="h6">Success State</h2>
+              <p class="owa-form-hint mb-3">This is the confirmation state shown after a successful submission.</p>
+              <div class="owa-form-grid">
+                <div class="full">
+                  <label class="form-label" for="popup_success_headline">Headline</label>
+                  <textarea class="form-control" id="popup_success_headline" name="popup_success_headline" rows="2">{{ popup_success.get("headline", "") }}</textarea>
+                </div>
+                <div class="full">
+                  <label class="form-label" for="popup_success_description">Description</label>
+                  <textarea class="form-control" id="popup_success_description" name="popup_success_description" rows="3">{{ popup_success.get("description", "") }}</textarea>
+                </div>
+                <div class="full">
+                  <label class="form-label" for="popup_success_background_image_url">Background Image</label>
+                  <div class="owa-url-row">
+                    <input type="text" class="form-control" id="popup_success_background_image_url" name="popup_success_background_image_url" value="{{ popup_success.get('backgroundImage', {}).get('url', '') }}" placeholder="Upload or paste image URL">
+                    <input type="file" class="d-none" id="popup_success_background_image_file" accept="image/*">
+                    <button type="button" class="btn btn-outline" data-upload-target="popup_success_background_image_url" data-upload-file="popup_success_background_image_file" data-upload-field="successState-backgroundImage-url">Upload image</button>
+                    <button type="button" class="btn btn-outline-danger" data-clear-target="popup_success_background_image_url">Remove</button>
+                  </div>
+                  <div class="owa-media-thumb mt-2" id="popup_success_background_thumb">
+                    {% if popup_success.get('backgroundImage', {}).get('url') %}
+                      <img src="{{ popup_success.get('backgroundImage', {}).get('url') }}" alt="Success background preview">
+                    {% else %}
+                      <div class="owa-media-empty">No image uploaded yet.</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="owa-preview-image" id="preview-initial-image" {% if popup_initial.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), url('{{ popup_initial.get('backgroundImage', {}).get('url') }}');"{% endif %}></div>
           </div>
-        </div>
 
-        <div class="owa-preview-label">Success State</div>
-        <div class="owa-preview-card">
-          <div class="owa-preview-success" id="preview-success-image" {% if popup_success.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), url('{{ popup_success.get('backgroundImage', {}).get('url') }}');"{% endif %}>
-            <div>
-              <div class="owa-preview-star">✦</div>
-              <div class="owa-preview-headline" id="preview-success-headline">{{ popup_success.get("headline", "") }}</div>
-              <div class="owa-preview-body" id="preview-success-description">{{ popup_success.get("description", "") }}</div>
+          <div class="owa-card">
+            <h2 class="h6">Internal Notes</h2>
+            <textarea class="form-control" id="popup_notes" name="popup_notes" rows="3">{{ (popup_content or {}).get("notes", "") }}</textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="owa-preview-panel">
+        <div class="owa-card">
+          <h2 class="h6">Live Preview</h2>
+          <p class="owa-form-hint mb-3">Approximate admin preview of the active visual state.</p>
+
+          <div class="owa-preview-panel-item{% if popup_text_section == 'initial' %} active{% endif %}" data-preview-panel="initial">
+            <div class="owa-preview-label">Initial Pop-Up</div>
+            <div class="owa-preview-card">
+              <div class="owa-preview-initial">
+                <div class="owa-preview-copy">
+                  <div class="owa-preview-headline" id="preview-initial-headline">{{ popup_initial.get("headline", "") }}</div>
+                  <div class="owa-preview-body" id="preview-initial-description">{{ popup_initial.get("description", "") }}</div>
+                  <div class="owa-preview-disclaimer" id="preview-initial-disclaimer">{{ popup_initial.get("disclaimer", "") }}</div>
+                </div>
+                <div class="owa-preview-image" id="preview-initial-image" {% if popup_initial.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(35, 19, 14, .35), rgba(12, 8, 7, .6)), url('{{ popup_initial.get('backgroundImage', {}).get('url') }}');"{% endif %}></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="owa-preview-panel-item{% if popup_text_section == 'success' %} active{% endif %}" data-preview-panel="success">
+            <div class="owa-preview-label">Success State</div>
+            <div class="owa-preview-card">
+              <div class="owa-preview-success" id="preview-success-image" {% if popup_success.get('backgroundImage', {}).get('url') %}style="background-image: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.78)), url('{{ popup_success.get('backgroundImage', {}).get('url') }}');"{% endif %}>
+                <div>
+                  <div class="owa-preview-star">&#10022;</div>
+                  <div class="owa-preview-headline" id="preview-success-headline">{{ popup_success.get("headline", "") }}</div>
+                  <div class="owa-preview-body" id="preview-success-description">{{ popup_success.get("description", "") }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -423,119 +477,121 @@
     </div>
   </div>
 
-  <div class="owa-card">
-    <h2 class="h6 mb-3">Submission Analytics</h2>
-    <div class="owa-kpi-grid">
-      <div class="owa-kpi">
-        <div class="k">Total People</div>
-        <div class="v">{{ popup_metrics.total_submissions }}</div>
-      </div>
-      <div class="owa-kpi">
-        <div class="k">Age Buckets</div>
-        <div class="v">{{ popup_metrics.age_buckets|length }}</div>
-      </div>
-      <div class="owa-kpi">
-        <div class="k">Gender Groups</div>
-        <div class="v">{{ popup_metrics.gender_distribution|length }}</div>
-      </div>
-    </div>
-
-    <div class="owa-stack">
-      <div class="owa-card">
-        <h3 class="h6 mb-3">Age Histogram</h3>
-        {% for label, count in popup_metrics.age_histogram.items() %}
-          <div class="owa-bar-row">
-            <div>{{ label }}</div>
-            <div class="owa-track">
-              <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
-            </div>
-            <div>{{ count }}</div>
-          </div>
-        {% endfor %}
-      </div>
-
-      <div class="owa-card">
-        <h3 class="h6 mb-3">Gender Distribution</h3>
-        {% for label, count in popup_metrics.gender_distribution.items() %}
-          <div class="owa-bar-row">
-            <div>{{ label }}</div>
-            <div class="owa-track">
-              <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
-            </div>
-            <div>{{ count }}</div>
-          </div>
-        {% else %}
-          <p class="text-muted small m-0">No data yet.</p>
-        {% endfor %}
-      </div>
-
-      <div class="owa-card">
-        <h3 class="h6 mb-3">Gender × Age Distribution</h3>
-        <div class="owa-table-wrap">
-          <table class="owa-table">
-            <thead>
-              <tr>
-                <th>Gender</th>
-                {% for bucket in popup_metrics.age_buckets %}
-                  <th>{{ bucket }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for gender, counts in popup_metrics.gender_age_distribution.items() %}
-                <tr>
-                  <td>{{ gender }}</td>
-                  {% for bucket in popup_metrics.age_buckets %}
-                    <td>{{ counts.get(bucket, 0) }}</td>
-                  {% endfor %}
-                </tr>
-              {% else %}
-                <tr>
-                  <td colspan="{{ popup_metrics.age_buckets|length + 1 }}" class="text-muted">No data yet.</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+  <div class="owa-view-panel{% if popup_view == 'analytics' %} active{% endif %}" data-view-panel="analytics">
+    <div class="owa-card">
+      <h2 class="h6 mb-3">Submission Analytics</h2>
+      <div class="owa-kpi-grid">
+        <div class="owa-kpi">
+          <div class="k">Total People</div>
+          <div class="v">{{ popup_metrics.total_submissions }}</div>
+        </div>
+        <div class="owa-kpi">
+          <div class="k">Age Buckets</div>
+          <div class="v">{{ popup_metrics.age_buckets|length }}</div>
+        </div>
+        <div class="owa-kpi">
+          <div class="k">Gender Groups</div>
+          <div class="v">{{ popup_metrics.gender_distribution|length }}</div>
         </div>
       </div>
 
-      <div class="owa-card">
-        <h3 class="h6 mb-3">Stored Submissions</h3>
-        <div class="owa-table-wrap">
-          <table class="owa-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Email</th>
-                <th>Gender</th>
-                <th>Birth Date</th>
-                <th>Age</th>
-                <th>Submitted At</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in popup_metrics.rows %}
+      <div class="owa-stack">
+        <div class="owa-card">
+          <h3 class="h6 mb-3">Age Histogram</h3>
+          {% for label, count in popup_metrics.age_histogram.items() %}
+            <div class="owa-bar-row">
+              <div>{{ label }}</div>
+              <div class="owa-track">
+                <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+              </div>
+              <div>{{ count }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="owa-card">
+          <h3 class="h6 mb-3">Gender Distribution</h3>
+          {% for label, count in popup_metrics.gender_distribution.items() %}
+            <div class="owa-bar-row">
+              <div>{{ label }}</div>
+              <div class="owa-track">
+                <div class="owa-fill" style="width: {{ ((count * 100 / popup_metrics.total_submissions) if popup_metrics.total_submissions else 0)|round(1) }}%;"></div>
+              </div>
+              <div>{{ count }}</div>
+            </div>
+          {% else %}
+            <p class="text-muted small m-0">No data yet.</p>
+          {% endfor %}
+        </div>
+
+        <div class="owa-card">
+          <h3 class="h6 mb-3">Gender × Age Distribution</h3>
+          <div class="owa-table-wrap">
+            <table class="owa-table">
+              <thead>
                 <tr>
-                  <td>{{ row.id }}</td>
-                  <td>{{ row.email }}</td>
-                  <td>{{ row.gender_raw }}</td>
-                  <td>{{ row.birth_date }}</td>
-                  <td>{{ row.age }}</td>
-                  <td>{% if row.created_at %}{{ row.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
-                  <td>
-                    <form method="post" action="/admin/pages/{{ page.id }}/popup-submissions/{{ row.id }}/delete" onsubmit="return confirm('Delete this submission?');">
-                      <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
-                    </form>
-                  </td>
+                  <th>Gender</th>
+                  {% for bucket in popup_metrics.age_buckets %}
+                    <th>{{ bucket }}</th>
+                  {% endfor %}
                 </tr>
-              {% else %}
+              </thead>
+              <tbody>
+                {% for gender, counts in popup_metrics.gender_age_distribution.items() %}
+                  <tr>
+                    <td>{{ gender }}</td>
+                    {% for bucket in popup_metrics.age_buckets %}
+                      <td>{{ counts.get(bucket, 0) }}</td>
+                    {% endfor %}
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="{{ popup_metrics.age_buckets|length + 1 }}" class="text-muted">No data yet.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="owa-card">
+          <h3 class="h6 mb-3">Stored Submissions</h3>
+          <div class="owa-table-wrap">
+            <table class="owa-table">
+              <thead>
                 <tr>
-                  <td colspan="7" class="text-muted">No submissions yet.</td>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Gender</th>
+                  <th>Birth Date</th>
+                  <th>Age</th>
+                  <th>Submitted At</th>
+                  <th></th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {% for row in popup_metrics.rows %}
+                  <tr>
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.email }}</td>
+                    <td>{{ row.gender_raw }}</td>
+                    <td>{{ row.birth_date }}</td>
+                    <td>{{ row.age }}</td>
+                    <td>{% if row.created_at %}{{ row.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}&mdash;{% endif %}</td>
+                    <td>
+                      <form method="post" action="/admin/pages/{{ page.id }}/popup-submissions/{{ row.id }}/delete" onsubmit="return confirm('Delete this submission?');">
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="7" class="text-muted">No submissions yet.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -553,6 +609,8 @@
     const uploadMaxMb = parseFloat(root?.dataset?.uploadMaxMb || '0') || 0;
     const entryId = root?.dataset?.entryId || '';
     const sectionKey = root?.dataset?.sectionKey || '';
+    const popupViewInput = document.getElementById('popup_view');
+    const popupTextSectionInput = document.getElementById('popup_text_section');
     let isDirty = false;
 
     function setDirty(nextValue){
@@ -606,6 +664,37 @@
       }
     }
 
+    function updateUrlState(view, textSection){
+      try{
+        const url = new URL(window.location.href);
+        url.searchParams.set('popup_view', view);
+        url.searchParams.set('popup_text_section', textSection);
+        window.history.replaceState({}, '', url.toString());
+      }catch(_){}
+    }
+
+    function applyPopupNavigation(){
+      const activeView = popupViewInput?.value === 'analytics' ? 'analytics' : 'text';
+      const activeTextSection = popupTextSectionInput?.value === 'success' ? 'success' : 'initial';
+
+      root?.querySelectorAll('[data-view-target]').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-view-target') === activeView);
+      });
+      root?.querySelectorAll('[data-view-panel]').forEach((panel) => {
+        panel.classList.toggle('active', panel.getAttribute('data-view-panel') === activeView);
+      });
+      root?.querySelectorAll('[data-text-target]').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-text-target') === activeTextSection);
+      });
+      root?.querySelectorAll('[data-text-panel]').forEach((panel) => {
+        panel.classList.toggle('active', panel.getAttribute('data-text-panel') === activeTextSection);
+      });
+      root?.querySelectorAll('[data-preview-panel]').forEach((panel) => {
+        panel.classList.toggle('active', panel.getAttribute('data-preview-panel') === activeTextSection);
+      });
+      updateUrlState(activeView, activeTextSection);
+    }
+
     function updatePreview(){
       const initialHeadline = document.getElementById('popup_initial_headline')?.value || '';
       const initialDescription = document.getElementById('popup_initial_description')?.value || '';
@@ -651,6 +740,21 @@
       el.addEventListener('change', () => {
         setDirty(true);
         updatePreview();
+      });
+    });
+
+    root?.querySelectorAll('[data-view-target]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if(popupViewInput) popupViewInput.value = btn.getAttribute('data-view-target') || 'text';
+        applyPopupNavigation();
+      });
+    });
+
+    root?.querySelectorAll('[data-text-target]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if(popupTextSectionInput) popupTextSectionInput.value = btn.getAttribute('data-text-target') || 'initial';
+        if(popupViewInput) popupViewInput.value = 'text';
+        applyPopupNavigation();
       });
     });
 
@@ -732,6 +836,7 @@
     });
 
     updatePreview();
+    applyPopupNavigation();
     setDirty(false);
   })();
 </script>

@@ -215,10 +215,14 @@ def _owa_popup_template_response(
     entry: Entry,
     section: Section,
     popup_content: dict[str, Any] | None = None,
+    popup_view: str = "text",
+    popup_text_section: str = "initial",
     ok_message: str | None = None,
     error: str | None = None,
     status_code: int = 200,
 ):
+    popup_view = "analytics" if popup_view == "analytics" else "text"
+    popup_text_section = "success" if popup_text_section == "success" else "initial"
     submissions = db.scalars(
         select(OwaPopupSubmission)
         .where(OwaPopupSubmission.tenant_id == int(active["id"]))
@@ -254,6 +258,8 @@ def _owa_popup_template_response(
             "popup_content": current_content,
             "popup_initial": current_content.get("initialState", {}) if isinstance(current_content, dict) else {},
             "popup_success": current_content.get("successState", {}) if isinstance(current_content, dict) else {},
+            "popup_view": popup_view,
+            "popup_text_section": popup_text_section,
             "ok_message": ok_message,
             "error": error,
             **_upload_context(active),
@@ -1261,6 +1267,8 @@ def page_detail(
 def page_edit_get(
     entry_id: int,
     request: Request,
+    popup_view: str = Query("text"),
+    popup_text_section: str = Query("initial"),
     db: Session = Depends(get_db),
 ):
     user = _require_web_user(request)
@@ -1281,6 +1289,8 @@ def page_edit_get(
             is_superadmin=is_superadmin,
             entry=entry,
             section=section,
+            popup_view=popup_view,
+            popup_text_section=popup_text_section,
         )
 
     # If page is published and has __draft, edit the draft (except projects)
@@ -1399,6 +1409,8 @@ def page_edit_post(
     popup_success_headline: str = Form(""),
     popup_success_description: str = Form(""),
     popup_success_background_image_url: str = Form(""),
+    popup_view: str = Form("text"),
+    popup_text_section: str = Form("initial"),
 ):
     user = _require_web_user(request)
     is_superadmin = bool(user.get("is_superadmin"))
@@ -1442,6 +1454,8 @@ def page_edit_post(
                 entry=entry,
                 section=section,
                 popup_content=popup_payload,
+                popup_view=popup_view,
+                popup_text_section=popup_text_section,
                 error="Schema validation failed: " + "; ".join(errors[:5]),
                 status_code=422,
             )
@@ -1474,6 +1488,8 @@ def page_edit_post(
             is_superadmin=is_superadmin,
             entry=entry,
             section=section,
+            popup_view=popup_view,
+            popup_text_section=popup_text_section,
             ok_message="Changes saved.",
         )
 
