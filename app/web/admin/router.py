@@ -76,6 +76,7 @@ _OWA_SECTION_DASHBOARD_ORDER = [
     "moto_text",
     "discover_owa",
     "therapies",
+    "drop_ins",
     "memberships",
     "moto_image",
     "events",

@@ -1,0 +1,21 @@
+{
+  "pageTitle": "Drop-In",
+  "pageDescription": "Flexible access to OWA experiences whenever you want them, with no long-term commitment required.",
+  "dropInsList": [
+    {
+      "dropInName": "SAUNA",
+      "dropInPrice": "$600 MXN",
+      "dropInDescription": "Enjoy access to our sauna experience on your own schedule. Ideal for quick recovery, stress reduction, and a restorative reset during your day.",
+      "benefits": [
+        "Muscle recovery",
+        "Stress relief",
+        "Circulation support",
+        "Relaxation",
+        "Detox support"
+      ],
+      "dropInImage": {
+        "url": ""
+      }
+    }
+  ]
+}

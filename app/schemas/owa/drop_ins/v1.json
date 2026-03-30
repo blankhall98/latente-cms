@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/owa/drop_ins/v1.json",
+  "title": "OWA - Drop-Ins v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Drop-Ins",
+    "order": ["pageTitle", "pageDescription", "dropInsList"]
+  },
+  "properties": {
+    "pageTitle": { "type": "string", "x-ui": { "label": "Page Title" } },
+    "pageDescription": { "type": "string", "x-ui": { "label": "Page Description", "textarea": true } },
+    "dropInsList": {
+      "type": "array",
+      "x-ui": { "label": "Drop-Ins", "addLabel": "Add Drop-In", "itemTitlePath": "dropInName" },
+      "items": { "$ref": "#/$defs/DropIn" }
+    }
+  },
+  "required": ["pageTitle", "pageDescription", "dropInsList"],
+  "$defs": {
+    "DropIn": {
+      "type": "object",
+      "x-ui": {
+        "label": "Drop-In",
+        "order": ["dropInName", "dropInPrice", "dropInDescription", "benefits", "dropInImage"]
+      },
+      "properties": {
+        "dropInName": { "type": "string", "x-ui": { "label": "Drop-In Name" } },
+        "dropInPrice": { "type": "string", "x-ui": { "label": "Price" } },
+        "dropInDescription": { "type": "string", "x-ui": { "label": "Description", "textarea": true } },
+        "benefits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "x-ui": { "label": "Benefits", "addLabel": "Add Benefit" }
+        },
+        "dropInImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Drop-In Image" } }
+      },
+      "required": ["dropInName", "dropInPrice", "dropInDescription", "benefits", "dropInImage"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

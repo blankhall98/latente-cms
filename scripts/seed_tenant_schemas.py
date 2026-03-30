@@ -36,6 +36,8 @@ def _pretty_section_name(section_key: str) -> str:
         return "Pop-Up"
     if section_key == "pop_up_text":
         return "Pop-Up Text"
+    if section_key == "drop_ins":
+        return "Drop-Ins"
     return section_key.replace("_", " ").strip().title()
 
 
