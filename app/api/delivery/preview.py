@@ -1,6 +1,7 @@
 # app/api/delivery/preview.py
 from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -22,13 +23,16 @@ def preview_via_token(
     if not e or e.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Preview not found")
 
-    # Entrega payload estilo delivery (puedes adaptarlo a tu DeliveryEntryOut)
-    return {
-        "tenant_id": e.tenant_id,
-        "section_id": e.section_id,
-        "slug": e.slug,
-        "schema_version": data.get("schema_version", e.schema_version),
-        "status": e.status,
-        "data": e.data or {},
-        "updated_at": e.updated_at,
-    }
+    # Preview responses must never be cached — content is unpublished/draft.
+    return JSONResponse(
+        content={
+            "tenant_id": e.tenant_id,
+            "section_id": e.section_id,
+            "slug": e.slug,
+            "schema_version": data.get("schema_version", e.schema_version),
+            "status": e.status,
+            "data": e.data or {},
+            "updated_at": e.updated_at.isoformat() if e.updated_at else None,
+        },
+        headers={"Cache-Control": "no-store"},
+    )

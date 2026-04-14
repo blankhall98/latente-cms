@@ -14,6 +14,7 @@ from app.core.config import create_app
 from app.core.logging import configure_logging
 from app.core.settings import settings
 
+from starlette.middleware.gzip import GZipMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 
@@ -21,6 +22,9 @@ app = create_app()
 configure_logging()
 
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+# Compress JSON delivery responses. minimum_size skips tiny payloads where
+# compression overhead would outweigh the savings.
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 def _inject_bearer_security(app):
     """

@@ -133,6 +133,17 @@ class Settings(BaseSettings):
     IMAGE_MAX_WIDTH: int = int(os.getenv("IMAGE_MAX_WIDTH", "1920"))
     IMAGE_WEBP_QUALITY: int = int(os.getenv("IMAGE_WEBP_QUALITY", "82"))
 
+    # ====== Delivery API cache (Cache-Control) ======
+    # max-age: how long browsers cache a response (seconds)
+    # s-maxage: how long a CDN (Cloudflare, etc.) caches a response (seconds)
+    # stale-while-revalidate: serve stale while fetching fresh copy (seconds)
+    DELIVERY_LIST_MAX_AGE: int = int(os.getenv("DELIVERY_LIST_MAX_AGE", "60"))
+    DELIVERY_LIST_SWR: int = int(os.getenv("DELIVERY_LIST_SWR", "120"))
+    DELIVERY_LIST_S_MAXAGE: int = int(os.getenv("DELIVERY_LIST_S_MAXAGE", "120"))
+    DELIVERY_DETAIL_MAX_AGE: int = int(os.getenv("DELIVERY_DETAIL_MAX_AGE", "300"))
+    DELIVERY_DETAIL_SWR: int = int(os.getenv("DELIVERY_DETAIL_SWR", "600"))
+    DELIVERY_DETAIL_S_MAXAGE: int = int(os.getenv("DELIVERY_DETAIL_S_MAXAGE", "600"))
+
     # ====== Mailchimp (OWA newsletter) ======
     MAILCHIMP_API_KEY: str | None = os.getenv("MAILCHIMP_API_KEY")
     MAILCHIMP_AUDIENCE_ID: str | None = os.getenv("MAILCHIMP_AUDIENCE_ID")

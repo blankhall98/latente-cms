@@ -125,19 +125,37 @@ def parse_httpdate(value: str) -> datetime | None:
 # -----------------------------
 def cache_policy_for_list() -> dict[str, str]:
     """
-    Política de caché para listados Delivery.
+    Cache policy for delivery list endpoints.
+    Values are configurable via DELIVERY_LIST_* env vars.
     """
+    from app.core.settings import settings
+    max_age = settings.DELIVERY_LIST_MAX_AGE
+    swr = settings.DELIVERY_LIST_SWR
+    s_maxage = settings.DELIVERY_LIST_S_MAXAGE
     return {
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=120",
+        "Cache-Control": (
+            f"public, max-age={max_age}, s-maxage={s_maxage}, "
+            f"stale-while-revalidate={swr}"
+        ),
+        "Vary": "Accept-Encoding",
     }
 
 
 def cache_policy_for_detail() -> dict[str, str]:
     """
-    Política de caché para detalle Delivery.
+    Cache policy for delivery detail endpoints.
+    Values are configurable via DELIVERY_DETAIL_* env vars.
     """
+    from app.core.settings import settings
+    max_age = settings.DELIVERY_DETAIL_MAX_AGE
+    swr = settings.DELIVERY_DETAIL_SWR
+    s_maxage = settings.DELIVERY_DETAIL_S_MAXAGE
     return {
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+        "Cache-Control": (
+            f"public, max-age={max_age}, s-maxage={s_maxage}, "
+            f"stale-while-revalidate={swr}"
+        ),
+        "Vary": "Accept-Encoding",
     }
 
 
