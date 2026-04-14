@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
+import tempfile
 import urllib.parse
 import uuid
 
@@ -18,12 +20,49 @@ def _normalize_bucket(bucket: str) -> str:
     return bucket
 
 
-def is_firebase_configured() -> bool:
+def _resolve_credentials_path() -> str:
+    """
+    Return a path to a valid Firebase service-account JSON file.
+
+    Resolution order:
+    1. FIREBASE_CREDENTIALS_PATH points to an existing file  (local dev)
+    2. FIREBASE_SERVICE_ACCOUNT_JSON env var contains the raw JSON  (Heroku / CI)
+       → write it to a temp file and return that path
+    """
     cred_path = settings.FIREBASE_CREDENTIALS_PATH or ""
+    if cred_path and os.path.exists(cred_path):
+        return cred_path
+
+    json_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "")
+    if json_str:
+        try:
+            json.loads(json_str)  # validate before writing
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON") from exc
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, encoding="utf-8"
+        )
+        tmp.write(json_str)
+        tmp.close()
+        return tmp.name
+
+    if cred_path:
+        raise RuntimeError(f"FIREBASE_CREDENTIALS_PATH does not exist: {cred_path}")
+    raise RuntimeError(
+        "Firebase credentials not configured. "
+        "Set FIREBASE_CREDENTIALS_PATH or FIREBASE_SERVICE_ACCOUNT_JSON."
+    )
+
+
+def is_firebase_configured() -> bool:
     bucket = settings.FIREBASE_STORAGE_BUCKET or ""
-    if not cred_path or not bucket:
+    if not bucket:
         return False
-    return os.path.exists(cred_path)
+    try:
+        _resolve_credentials_path()
+        return True
+    except RuntimeError:
+        return False
 
 
 def _get_firebase_app():
@@ -36,12 +75,8 @@ def _get_firebase_app():
     except ValueError:
         pass
 
-    cred_path = settings.FIREBASE_CREDENTIALS_PATH or ""
+    cred_path = _resolve_credentials_path()
     bucket = settings.FIREBASE_STORAGE_BUCKET or ""
-    if not cred_path:
-        raise RuntimeError("FIREBASE_CREDENTIALS_PATH is not set")
-    if not os.path.exists(cred_path):
-        raise RuntimeError("FIREBASE_CREDENTIALS_PATH does not exist")
     if not bucket:
         raise RuntimeError("FIREBASE_STORAGE_BUCKET is not set")
 
