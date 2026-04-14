@@ -28,6 +28,7 @@ from app.services.ui_schema_service import (
     build_sections_ui_fallback_for_object_page,  # NEW
 )
 from app.services.firebase_storage import is_firebase_configured, upload_file_to_firebase
+from app.services.image_processing import should_process_image, process_image_to_webp
 
 # Optional server-side schema validation toggle
 ENABLE_SERVER_VALIDATION = False
@@ -1853,11 +1854,27 @@ def admin_upload_media(
     if ext and not re.match(r"^\.[a-z0-9]{1,6}$", ext):
         ext = ""
 
+    # --- WebP conversion ---
+    upload_file_obj = file.file
+    if media_kind == "image" and should_process_image(content_type, file.filename or ""):
+        try:
+            processed_buf, content_type = process_image_to_webp(
+                file.file,
+                max_width=int(getattr(settings, "IMAGE_MAX_WIDTH", 1920)),
+                quality=int(getattr(settings, "IMAGE_WEBP_QUALITY", 82)),
+            )
+            upload_file_obj = processed_buf
+            ext = ".webp"
+        except Exception:
+            # If processing fails for any reason, fall back to the original file.
+            file.file.seek(0)
+            upload_file_obj = file.file
+
     unique = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
     dest_path = "/".join(parts + [unique + ext])
 
     try:
-        url = upload_file_to_firebase(file.file, content_type, dest_path)
+        url = upload_file_to_firebase(upload_file_obj, content_type, dest_path)
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Upload failed.") from exc
 

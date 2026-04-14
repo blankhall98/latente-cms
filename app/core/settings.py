@@ -129,6 +129,10 @@ class Settings(BaseSettings):
     UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "15"))
     UPLOAD_TENANT_SLUGS: str = os.getenv("UPLOAD_TENANT_SLUGS", "anro")
 
+    # ====== Image processing (WebP conversion) ======
+    IMAGE_MAX_WIDTH: int = int(os.getenv("IMAGE_MAX_WIDTH", "1920"))
+    IMAGE_WEBP_QUALITY: int = int(os.getenv("IMAGE_WEBP_QUALITY", "82"))
+
     # ====== Mailchimp (OWA newsletter) ======
     MAILCHIMP_API_KEY: str | None = os.getenv("MAILCHIMP_API_KEY")
     MAILCHIMP_AUDIENCE_ID: str | None = os.getenv("MAILCHIMP_AUDIENCE_ID")
