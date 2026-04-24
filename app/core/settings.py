@@ -133,6 +133,17 @@ class Settings(BaseSettings):
     IMAGE_MAX_WIDTH: int = int(os.getenv("IMAGE_MAX_WIDTH", "1920"))
     IMAGE_WEBP_QUALITY: int = int(os.getenv("IMAGE_WEBP_QUALITY", "82"))
 
+    # ====== SMTP (contact form) ======
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str | None = os.getenv("SMTP_USER")
+    SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD")
+    SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "Latente CMS")
+    # Key of the section that holds contact_email per tenant
+    CONTACT_SETTINGS_SECTION: str = os.getenv("CONTACT_SETTINGS_SECTION", "settings")
+    # Max contact form submissions per IP per minute
+    CONTACT_RATE_LIMIT: int = int(os.getenv("CONTACT_RATE_LIMIT", "5"))
+
     # ====== Delivery API cache (Cache-Control) ======
     # max-age: how long browsers cache a response (seconds)
     # s-maxage: how long a CDN (Cloudflare, etc.) caches a response (seconds)

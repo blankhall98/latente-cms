@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New contact message</title>
+  <style>
+    body {
+      margin: 0; padding: 0;
+      background-color: #f4f4f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #18181b;
+    }
+    .wrapper {
+      max-width: 560px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .header {
+      background-color: #18181b;
+      padding: 28px 36px;
+    }
+    .header p {
+      margin: 0;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+    }
+    .header h1 {
+      margin: 6px 0 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+    .body {
+      padding: 32px 36px;
+    }
+    .meta {
+      background: #f4f4f5;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .meta-row:last-child { margin-bottom: 0; }
+    .meta-label {
+      color: #71717a;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+    .meta-value {
+      color: #18181b;
+      font-weight: 500;
+      word-break: break-word;
+    }
+    .message-label {
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #71717a;
+      margin-bottom: 10px;
+    }
+    .message-body {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #27272a;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #e4e4e7;
+      margin: 28px 0;
+    }
+    .footer {
+      padding: 0 36px 28px;
+      font-size: 12px;
+      color: #a1a1aa;
+      line-height: 1.6;
+    }
+    .reply-hint {
+      background: #f0fdf4;
+      border-left: 3px solid #22c55e;
+      border-radius: 0 4px 4px 0;
+      padding: 10px 14px;
+      margin-top: 24px;
+      font-size: 13px;
+      color: #15803d;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <p>{{ tenant_name }}</p>
+      <h1>New contact form message</h1>
+    </div>
+
+    <div class="body">
+      <div class="meta">
+        <div class="meta-row">
+          <span class="meta-label">From</span>
+          <span class="meta-value">{{ sender_name }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Email</span>
+          <span class="meta-value">{{ sender_email }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Subject</span>
+          <span class="meta-value">{{ subject }}</span>
+        </div>
+      </div>
+
+      <div class="message-label">Message</div>
+      <div class="message-body">{{ message }}</div>
+
+      <div class="reply-hint">
+        Hit <strong>Reply</strong> to respond directly to {{ sender_name }}.
+      </div>
+
+      <hr class="divider" />
+    </div>
+
+    <div class="footer">
+      This message was sent through the contact form on your website.<br />
+      Powered by <strong>Latente CMS</strong>.
+    </div>
+  </div>
+</body>
+</html>

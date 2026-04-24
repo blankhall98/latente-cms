@@ -7,6 +7,7 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.api.delivery.contact import router as contact_router
 from app.api.delivery.preview import router as delivery_preview_router
 from app.api.delivery.router import router as delivery_router
 from app.api.v1.router import api_router
@@ -98,9 +99,10 @@ def root_smart(request: Request):
 # API privada (JWT)
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Delivery pública + Preview pública (con tokens)
+# Delivery pública + Preview pública (con tokens) + Contact form
 app.include_router(delivery_router)
 app.include_router(delivery_preview_router)
+app.include_router(contact_router)
 
 # Web (login/admin)
 from app.web.auth.router import router as auth_web_router  # import tardío para evitar ciclos
