@@ -23,14 +23,15 @@ def send_contact_email(
     sender_name: str,
     sender_email: str,
     subject: str,
-    message: str,
+    fields: dict[str, str],
     tenant_name: str,
 ) -> None:
     """
     Send a contact-form email via SMTP.
 
-    The email arrives at *to_email* (the tenant's contact address) with
-    Reply-To set to the visitor's address so the client can reply directly.
+    *fields* is the free-form dict from the front-end form — every key/value
+    pair is rendered verbatim in the email body, so the template stays
+    generic regardless of what fields the form contains.
 
     Raises RuntimeError if SMTP credentials are not configured.
     Raises smtplib.SMTPException (or subclass) on delivery failure.
@@ -43,14 +44,14 @@ def send_contact_email(
         "sender_name": sender_name,
         "sender_email": sender_email,
         "subject": subject,
-        "message": message,
+        "fields": fields,
     })
-    plain_body = (
-        f"New contact form message — {tenant_name}\n\n"
-        f"From:    {sender_name} <{sender_email}>\n"
-        f"Subject: {subject}\n\n"
-        f"{message}"
-    )
+
+    plain_lines = [f"New contact form message — {tenant_name}", ""]
+    plain_lines.append(f"From: {sender_name} <{sender_email}>")
+    for key, value in fields.items():
+        plain_lines.append(f"{key}: {value}")
+    plain_body = "\n".join(plain_lines)
 
     msg = MIMEMultipart("alternative")
     msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USER}>"

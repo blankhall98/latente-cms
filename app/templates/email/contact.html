@@ -55,7 +55,7 @@
     .meta-row:last-child { margin-bottom: 0; }
     .meta-label {
       color: #71717a;
-      min-width: 60px;
+      min-width: 52px;
       flex-shrink: 0;
     }
     .meta-value {
@@ -63,14 +63,25 @@
       font-weight: 500;
       word-break: break-word;
     }
-    .message-label {
+    .fields-label {
       font-size: 11px;
       letter-spacing: .1em;
       text-transform: uppercase;
       color: #71717a;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .message-body {
+    .field-row {
+      margin-bottom: 18px;
+    }
+    .field-row:last-child { margin-bottom: 0; }
+    .field-key {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #71717a;
+      margin-bottom: 3px;
+    }
+    .field-value {
       font-size: 15px;
       line-height: 1.7;
       color: #27272a;
@@ -82,12 +93,6 @@
       border-top: 1px solid #e4e4e7;
       margin: 28px 0;
     }
-    .footer {
-      padding: 0 36px 28px;
-      font-size: 12px;
-      color: #a1a1aa;
-      line-height: 1.6;
-    }
     .reply-hint {
       background: #f0fdf4;
       border-left: 3px solid #22c55e;
@@ -96,6 +101,12 @@
       margin-top: 24px;
       font-size: 13px;
       color: #15803d;
+    }
+    .footer {
+      padding: 0 36px 28px;
+      font-size: 12px;
+      color: #a1a1aa;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -116,14 +127,16 @@
           <span class="meta-label">Email</span>
           <span class="meta-value">{{ sender_email }}</span>
         </div>
-        <div class="meta-row">
-          <span class="meta-label">Subject</span>
-          <span class="meta-value">{{ subject }}</span>
-        </div>
       </div>
 
-      <div class="message-label">Message</div>
-      <div class="message-body">{{ message }}</div>
+      <div class="fields-label">Message</div>
+
+      {% for key, value in fields.items() %}
+      <div class="field-row">
+        <div class="field-key">{{ key }}</div>
+        <div class="field-value">{{ value }}</div>
+      </div>
+      {% endfor %}
 
       <div class="reply-hint">
         Hit <strong>Reply</strong> to respond directly to {{ sender_name }}.

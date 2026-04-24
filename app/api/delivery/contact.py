@@ -18,7 +18,6 @@ router = APIRouter(prefix="/delivery/v1", tags=["Contact"])
 
 # ---------------------------------------------------------------------------
 # In-memory IP rate limiter
-# Stores per-IP timestamps of the last submissions within the rolling window.
 # ---------------------------------------------------------------------------
 _rate_store: dict[str, list[float]] = defaultdict(list)
 _WINDOW_SECONDS = 60.0
@@ -43,10 +42,10 @@ def _check_rate_limit(ip: str) -> None:
 
 class ContactFormIn(BaseModel):
     tenant_slug: str = Field(..., min_length=1, max_length=80)
-    sender_name: str = Field(..., min_length=1, max_length=160)
     sender_email: EmailStr
-    subject: str | None = Field(None, max_length=200)
-    message: str = Field(..., min_length=1, max_length=5000)
+    # Free-form fields — the front-end decides what the form contains.
+    # e.g. {"Name": "Carlos", "Message": "Hello", "Budget": "$50k"}
+    fields: dict[str, str] = Field(..., min_length=1)
 
 
 # ---------------------------------------------------------------------------
@@ -62,10 +61,14 @@ def submit_contact_form(
     """
     Public endpoint consumed by front-end contact forms.
 
-    Looks up the tenant's published 'settings' entry for contact_email,
-    then sends an email via SMTP with Reply-To set to the visitor's address.
+    Only tenant_slug and sender_email are required. All form fields
+    (name, message, subject, budget, etc.) are passed as a free-form
+    dict and rendered verbatim in the email.
+
+    The receiver address is read from the tenant's published 'settings'
+    entry — never from the request body.
     """
-    ip = (request.client.host if request.client else "unknown")
+    ip = request.client.host if request.client else "unknown"
     _check_rate_limit(ip)
 
     # Resolve tenant
@@ -79,13 +82,12 @@ def submit_contact_form(
         raise HTTPException(status_code=404, detail="Tenant not found.")
 
     # Fetch contact_email from the tenant's published settings entry
-    section_key = settings.CONTACT_SETTINGS_SECTION
     settings_entry = db.scalar(
         select(Entry)
         .join(Section, Section.id == Entry.section_id)
         .where(
             Entry.tenant_id == tenant.id,
-            Section.key == section_key,
+            Section.key == "settings",
             Entry.status == "published",
         )
         .order_by(Entry.updated_at.desc())
@@ -102,21 +104,26 @@ def submit_contact_form(
             detail="Contact form is not configured for this site.",
         )
 
-    subject = (payload.subject or "").strip() or f"New message from {payload.sender_name}"
+    # Derive subject and sender name from fields if present, with fallbacks.
+    sender_name = payload.fields.get("Name") or payload.fields.get("name") or "Website visitor"
+    subject = (
+        payload.fields.get("Subject")
+        or payload.fields.get("subject")
+        or f"New contact form message — {tenant.name}"
+    )
 
     try:
         send_contact_email(
             to_email=contact_email,
-            sender_name=payload.sender_name,
+            sender_name=sender_name,
             sender_email=str(payload.sender_email),
             subject=subject,
-            message=payload.message,
+            fields=payload.fields,
             tenant_name=tenant.name,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail="Mail service is not configured.") from exc
     except Exception:
-        # Do not expose raw SMTP errors to the caller.
         raise HTTPException(
             status_code=503,
             detail="Failed to send message. Please try again later.",
