@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from typing import Any
 
 import httpx
@@ -28,33 +29,80 @@ def _infer_server_prefix(api_key: str | None) -> str | None:
     return suffix or None
 
 
-def _get_mailchimp_base_url() -> str:
-    api_key = (settings.MAILCHIMP_API_KEY or "").strip()
-    audience_id = (settings.MAILCHIMP_AUDIENCE_ID or "").strip()
-    server_prefix = (settings.MAILCHIMP_SERVER_PREFIX or "").strip() or _infer_server_prefix(api_key)
+def _credentials_for_tenant(tenant_slug: str) -> tuple[str, str, str]:
+    """
+    Resolve Mailchimp credentials for *tenant_slug* from env vars.
+
+    Looks for:
+      MAILCHIMP_API_KEY_<SLUG>       e.g. MAILCHIMP_API_KEY_ANRO
+      MAILCHIMP_AUDIENCE_ID_<SLUG>   e.g. MAILCHIMP_AUDIENCE_ID_ANRO
+
+    The server prefix is inferred from the API key suffix (e.g. "us1").
+
+    Returns (api_key, audience_id, server_prefix).
+    Raises MailchimpConfigurationError if any value is missing.
+    """
+    slug = tenant_slug.upper()
+    api_key = os.environ.get(f"MAILCHIMP_API_KEY_{slug}", "").strip()
+    audience_id = os.environ.get(f"MAILCHIMP_AUDIENCE_ID_{slug}", "").strip()
+    server_prefix = _infer_server_prefix(api_key)
 
     if not api_key:
-        raise MailchimpConfigurationError("MAILCHIMP_API_KEY is not configured")
+        raise MailchimpConfigurationError(
+            f"MAILCHIMP_API_KEY_{slug} is not configured"
+        )
     if not audience_id:
-        raise MailchimpConfigurationError("MAILCHIMP_AUDIENCE_ID is not configured")
+        raise MailchimpConfigurationError(
+            f"MAILCHIMP_AUDIENCE_ID_{slug} is not configured"
+        )
     if not server_prefix:
         raise MailchimpConfigurationError(
-            "MAILCHIMP_SERVER_PREFIX is not configured and could not be inferred from MAILCHIMP_API_KEY"
+            f"Could not infer Mailchimp server prefix from MAILCHIMP_API_KEY_{slug}"
         )
-    return f"https://{server_prefix}.api.mailchimp.com/3.0"
+    return api_key, audience_id, server_prefix
 
 
-def subscribe_email(email: str) -> dict[str, Any]:
+def subscribe_email(
+    email: str,
+    *,
+    api_key: str | None = None,
+    audience_id: str | None = None,
+    server_prefix: str | None = None,
+) -> dict[str, Any]:
+    """
+    Subscribe *email* to a Mailchimp audience.
+
+    Credentials can be passed explicitly (used by the generic endpoint)
+    or omitted to fall back to the legacy global settings vars
+    (used by the existing OWA endpoint — backwards compatible).
+    """
     normalized_email = (email or "").strip().lower()
     if not normalized_email:
         raise MailchimpRequestError("Email is required")
 
-    api_key = (settings.MAILCHIMP_API_KEY or "").strip()
-    audience_id = (settings.MAILCHIMP_AUDIENCE_ID or "").strip()
-    base_url = _get_mailchimp_base_url()
-    subscriber_hash = hashlib.md5(normalized_email.encode("utf-8")).hexdigest()
+    # Fall back to global settings when no explicit credentials provided
+    # (keeps the existing OWA endpoint working without any changes).
+    _api_key = (api_key or settings.MAILCHIMP_API_KEY or "").strip()
+    _audience_id = (audience_id or settings.MAILCHIMP_AUDIENCE_ID or "").strip()
+    _server_prefix = (
+        server_prefix
+        or (settings.MAILCHIMP_SERVER_PREFIX or "").strip()
+        or _infer_server_prefix(_api_key)
+    )
 
-    url = f"{base_url}/lists/{audience_id}/members/{subscriber_hash}"
+    if not _api_key:
+        raise MailchimpConfigurationError("MAILCHIMP_API_KEY is not configured")
+    if not _audience_id:
+        raise MailchimpConfigurationError("MAILCHIMP_AUDIENCE_ID is not configured")
+    if not _server_prefix:
+        raise MailchimpConfigurationError(
+            "MAILCHIMP_SERVER_PREFIX is not configured and could not be inferred"
+        )
+
+    base_url = f"https://{_server_prefix}.api.mailchimp.com/3.0"
+    subscriber_hash = hashlib.md5(normalized_email.encode("utf-8")).hexdigest()
+    url = f"{base_url}/lists/{_audience_id}/members/{subscriber_hash}"
+
     payload = {
         "email_address": normalized_email,
         "status_if_new": "subscribed",
@@ -65,7 +113,7 @@ def subscribe_email(email: str) -> dict[str, Any]:
     try:
         response = httpx.put(
             url,
-            auth=("anystring", api_key),
+            auth=("anystring", _api_key),
             json=payload,
             params={"skip_merge_validation": "true"},
             timeout=timeout,
