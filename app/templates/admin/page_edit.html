@@ -223,38 +223,34 @@
     z-index:1;
   }
   .z2h-side-list{
-    border:1px solid var(--border);
-    background:
-      radial-gradient(600px 240px at 10% -10%, rgba(110,158,230,.05), transparent 60%),
-      #fff;
-    border-radius:14px;
-    padding:.6rem;
-    box-shadow: 0 10px 26px rgba(0,0,0,.05);
+    border:1px solid #e4e4e7;
+    background: #ffffff;
+    border-radius:10px;
+    padding:.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
   }
   .z2h-side-item{
     position: relative;
     display:flex; align-items:center;
-    gap:.8rem; padding:.78rem .9rem; border:1px solid transparent; width:100%; background:transparent;
-    text-align:left; border-radius:12px; margin:.12rem 0; cursor:pointer; color:var(--text-2);
-    transition: background-color .22s ease, color .22s ease, border-color .22s ease, transform .18s ease;
+    gap:.75rem; padding:.65rem .85rem; border:1px solid transparent; width:100%; background:transparent;
+    text-align:left; border-radius:7px; margin:.08rem 0; cursor:pointer; color:#71717a;
+    transition: background-color .15s ease, color .15s ease;
   }
   .z2h-side-item .z2h-side-deco{
-    width:6px; height:18px; border-radius:6px;
-    background: #e8eefc;
-    transition: box-shadow .2s ease, background .2s ease;
+    width:2px; height:16px; border-radius:2px;
+    background: #e4e4e7;
+    transition: background .15s ease;
+    flex-shrink: 0;
   }
   .z2h-side-item:hover{
-    background:#f8f7f4; color: var(--text-1); border-color:#eee6dc;
-    transform: translateX(1px);
+    background:#f4f4f5; color: #18181b;
   }
   .z2h-side-item.active{
-    background:linear-gradient(90deg, #f5f8ff 0%, #ffffff 70%);
-    color:#132c55; font-weight:750; border-color:#dbe7ff;
-    box-shadow: inset 0 0 0 1px #e9f0ff, 0 4px 10px rgba(37,74,147,.06);
+    background:#f4f4f5;
+    color:#18181b; font-weight:650; border-color:#e4e4e7;
   }
   .z2h-side-item.active .z2h-side-deco{
-    background: linear-gradient(180deg, #6e9ee6, #89c2d9);
-    box-shadow: 0 0 0 6px rgba(110,158,230,.14);
+    background: #18181b;
   }
   .z2h-side-label{
     font-size:.95rem;
@@ -268,6 +264,39 @@
   .z2h-panel-title{ font-size:.95rem; letter-spacing:.08em; }
   .z2h-rep-item{ border:1px dashed var(--border); border-radius:14px; }
   .z2h-roomy{ padding:1.1rem !important; }
+
+  /* ---- Strip nested card frames inside the editor panel ---- */
+  /* The editor panel itself is the ONE card — nothing inside should re-card */
+  .z2h-editor-panel .card,
+  .z2h-editor-panel .z2h-roomy{
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ---- Repeater items: flat separator rows, not nested cards ---- */
+  .repeater-item{
+    border: none !important;
+    border-top: 1px solid #e4e4e7 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: .9rem 0 !important;
+  }
+  .z2h-repeater .repeater-item:first-child{
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+  /* Keep the repeater head title readable */
+  .repeater-item .repeater-title{
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #71717a;
+  }
 
   /* Force single-column layout for all form rows (desktop too) */
   .z2h-panel .row.g-3 > [class^="col"],
