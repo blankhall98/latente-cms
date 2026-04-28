@@ -97,16 +97,20 @@ a{ color: var(--primary); text-decoration: none; transition: color .15s ease; }
 a:hover{ color: #1d4ed8; }
 
 /* -------------------------
-   Navbar — light, premium
+   Navbar — frosted glass, premium
    ------------------------- */
 .z2h-nav{
   position: sticky; top: 0; z-index: 1030;
-  background: #ffffff;
-  border-bottom: 1px solid #e4e4e7;
-  box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid rgba(228,228,231,.8);
+  box-shadow: 0 1px 0 rgba(228,228,231,.6);
+  transition: box-shadow .4s ease;
 }
 .z2h-nav .container{ padding: .55rem 1rem; }
 
+/* Brand — letter-spacing reveal on load */
 .z2h-brand--badge{
   font-size: .68rem;
   font-weight: 700;
@@ -116,7 +120,13 @@ a:hover{ color: #1d4ed8; }
   background: transparent;
   border: none;
   padding: 0;
+  animation: navBrandReveal 1.3s cubic-bezier(.22,.61,.36,1) .05s both;
 }
+@keyframes navBrandReveal {
+  from { opacity: 0; letter-spacing: .04em; }
+  to   { opacity: 1; letter-spacing: .2em; }
+}
+
 .z2h-badge{
   display: inline-block;
   background: #f4f4f5;
@@ -128,8 +138,10 @@ a:hover{ color: #1d4ed8; }
   letter-spacing: .06em;
   text-transform: uppercase;
   font-weight: 600;
+  transition: color .35s cubic-bezier(.4,0,.2,1), border-color .35s cubic-bezier(.4,0,.2,1);
 }
 
+/* Nav links — sliding underline, no background pill */
 .navbar .nav-link{
   position: relative;
   padding: .42rem .65rem;
@@ -138,27 +150,42 @@ a:hover{ color: #1d4ed8; }
   font-weight: 500;
   font-size: .82rem;
   letter-spacing: .02em;
-  border-radius: 5px;
-  transition: color .15s ease, background-color .15s ease;
+  border-radius: 0;
+  background: transparent !important;
+  transition: color .35s cubic-bezier(.4,0,.2,1);
 }
-.navbar .nav-link:hover{ color: #18181b; background: #f4f4f5; }
-.navbar .nav-link.active{
-  color: #18181b;
-  background: transparent;
-  font-weight: 600;
-}
-.navbar .nav-link.active::after{
+
+/* Underline slides in from left */
+.navbar .nav-link::after{
   content: "";
   position: absolute;
   bottom: -1px; left: .65rem; right: .65rem;
   height: 1px;
   background: #18181b;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform .45s cubic-bezier(.4,0,.2,1);
 }
+
+.navbar .nav-link:hover{ color: #18181b; }
+.navbar .nav-link:hover::after{ transform: scaleX(1); }
+
+.navbar .nav-link.active{
+  color: #18181b;
+  font-weight: 600;
+}
+.navbar .nav-link.active::after{ transform: scaleX(1); }
 
 .z2h-select{
   background: #ffffff;
   border: 1px solid #e4e4e7;
   color: #18181b;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .z2h-brand--badge{ animation: none; opacity: 1; letter-spacing: .2em; }
+  .navbar .nav-link,
+  .navbar .nav-link::after{ transition: none !important; }
 }
 
 /* -------------------------
