@@ -6,146 +6,260 @@
 
 {% block extra_head %}
 <style>
-  /* Login — editorial, precise */
-  .z2h-auth-wrap{
+  /* ============================================================
+     Login — premium dark canvas
+     ============================================================ */
+
+  body.auth { background: #060e1c; }
+
+  /* ---- Full-viewport root ---- */
+  .lc-root {
+    position: relative;
     min-height: 100vh;
     display: grid;
     place-items: center;
     padding: 40px 16px;
-    background: var(--bg);
-  }
-
-  .z2h-auth-head{
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  .z2h-auth-head .z2h-title{
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--text-1);
-    font-size: 1rem;
-  }
-
-  .z2h-auth-card{
-    width: 100%;
-    max-width: 420px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
-    padding: clamp(28px, 5vw, 40px);
-  }
-
-  .z2h-auth-title{
-    margin: 0 0 .2rem 0;
-    font-weight: 700;
-    color: var(--text-1);
-    font-size: 1.25rem;
-  }
-  .z2h-auth-sub{ color: var(--text-2); font-size: .9rem; }
-
-  .z2h-field{ margin-bottom: 1rem; }
-  .z2h-label{
-    display: block;
-    margin-bottom: .4rem;
-    font-weight: 600;
-    font-size: .875rem;
-    color: var(--text-1);
-  }
-  .z2h-input{
-    height: 44px;
-    padding: .55rem .8rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-1);
-    font-size: .9rem;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  .z2h-input::placeholder{ color: var(--muted); }
-  .z2h-input:hover{ border-color: #cbd5e1; }
-  .z2h-input:focus{
-    outline: none;
-    border-color: #93c5fd;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-  }
-  .z2h-input.is-invalid{
-    border-color: #dc2626 !important;
-    box-shadow: 0 0 0 3px rgba(220,38,38,.12) !important;
-  }
-
-  .z2h-cta{
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: .9rem;
-    padding: .65rem 1rem;
-    background: var(--grad-1);
-    border: 1px solid #1d4ed8;
-    color: #ffffff;
-    box-shadow: 0 1px 3px rgba(37,99,235,.3);
-    transition: all .15s ease;
-    position: relative;
     overflow: hidden;
-  }
-  .z2h-cta > span{ position: relative; z-index: 2; }
-  .z2h-cta::before{ display: none; }
-  .z2h-cta::after{ display: none; }
-  .z2h-cta:hover{
-    background: linear-gradient(135deg, #1a44c8 0%, #2159d4 100%);
-    box-shadow: 0 4px 12px rgba(37,99,235,.35);
-  }
-  .z2h-cta:active{ transform: scale(.98); }
-
-  @media (prefers-reduced-motion: reduce){
-    .z2h-cta, .z2h-input{ transition: none !important; }
+    background: #060e1c;
   }
 
-  .z2h-muted{ color: var(--text-2); }
+  /* ---- Animated gradient orbs ---- */
+  .lc-orb {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .lc-orb-1 {
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(37,99,235,.18) 0%, transparent 65%);
+    top: -260px; left: -180px;
+    filter: blur(80px);
+    animation: orb1 20s ease-in-out infinite alternate;
+  }
+  .lc-orb-2 {
+    width: 550px; height: 550px;
+    background: radial-gradient(circle, rgba(99,102,241,.16) 0%, transparent 65%);
+    bottom: -200px; right: -140px;
+    filter: blur(80px);
+    animation: orb2 25s ease-in-out infinite alternate;
+  }
+  .lc-orb-3 {
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(14,165,233,.12) 0%, transparent 65%);
+    top: 42%; left: 58%;
+    filter: blur(70px);
+    animation: orb3 18s ease-in-out infinite alternate;
+  }
+  @keyframes orb1 {
+    from { transform: translate(0,0) scale(1);    }
+    to   { transform: translate(55px,35px) scale(1.09); }
+  }
+  @keyframes orb2 {
+    from { transform: translate(0,0) scale(1);      }
+    to   { transform: translate(-45px,-28px) scale(1.07); }
+  }
+  @keyframes orb3 {
+    from { transform: translate(0,0) scale(1);    }
+    to   { transform: translate(28px,-36px) scale(.93); }
+  }
+
+  /* ---- Subtle dot grid ---- */
+  .lc-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 100%);
+  }
+
+  /* ---- Content stack ---- */
+  .lc-content {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%;
+  }
+
+  /* ---- Brand mark ---- */
+  .lc-mark {
+    width: 46px; height: 46px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    background: rgba(255,255,255,.05);
+    backdrop-filter: blur(12px);
+    animation: markIn .7s cubic-bezier(.22,.61,.36,1) both;
+  }
+  .lc-mark svg { width: 22px; height: 22px; }
+  @keyframes markIn {
+    from { opacity: 0; transform: translateY(-10px) scale(.88); }
+    to   { opacity: 1; transform: translateY(0)  scale(1); }
+  }
+
+  /* ---- Card ---- */
+  .lc-card {
+    width: 100%; max-width: 400px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: clamp(28px, 5vw, 42px);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.08),
+      0 8px 24px rgba(0,0,0,.35),
+      0 32px 64px rgba(0,0,0,.25),
+      0 0 80px rgba(37,99,235,.06);
+    animation: cardIn .85s cubic-bezier(.22,.61,.36,1) .08s both;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- Card header ---- */
+  .lc-card-eyebrow {
+    font-size: .7rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: #94a3b8; margin: 0 0 .5rem 0;
+  }
+  .lc-card-title {
+    font-size: 1.3rem; font-weight: 700;
+    color: #0f172a; margin: 0 0 .25rem 0; letter-spacing: -.01em;
+  }
+  .lc-card-sub { font-size: .875rem; color: #64748b; margin: 0 0 1.75rem 0; }
+
+  /* ---- Fields ---- */
+  .lc-field { margin-bottom: .85rem; }
+  .lc-label {
+    display: block; margin-bottom: .35rem;
+    font-size: .75rem; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase;
+    color: #64748b;
+  }
+  .lc-input {
+    display: block; width: 100%;
+    height: 44px; padding: 0 .9rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #0f172a; font-size: .9rem;
+    outline: none;
+    transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+  }
+  .lc-input::placeholder { color: #94a3b8; }
+  .lc-input:hover  { border-color: #cbd5e1; background: #ffffff; }
+  .lc-input:focus  {
+    border-color: #2563eb; background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.13);
+  }
+  .lc-input.is-invalid {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220,38,38,.1) !important;
+  }
+
+  /* ---- Submit button ---- */
+  .lc-btn {
+    display: block; width: 100%;
+    height: 44px; margin-top: .35rem;
+    border-radius: 8px; border: none; cursor: pointer;
+    font-weight: 600; font-size: .9rem; color: #ffffff;
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+    box-shadow: 0 1px 3px rgba(37,99,235,.45), 0 4px 16px rgba(37,99,235,.22);
+    transition: box-shadow .2s ease, transform .1s ease;
+  }
+  .lc-btn > span { position: relative; z-index: 2; }
+
+  /* Shimmer sweep on hover */
+  .lc-btn::after {
+    content: "";
+    position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+    transition: left .55s ease;
+    z-index: 1;
+  }
+  .lc-btn:hover { box-shadow: 0 6px 24px rgba(37,99,235,.5); }
+  .lc-btn:hover::after { left: 140%; }
+  .lc-btn:active { transform: scale(.98); }
+
+  /* ---- Footer ---- */
+  .lc-footer {
+    margin-top: 22px;
+    font-size: .76rem;
+    color: rgba(255,255,255,.22);
+    letter-spacing: .04em;
+    animation: cardIn 1s cubic-bezier(.22,.61,.36,1) .22s both;
+  }
+
+  /* ---- Divider ---- */
+  .lc-divider {
+    height: 1px; margin: 1.4rem 0;
+    background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lc-orb { animation: none !important; opacity: .06; }
+    .lc-mark, .lc-card, .lc-footer { animation: none !important; opacity: 1; transform: none !important; }
+    .lc-btn::after { transition: none !important; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="z2h-auth-wrap">
-  <div class="z2h-auth-head">
-    <h1 class="z2h-title">Latente CMS</h1>
-  </div>
+<!-- Decorative background (aria-hidden — purely visual) -->
+<div class="lc-orb lc-orb-1" aria-hidden="true"></div>
+<div class="lc-orb lc-orb-2" aria-hidden="true"></div>
+<div class="lc-orb lc-orb-3" aria-hidden="true"></div>
+<div class="lc-grid"         aria-hidden="true"></div>
 
-  <div class="z2h-auth-card">
-    <h2 class="z2h-auth-title">Sign in</h2>
-    <p class="z2h-auth-sub mb-4">Use your credentials to access the admin.</p>
+<div class="lc-root">
+  <div class="lc-content">
 
-    {% if error %}
-      <div class="alert alert-danger" role="alert">{{ error }}</div>
-    {% endif %}
+    <!-- Brand mark -->
+    <div class="lc-mark" aria-hidden="true">
+      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 4 L6 17 L15 17" stroke="rgba(255,255,255,.85)"
+              stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
 
-    <form method="post" action="/login" class="z2h-auth-form" novalidate>
-      <div class="z2h-field">
-        <label for="email" class="z2h-label">Email</label>
-        <input id="email" name="email" type="email" class="form-control z2h-input"
-               placeholder="you@example.com" required autocomplete="username"
-               inputmode="email" autocapitalize="off" spellcheck="false">
-      </div>
+    <!-- Card -->
+    <div class="lc-card">
+      <p class="lc-card-eyebrow">Latente CMS</p>
+      <h1 class="lc-card-title">Sign in</h1>
+      <p class="lc-card-sub">Enter your credentials to access the admin.</p>
 
-      <div class="z2h-field">
-        <label for="password" class="z2h-label">Password</label>
-        <input id="password" name="password" type="password" class="form-control z2h-input"
-               placeholder="••••••••" required autocomplete="current-password">
-      </div>
+      {% if error %}
+        <div class="alert alert-danger mb-3" role="alert">{{ error }}</div>
+      {% endif %}
 
-      <div class="d-grid">
-        <button type="submit" class="btn z2h-cta">
+      <form method="post" action="/login" class="z2h-auth-form" novalidate>
+        <div class="lc-field">
+          <label for="email" class="lc-label">Email</label>
+          <input id="email" name="email" type="email"
+                 class="lc-input form-control z2h-input"
+                 placeholder="you@example.com"
+                 required autocomplete="username"
+                 inputmode="email" autocapitalize="off" spellcheck="false">
+        </div>
+
+        <div class="lc-field">
+          <label for="password" class="lc-label">Password</label>
+          <input id="password" name="password" type="password"
+                 class="lc-input form-control z2h-input"
+                 placeholder="••••••••"
+                 required autocomplete="current-password">
+        </div>
+
+        <div class="lc-divider"></div>
+
+        <button type="submit" class="lc-btn btn z2h-cta">
           <span>Sign in</span>
         </button>
-      </div>
-    </form>
-
-    <div class="text-center mt-4 small z2h-muted">
-      © <span id="lc-year"></span> Latente
+      </form>
     </div>
+
+    <p class="lc-footer">© <span id="lc-year"></span> Latente. All rights reserved.</p>
   </div>
-</section>
+</div>
 
 <script>
   (function(){
@@ -154,13 +268,3 @@
   })();
 </script>
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
