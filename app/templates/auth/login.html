@@ -39,7 +39,7 @@
   /* ---- Content wrapper ---- */
   .lc-content {
     width: 100%;
-    max-width: 360px;
+    max-width: 460px;
     animation: contentFade .9s ease .2s both;
   }
   @keyframes contentFade {
@@ -60,6 +60,11 @@
     text-transform: uppercase;
     color: #a1a1aa;
     margin-bottom: 14px;
+    animation: brandReveal 1.4s cubic-bezier(.22,.61,.36,1) .3s both;
+  }
+  @keyframes brandReveal {
+    from { opacity: 0; letter-spacing: .06em; }
+    to   { opacity: 1; letter-spacing: .24em; }
   }
   .lc-brand-line {
     display: block;
@@ -84,12 +89,12 @@
       transform .9s cubic-bezier(.22,.61,.36,1),
       box-shadow .9s cubic-bezier(.22,.61,.36,1);
   }
-  /* Thin indigo accent on top — the modern touch */
+  /* Top edge — white, matches card surface */
   .lc-form-wrap::before {
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+    background: #ffffff;
     border-radius: 8px 8px 0 0;
   }
   /* Card grows subtly when user starts typing */
@@ -165,13 +170,18 @@
     border-radius: 6px;
     border: 1px solid #18181b;
     background: #18181b;
-    color: #ffffff;
+    color: #ffffff !important;
     font-size: .78rem;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
     cursor: pointer;
     transition: background-color .2s ease, box-shadow .2s ease;
+  }
+  .lc-btn:hover,
+  .lc-btn:focus,
+  .lc-btn:active {
+    color: #ffffff !important;
   }
   .lc-btn:hover {
     background: #27272a;
@@ -190,7 +200,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .lc-rule    { animation: none !important; transform: scaleX(1); }
+    .lc-rule, .lc-brand-name { animation: none !important; opacity: 1; transform: none; letter-spacing: .24em; }
     .lc-content { animation: none !important; opacity: 1; transform: none; }
     .lc-form-wrap,
     .lc-form-wrap.is-active { transform: none !important; transition: none !important; }
