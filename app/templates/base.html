@@ -18,98 +18,52 @@
   <link rel="stylesheet" href="/static/css/style.css?v={{ build_version|default('1') }}">
 
   <style>
-    /* ---------- Layout básico ---------- */
+    /* ---------- Layout ---------- */
     html, body { height: 100%; }
     body.z2h-body { display:flex; flex-direction:column; min-height:100vh; }
     #main-content { flex:1 0 auto; }
     .z2h-footer { flex-shrink:0; }
 
-    /* ---------- Logout button: replicate login CTA effect (red palette) ---------- */
-    :root{
-      /* lighter static base + darker fill for logout */
-      --grad-logout-base: linear-gradient(135deg, #ffd9d9 0%, #ffe9e9 100%);
-      --grad-logout-fill: linear-gradient(135deg, #ef6666 0%, #e94d4d 100%);
-    }
-
+    /* ---------- Logout button — clean red on dark nav ---------- */
     .z2h-logout{
       position: relative;
       overflow: hidden;
-      border-radius: 12px;
-      font-weight: 800;
-      letter-spacing: .05em;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: .8rem;
+      letter-spacing: .04em;
       text-transform: uppercase;
-
-      /* look & sizing to fit navbar */
-      padding: .42rem .75rem;
-      font-size: .82rem;
+      padding: .38rem .7rem;
       line-height: 1;
-
-      /* base like login CTA (but red) */
-      background: var(--grad-logout-base);
-      border: 1px solid #f3b2b2;
-      color: #3d0f0f;
-
-      box-shadow: 0 10px 22px rgba(233, 77, 77, .10);
-      transition: color .36s ease, box-shadow .48s ease;
+      background: transparent;
+      border: 1px solid #3f2020;
+      color: #fca5a5;
+      transition: background-color .15s ease, border-color .15s ease, color .15s ease;
     }
-    .z2h-logout > span { position: relative; z-index: 2; }
-
-    /* Layer 1: darker fill slides in from left (slow, like login) */
-    .z2h-logout::before{
-      content:"";
-      position:absolute; inset:0;
-      background: var(--grad-logout-fill);
-      transform: translateX(-100%);
-      transition: transform 2.2s cubic-bezier(.22,.61,.36,1);
-      z-index:1;
-    }
-
-    /* Layer 2: soft wave edge (also slow) */
-    .z2h-logout::after{
-      content:"";
-      position:absolute; inset:0;
-      background:
-        radial-gradient(28px 12px at 24px 50%, rgba(255,255,255,.26) 48%, transparent 52%) repeat-x,
-        radial-gradient(28px 12px at 12px 50%, rgba(255,255,255,.16) 48%, transparent 52%) repeat-x;
-      background-size: 56px 100%, 56px 100%;
-      background-position: 0 0, 0 0;
-      opacity: .28;
-      transform: translateX(-100%);
-      transition: transform 2.7s cubic-bezier(.22,.61,.36,1);
-      z-index:1;
-      mix-blend-mode: soft-light;
-      pointer-events: none;
-    }
-
+    .z2h-logout > span{ position: relative; z-index: 2; }
+    .z2h-logout::before{ display: none; }
+    .z2h-logout::after{ display: none; }
     .z2h-logout:hover{
-      box-shadow: 0 12px 26px rgba(233, 77, 77, .14);
+      background: rgba(220,38,38,.15);
+      border-color: #7f1d1d;
+      color: #fca5a5;
     }
-    .z2h-logout:hover::before{ transform: translateX(0); }
-    .z2h-logout:hover::after{ transform: translateX(0); }
-    .z2h-logout:active{ transform: none; } /* no bounce */
+    .z2h-logout:active{ transform: scale(.97); }
 
     @media (prefers-reduced-motion: reduce){
-      .z2h-logout::before,
-      .z2h-logout::after{
-        transition: none !important;
-        transform: none !important;
-      }
       .z2h-logout{ transition: none !important; }
     }
 
-    /* Ripple circle (drawn via JS with <span>) */
+    /* Ripple */
     .z2h-ripple{
       position:absolute; border-radius:50%;
       transform: scale(0); pointer-events:none;
-      background: rgba(0,0,0,.12);
-      animation: z2hRipple .45s ease-out forwards;
-      mix-blend-mode: multiply;
+      background: rgba(255,255,255,.15);
+      animation: z2hRipple .4s ease-out forwards;
     }
-    @keyframes z2hRipple{
-      to{ transform: scale(12); opacity:0; }
-    }
+    @keyframes z2hRipple{ to{ transform: scale(10); opacity:0; } }
 
-    /* ---------- Z-index seguro toasts/modals ---------- */
+    /* ---------- Z-index ---------- */
     .modal { z-index: 1080; }
     .modal-backdrop { z-index: 1070; }
     .toast-container { z-index: 2000; }

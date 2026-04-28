@@ -3,90 +3,91 @@
 
 {% block extra_head %}
 <style>
-  /* ---------------------------
-     Pages — professional, calm, no-code look
-     --------------------------- */
-
-  /* Header panel (mini-hero, consistent with dashboard) */
+  /* Pages */
   .z2h-page-head{
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: var(--shadow-md);
+    padding: clamp(18px, 3vw, 36px);
+    position: relative; overflow: hidden;
+  }
+  .z2h-page-head::before{
+    content:””; position:absolute; inset:0; pointer-events:none;
     background:
-      radial-gradient(900px 420px at 14% -10%, rgba(110,158,230,.08), transparent 60%),
-      radial-gradient(700px 360px at 86% -6%, rgba(137,194,217,.07), transparent 55%),
-      linear-gradient(180deg, #ffffff 0%, #f7f5f0 100%);
-    box-shadow: 0 16px 36px rgba(0,0,0,.06);
-    padding: clamp(20px, 3.5vw, 40px);
+      radial-gradient(700px 360px at 10% -10%, rgba(37,99,235,.04), transparent 60%),
+      radial-gradient(500px 300px at 90% -5%,  rgba(96,165,250,.03), transparent 55%);
   }
   .z2h-page-title{
-    letter-spacing:.12em; text-transform: uppercase; margin: .2rem 0 0 0;
+    letter-spacing: .1em; text-transform: uppercase; margin: .2rem 0 0 0; position: relative;
   }
   .z2h-project-pill{
-    display:inline-flex; align-items:center; gap:.5rem;
-    padding:.35rem .8rem; border:1px solid var(--border);
-    border-radius: 999px; background:#fff; font-size:.92rem; color: var(--text-1);
-    box-shadow: 0 8px 22px rgba(0,0,0,.05);
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .32rem .75rem; border: 1px solid var(--border);
+    border-radius: 7px; background: var(--surface);
+    font-size: .875rem; color: var(--text-1);
+    box-shadow: var(--shadow-sm);
   }
-  .z2h-project-pill .dot{ width:10px; height:10px; border-radius:50%; background: var(--primary); box-shadow: 0 0 0 6px rgba(110,158,230,.12); }
+  .z2h-project-pill .dot{
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+  }
 
-  /* “Back to projects” chip */
   .z2h-chip{
-    display:inline-flex; align-items:center; gap:.35rem; padding:.28rem .7rem;
-    border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--text-1);
-    text-decoration:none; transition: border-color .28s ease, background-color .28s ease;
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .25rem .65rem; border: 1px solid var(--border);
+    border-radius: 7px; background: var(--surface); color: var(--text-2);
+    text-decoration: none; font-size: .8rem;
+    transition: border-color .15s ease, color .15s ease;
   }
-  .z2h-chip:hover{ background:#fff; border-color:#e9e1d7; }
+  .z2h-chip:hover{ border-color: #cbd5e1; color: var(--text-1); }
 
-  /* Filters card */
-  .z2h-filters.card{
-    padding: 1rem 1.25rem;
-    border-radius: 16px;
-  }
+  .z2h-filters.card{ padding: .85rem 1.1rem; border-radius: 10px; }
   .z2h-filters .form-control,
-  .z2h-filters .z2h-select{
-    background:#fff; border-color: var(--border);
-  }
-  .z2h-filters .btn{ font-weight:700; letter-spacing:.06em; }
+  .z2h-filters .z2h-select{ background: var(--surface); border-color: var(--border); }
+  .z2h-filters .btn{ font-weight: 600; }
 
-  /* Table — neutral hover, no paint, tidy spacing */
-  .z2h-table-wrap{ border-top:1px solid var(--border); border-radius: 16px; overflow: hidden; }
-  table.z2h-table{ width:100%; border-collapse: separate; border-spacing:0; }
+  .z2h-table-wrap{ border-radius: 10px; overflow: hidden; }
+  table.z2h-table{ width: 100%; border-collapse: separate; border-spacing: 0; }
   .z2h-table thead th{
-    background:#fff; position:sticky; top:0; z-index:1;
-    font-size:.78rem; letter-spacing:.12em; text-transform: uppercase;
-    color:#7a8697; font-weight:800; border-bottom:1px solid var(--border);
-    padding: .85rem 1rem;
+    background: var(--surface-2); position: sticky; top: 0; z-index: 1;
+    font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-2); font-weight: 600; border-bottom: 1px solid var(--border);
+    padding: .75rem 1rem;
   }
   .z2h-table tbody td{
-    padding: 1rem; border-bottom:1px dashed var(--border); background:#fff;
-    vertical-align: middle;
+    padding: .85rem 1rem; border-bottom: 1px solid var(--border);
+    background: var(--surface); vertical-align: middle;
+  }
+  .z2h-table tbody tr:last-child td{ border-bottom: none; }
+
+  .z2h-row-title{ font-weight: 600; color: var(--text-1); transition: opacity .15s ease; }
+  .z2h-row-sub{ color: var(--text-2); font-size: .875rem; }
+  .z2h-table tbody tr:hover .z2h-row-title{ opacity: .8; }
+
+  .btn.btn-outline, .btn.btn-outline.btn-sm{
+    background: var(--surface); border-color: var(--border); color: var(--text-1);
+    box-shadow: var(--shadow-sm);
+    transition: all .15s ease;
+  }
+  .btn.btn-outline:hover, .btn.btn-outline.btn-sm:hover{
+    background: var(--surface-2); border-color: #cbd5e1; color: var(--text-1); box-shadow: none;
   }
 
-  /* Row hover: no background fill, tiny opacity cue in title only */
-  .z2h-row-title{ font-weight:800; color:var(--text-1); transition: opacity .25s ease; }
-  .z2h-row-sub{ color:var(--text-2); font-size:.92rem; transition: opacity .25s ease; }
-  .z2h-table tbody tr:hover .z2h-row-title{ opacity:.96; }
-  .z2h-table tbody tr:hover .z2h-row-sub{ opacity:.9; }
-
-  /* Outline buttons like “Switch project” */
-  .btn.btn-outline,
-  .btn.btn-outline.btn-sm{
-    background: transparent; border-color: var(--border); color: var(--text-1);
-    box-shadow: none; transition: background-color .28s ease, border-color .28s ease, color .28s ease;
+  .z2h-status{
+    display: inline-block; padding: .15rem .5rem;
+    border-radius: 5px; font-size: .7rem;
+    letter-spacing: .05em; text-transform: uppercase; border: 1px solid transparent;
+    font-weight: 600;
   }
-  .btn.btn-outline:hover,
-  .btn.btn-outline.btn-sm:hover{
-    background: var(--accent-soft); border-color: var(--accent-soft); color: var(--text-1);
+  .z2h-status.published{ background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+  .z2h-status.draft{     background: #fffbeb; border-color: #fde68a; color: #713f12; }
+  .z2h-status.archived{  background: var(--surface-2); border-color: var(--border); color: var(--text-2); }
+
+  .z2h-pager{
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: .7rem 1rem; border-radius: 0 0 10px 10px;
   }
-
-  /* Status badges (calm palette) */
-  .z2h-status{ display:inline-block; padding:.18rem .5rem; border-radius:999px; font-size:.72rem; letter-spacing:.06em; text-transform: uppercase; border:1px solid transparent; }
-  .z2h-status.published{ background: rgba(16,185,129,.12); border-color:#10b98133; color:#065f46; }
-  .z2h-status.draft{ background: rgba(250,204,21,.18); border-color:#f59e0b33; color:#78350f; }
-  .z2h-status.archived{ background: rgba(148,163,184,.18); border-color:#94a3b833; color:#334155; }
-
-  /* Pager bar */
-  .z2h-pager{ background:#fff; border-top:1px solid var(--border); padding: .8rem 1rem; border-radius: 0 0 16px 16px; }
 </style>
 {% endblock %}
 

@@ -3,90 +3,85 @@
 
 {% block extra_head %}
 <style>
-  /* ---------------------------
-     Projects — extra-desaturated left cluster
-     --------------------------- */
-
-  /* Header / mini-hero (unchanged look) */
+  /* Projects */
   .z2h-proj-head{
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: var(--shadow-md);
+    padding: clamp(18px, 3vw, 36px);
+    position: relative; overflow: hidden;
+  }
+  .z2h-proj-head::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
     background:
-      radial-gradient(900px 420px at 14% -10%, rgba(110,158,230,.06), transparent 60%),
-      radial-gradient(700px 360px at 86% -6%, rgba(137,194,217,.05), transparent 55%),
-      linear-gradient(180deg, #ffffff 0%, #f7f5f0 100%);
-    box-shadow: 0 16px 36px rgba(0,0,0,.06);
-    padding: clamp(20px, 3.5vw, 40px);
+      radial-gradient(700px 360px at 10% -10%, rgba(37,99,235,.04), transparent 60%),
+      radial-gradient(500px 300px at 90% -5%,  rgba(96,165,250,.03), transparent 55%);
   }
   .z2h-proj-title{
-    letter-spacing:.12em; text-transform: uppercase; margin:.2rem 0 0 0;
+    letter-spacing: .1em; text-transform: uppercase; margin: .2rem 0 0 0; position: relative;
   }
 
-  /* Back chip & project pill — remove color glow/shadows */
   .z2h-chip{
-    display:inline-flex; align-items:center; gap:.35rem;
-    padding:.28rem .7rem; border:1px solid var(--border); border-radius:999px;
-    background:#fff; color:var(--text-1); text-decoration:none;
-    transition: border-color .28s ease, background-color .28s ease;
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .25rem .65rem; border: 1px solid var(--border);
+    border-radius: 7px; background: var(--surface); color: var(--text-2);
+    text-decoration: none; font-size: .8rem;
+    transition: border-color .15s ease, color .15s ease;
   }
-  .z2h-chip:hover{ background:#fff; border-color:#e9e1d7; }
+  .z2h-chip:hover{ border-color: #cbd5e1; color: var(--text-1); }
 
   .z2h-project-pill{
-    display:inline-flex; align-items:center; gap:.5rem;
-    padding:.32rem .72rem; border:1px solid var(--border); border-radius:999px;
-    background:#fff; color:var(--text-1); font-size:.9rem;
-    box-shadow: none;                           /* was 0 8px 22px… */
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .3rem .7rem; border: 1px solid var(--border);
+    border-radius: 7px; background: var(--surface);
+    color: var(--text-1); font-size: .875rem;
   }
   .z2h-project-pill .dot{
-    width:8px; height:8px; border-radius:50%;
-    background: rgba(110,158,230,.35);          /* softer blue */
-    box-shadow:none;                            /* remove halo */
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--primary); opacity: .6;
   }
 
-  /* Card list — neutral rows, no hover paint */
-  .z2h-card-list{ display:flex; flex-direction:column; gap:.5rem; }
+  .z2h-card-list{ display: flex; flex-direction: column; }
   .z2h-list-item{
-    display:grid; grid-template-columns:1fr auto; align-items:center; gap:1rem;
-    padding:.9rem .5rem .9rem 0; border-top:1px dashed var(--border);
-    background: transparent; transition: color .25s ease, border-color .25s ease;
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem;
+    padding: .9rem 0; border-top: 1px solid var(--border);
+    background: transparent;
   }
-  .z2h-list-item:first-child{ border-top:0; }
+  .z2h-list-item:first-child{ border-top: 0; }
 
-  /* Calmer title + subtitle */
-  .z2h-list-title{ font-weight:600; color:#303030; }  /* was 700 */
-  .z2h-list-sub{ color:var(--text-2); font-size:.92rem; }
+  .z2h-list-title{ font-weight: 600; color: var(--text-1); font-size: .95rem; }
+  .z2h-list-sub{ color: var(--text-2); font-size: .875rem; margin-top: .15rem; }
 
-  /* Desaturated badges on the LEFT ONLY */
   .z2h-badge-active{
-    display:inline-block; padding:.18rem .5rem; border-radius:999px;
-    font-size:.72rem; letter-spacing:.06em; text-transform: uppercase;
-    background: rgba(16,185,129,.06);           /* softer mint */
-    border:1px solid rgba(16,185,129,.14);
-    color:#335a4c;                               /* deep, not neon */
+    display: inline-block; padding: .14rem .45rem; border-radius: 5px;
+    font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; font-weight: 600;
+    background: var(--ok-bg); border: 1px solid var(--ok-border); color: var(--ok-text);
   }
   .z2h-card-list .z2h-list-item .z2h-list-sub .z2h-badge{
-    background:#faf9f7 !important;              /* neutral, not blue */
+    background: var(--surface-2) !important;
     border-color: var(--border) !important;
-    color: #7a7a7a !important;                   /* muted text */
+    color: var(--text-2) !important;
     box-shadow: none !important;
-    padding:.14rem .44rem;
+    padding: .12rem .4rem;
+    border-radius: 5px;
+    font-size: .78rem;
   }
 
-  /* Buttons on the RIGHT — keep the established styles */
   .btn.btn-outline, .btn.btn-outline.btn-sm{
-    background: transparent; border-color: var(--border); color: var(--text-1);
-    box-shadow: none; transition: background-color .28s ease, border-color .28s ease, color .28s ease;
+    background: var(--surface); border-color: var(--border); color: var(--text-1);
+    box-shadow: var(--shadow-sm); transition: all .15s ease;
   }
   .btn.btn-outline:hover, .btn.btn-outline.btn-sm:hover{
-    background: var(--accent-soft); border-color: var(--accent-soft); color: var(--text-1);
+    background: var(--surface-2); border-color: #cbd5e1; box-shadow: none;
   }
   .btn.btn-cta.btn-sm{
-    padding:.45rem .75rem; background: var(--grad-1); color: var(--primary-ink);
-    border:1px solid #6e9ee6; box-shadow: 0 10px 24px rgba(110,158,230,.12);
-    transition: filter .28s ease, border-color .28s ease, box-shadow .28s ease;
+    padding: .42rem .75rem; background: var(--grad-1); color: var(--primary-ink);
+    border: 1px solid #1d4ed8; box-shadow: 0 1px 3px rgba(37,99,235,.3);
+    transition: all .15s ease;
   }
-  .btn.btn-cta.btn-sm:hover{ filter: brightness(1.03); }
-  .btn.btn-cta.btn-sm:disabled{ opacity:.55; cursor:not-allowed; }
+  .btn.btn-cta.btn-sm:hover{ background: linear-gradient(135deg, #1a44c8 0%, #2159d4 100%); }
+  .btn.btn-cta.btn-sm:disabled{ opacity: .5; cursor: not-allowed; }
 </style>
 {% endblock %}
 
