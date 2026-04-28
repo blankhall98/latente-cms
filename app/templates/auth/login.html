@@ -11,7 +11,7 @@
      ============================================================ */
 
   body.auth {
-    background: #f7f6f3;
+    background: #f4f4f5;
   }
 
   .lc-root {
@@ -19,7 +19,7 @@
     display: grid;
     place-items: center;
     padding: 48px 20px;
-    background: #f7f6f3;
+    background: #f4f4f5;
   }
 
   /* ---- Top accent line — draws in from left ---- */
@@ -54,56 +54,76 @@
   }
   .lc-brand-name {
     display: block;
-    font-size: .7rem;
+    font-size: .68rem;
     font-weight: 700;
-    letter-spacing: .22em;
+    letter-spacing: .24em;
     text-transform: uppercase;
-    color: #94a3b8;
+    color: #a1a1aa;
     margin-bottom: 14px;
   }
   .lc-brand-line {
     display: block;
-    width: 32px;
+    width: 28px;
     height: 1px;
-    background: #cbd5e1;
+    background: #e4e4e7;
     margin: 0 auto;
   }
 
   /* ---- Form container ---- */
   .lc-form-wrap {
+    position: relative;
     background: #ffffff;
-    border: 1px solid #e8e5df;
-    border-radius: 4px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
     padding: clamp(32px, 5vw, 48px);
     box-shadow:
+      0 1px 2px rgba(0,0,0,.04),
+      0 6px 20px rgba(0,0,0,.05);
+    transform: scale(1);
+    transition:
+      transform .9s cubic-bezier(.22,.61,.36,1),
+      box-shadow .9s cubic-bezier(.22,.61,.36,1);
+  }
+  /* Thin indigo accent on top — the modern touch */
+  .lc-form-wrap::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+    border-radius: 8px 8px 0 0;
+  }
+  /* Card grows subtly when user starts typing */
+  .lc-form-wrap.is-active {
+    transform: scale(1.018);
+    box-shadow:
       0 1px 3px rgba(0,0,0,.04),
-      0 8px 24px rgba(0,0,0,.05);
+      0 16px 40px rgba(0,0,0,.08),
+      0 0 0 1px rgba(99,102,241,.06);
   }
 
   /* ---- Headings ---- */
   .lc-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #0f172a;
-    letter-spacing: .01em;
+    color: #18181b;
+    letter-spacing: -.01em;
     margin: 0 0 .3rem 0;
   }
   .lc-sub {
     font-size: .82rem;
-    color: #94a3b8;
-    margin: 0 0 2rem 0;
-    letter-spacing: .01em;
+    color: #a1a1aa;
+    margin: 0 0 1.75rem 0;
   }
 
   /* ---- Fields ---- */
   .lc-field { margin-bottom: 1.1rem; }
   .lc-label {
     display: block;
-    font-size: .72rem;
+    font-size: .7rem;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: #64748b;
+    color: #71717a;
     margin-bottom: .4rem;
   }
   .lc-input {
@@ -111,30 +131,29 @@
     width: 100%;
     height: 42px;
     padding: 0 .85rem;
-    border-radius: 3px;
-    border: 1px solid #ddd9d3;
-    background: #faf9f7;
-    color: #0f172a;
+    border-radius: 6px;
+    border: 1px solid #d4d4d8;
+    background: #ffffff;
+    color: #18181b;
     font-size: .9rem;
     outline: none;
-    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+    transition: border-color .2s ease, box-shadow .2s ease;
   }
-  .lc-input::placeholder { color: #b8b4ae; }
-  .lc-input:hover  { border-color: #b8b4ae; background: #ffffff; }
+  .lc-input::placeholder { color: #a1a1aa; }
+  .lc-input:hover  { border-color: #a1a1aa; }
   .lc-input:focus  {
-    border-color: #0f172a;
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(15,23,42,.06);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,.1);
   }
   .lc-input.is-invalid {
     border-color: #dc2626 !important;
-    box-shadow: 0 0 0 2px rgba(220,38,38,.08) !important;
+    box-shadow: 0 0 0 3px rgba(220,38,38,.08) !important;
   }
 
   /* ---- Divider ---- */
   .lc-divider {
     height: 1px;
-    background: #f0ede8;
+    background: #f4f4f5;
     margin: 1.5rem 0;
   }
 
@@ -143,32 +162,38 @@
     display: block;
     width: 100%;
     height: 42px;
-    border-radius: 3px;
-    border: 1px solid #0f172a;
-    background: #0f172a;
+    border-radius: 6px;
+    border: 1px solid #18181b;
+    background: #18181b;
     color: #ffffff;
-    font-size: .8rem;
+    font-size: .78rem;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background-color .2s ease, border-color .2s ease;
+    transition: background-color .2s ease, box-shadow .2s ease;
   }
-  .lc-btn:hover  { background: #1e293b; border-color: #1e293b; }
-  .lc-btn:active { background: #0a1020; transform: none; }
+  .lc-btn:hover {
+    background: #27272a;
+    border-color: #27272a;
+    box-shadow: 0 4px 12px rgba(0,0,0,.18);
+  }
+  .lc-btn:active { background: #09090b; transform: scale(.99); }
 
   /* ---- Footer ---- */
   .lc-footer {
     text-align: center;
     margin-top: 28px;
-    font-size: .72rem;
-    letter-spacing: .07em;
-    color: #b8b4ae;
+    font-size: .7rem;
+    letter-spacing: .08em;
+    color: #a1a1aa;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .lc-rule     { animation: none !important; transform: scaleX(1); }
-    .lc-content  { animation: none !important; opacity: 1; transform: none; }
+    .lc-rule    { animation: none !important; transform: scaleX(1); }
+    .lc-content { animation: none !important; opacity: 1; transform: none; }
+    .lc-form-wrap,
+    .lc-form-wrap.is-active { transform: none !important; transition: none !important; }
     .lc-input, .lc-btn { transition: none !important; }
   }
 </style>
@@ -225,8 +250,22 @@
 
 <script>
   (function(){
+    // Copyright year
     var el = document.getElementById('lc-year');
     if (el) el.textContent = new Date().getFullYear();
+
+    // Card grows when the user starts typing, shrinks back when all fields are empty
+    var card   = document.querySelector('.lc-form-wrap');
+    var inputs = document.querySelectorAll('.lc-input');
+    if (card && inputs.length) {
+      function sync() {
+        var hasValue = Array.prototype.some.call(inputs, function(i){ return i.value.length > 0; });
+        card.classList.toggle('is-active', hasValue);
+      }
+      Array.prototype.forEach.call(inputs, function(input){
+        input.addEventListener('input', sync);
+      });
+    }
   })();
 </script>
 {% endblock %}
