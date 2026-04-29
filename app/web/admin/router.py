@@ -961,8 +961,47 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 
 
 # --------------------------- Analytics ---------------------------
+
+def _content_stats(db: Session, tenant_id: int | None, all_projects: bool = False) -> dict:
+    """Query real content metrics from the DB for one tenant or all."""
+    def _count(*where):
+        return db.scalar(select(func.count(Entry.id)).where(*where)) or 0
+    def _count_s(*where):
+        return db.scalar(select(func.count(Section.id)).where(*where)) or 0
+    def _last_pub(*where):
+        return db.scalar(select(func.max(Entry.published_at)).where(Entry.status == "published", *where))
+
+    if all_projects:
+        published = _count(Entry.status == "published")
+        drafts    = _count(Entry.status == "draft")
+        sections  = _count_s()
+        last_pub  = _last_pub()
+    elif tenant_id:
+        published = _count(Entry.tenant_id == tenant_id, Entry.status == "published")
+        drafts    = _count(Entry.tenant_id == tenant_id, Entry.status == "draft")
+        sections  = _count_s(Section.tenant_id == tenant_id)
+        last_pub  = _last_pub(Entry.tenant_id == tenant_id)
+    else:
+        return {}
+
+    # Human-readable last-published
+    if last_pub:
+        now = datetime.now(timezone.utc)
+        dt  = last_pub.replace(tzinfo=timezone.utc) if last_pub.tzinfo is None else last_pub
+        d   = (now - dt).days
+        lp  = "Today" if d == 0 else ("Yesterday" if d == 1 else (f"{d}d ago" if d < 30 else dt.strftime("%b %d, %Y")))
+    else:
+        lp = "—"
+
+    return {"published": published, "drafts": drafts, "sections": sections, "last_published": lp}
+
+
 @router.get("/admin/analytics")
-def admin_analytics(request: Request, db: Session = Depends(get_db)):
+def admin_analytics(
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant: str | None = Query(None),
+):
     try:
         auth = _require_web_user(request)
     except HTTPException:
@@ -971,23 +1010,56 @@ def admin_analytics(request: Request, db: Session = Depends(get_db)):
     is_superadmin = bool(auth.get("is_superadmin"))
     active = _get_active_tenant(request)
 
-    if active:
-        if is_superadmin:
-            projects_count = db.scalar(select(func.count(Tenant.id))) or 0
+    # All tenants list for the superadmin selector
+    all_tenants: list[dict] = []
+    if is_superadmin:
+        rows = db.scalars(select(Tenant).where(Tenant.is_active.is_(True)).order_by(Tenant.name)).all()
+        all_tenants = [{"id": t.id, "name": t.name, "slug": t.slug} for t in rows]
+
+    # Resolve which tenant's stats to show
+    selected_tenant: dict | None = None
+    show_all = False
+    selected_slug = tenant
+
+    if is_superadmin:
+        if tenant and tenant != "all":
+            t = db.scalar(select(Tenant).where(Tenant.slug == tenant, Tenant.is_active.is_(True)))
+            if t:
+                selected_tenant = {"id": t.id, "name": t.name, "slug": t.slug}
         else:
-            projects_count = db.scalar(
-                select(func.count(UserTenant.tenant_id))
-                .where(and_(UserTenant.user_id == int(auth["id"]), UserTenant.status == _active_status_value()))
-            ) or 0
-        _set_single_project_flag(request, db, auth, projects_count)
+            show_all = True
+            selected_slug = "all"
+    else:
+        selected_tenant = active
+
+    stats = _content_stats(
+        db,
+        tenant_id=selected_tenant["id"] if selected_tenant else None,
+        all_projects=show_all,
+    )
+
+    # Single-project flag (hides Projects nav for clients with one project)
+    if active:
+        pc = db.scalar(select(func.count(Tenant.id))) or 0 if is_superadmin else (
+            db.scalar(select(func.count(UserTenant.tenant_id)).where(
+                UserTenant.user_id == int(auth["id"]),
+                UserTenant.status == _active_status_value(),
+            )) or 0
+        )
+        _set_single_project_flag(request, db, auth, pc)
 
     return templates.TemplateResponse(
         "admin/analytics.html",
         {
             "request": request,
             "user": {"email": auth.get("email")},
-            "current_tenant": active or {"name": "-", "slug": None, "id": None},
+            "current_tenant": active or {"name": "—", "slug": None, "id": None},
             "is_superadmin": is_superadmin,
+            "all_tenants": all_tenants,
+            "selected_tenant": selected_tenant,
+            "selected_slug": selected_slug or "all",
+            "show_all": show_all,
+            "stats": stats,
         },
     )
 

@@ -3,167 +3,300 @@
 
 {% block extra_head %}
 <style>
-  .z2h-analytics-shell{
-    min-height: min(68vh, 720px);
-    display: grid;
-    align-items: center;
-  }
-  .z2h-analytics-panel{
-    border: 1px solid var(--border);
+  /* ============================================================
+     Analytics — premium, intentional
+     ============================================================ */
+
+  /* Page header */
+  .an-head{
+    border: 1px solid #e4e4e7;
     border-radius: 12px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: var(--shadow-md);
-    padding: clamp(24px, 5vw, 56px);
-    overflow: hidden;
-    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+    padding: clamp(20px, 3.5vw, 36px);
+    margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
   }
-  .z2h-analytics-panel::before{
-    content: "";
-    position: absolute;
-    inset: 0;
+  .an-head::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
     background:
-      radial-gradient(760px 360px at 12% -12%, rgba(37,99,235,.06), transparent 62%),
-      radial-gradient(620px 300px at 92% 0%, rgba(16,185,129,.045), transparent 58%);
-    pointer-events: none;
+      radial-gradient(700px 320px at 8% -12%, rgba(37,99,235,.04), transparent 60%),
+      radial-gradient(500px 260px at 92% -8%,  rgba(99,102,241,.03), transparent 55%);
   }
-  .z2h-analytics-content{
-    position: relative;
-    max-width: 820px;
+  .an-head-inner{ position: relative; }
+  .an-eyebrow{
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #71717a;
+    margin-bottom: .5rem;
   }
-  .z2h-analytics-eyebrow{
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    padding: .36rem .72rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--text-2);
-    font-size: .72rem;
-    letter-spacing: .1em;
+  .an-head-title{
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 700; letter-spacing: -.02em;
+    color: #18181b; margin: 0 0 .35rem 0;
+    line-height: 1.1;
+  }
+  .an-head-sub{
+    font-size: .875rem; color: #71717a; margin: 0;
+  }
+  .an-project-pill{
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .3rem .75rem; border: 1px solid #e4e4e7;
+    border-radius: 7px; background: #ffffff;
+    font-size: .82rem; color: #18181b;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .an-project-pill .dot{
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #18181b; opacity: .5; flex-shrink: 0;
+  }
+
+  /* ---- Superadmin project selector ---- */
+  .an-selector{
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e4e4e7;
+  }
+  .an-selector-label{
+    width: 100%;
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #a1a1aa;
+    margin-bottom: .1rem;
+  }
+  .an-pill{
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .28rem .7rem; border: 1px solid #e4e4e7;
+    border-radius: 6px; background: #ffffff; color: #71717a;
+    font-size: .78rem; font-weight: 500;
+    text-decoration: none;
+    transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+  }
+  .an-pill:hover{ border-color: #a1a1aa; color: #18181b; }
+  .an-pill.active{
+    border-color: #18181b; background: #18181b;
+    color: #ffffff; font-weight: 600;
+  }
+
+  /* ---- Section wrapper ---- */
+  .an-section{ margin-bottom: 1.25rem; }
+  .an-section-head{
+    display: flex; align-items: center; gap: .65rem;
+    margin-bottom: .85rem;
+  }
+  .an-section-title{
+    font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #71717a;
+  }
+  .an-badge{
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .14rem .45rem; border-radius: 4px;
+    font-size: .62rem; font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase;
-    font-weight: 700;
   }
-  .z2h-analytics-dot{
-    width: .55rem;
-    height: .55rem;
-    border-radius: 999px;
-    background: #f59e0b;
-    box-shadow: 0 0 0 4px rgba(245,158,11,.14);
+  .an-badge.live{
+    background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d;
   }
-  .z2h-analytics-title{
-    margin: 1rem 0 .45rem;
-    font-size: clamp(1.7rem, 4vw, 3.1rem);
-    line-height: 1.02;
-    letter-spacing: 0;
-    color: var(--text-1);
+  .an-badge.soon{
+    background: #fffbeb; border: 1px solid #fde68a; color: #713f12;
   }
-  .z2h-analytics-copy{
-    max-width: 62ch;
-    color: var(--text-2);
-    font-size: 1rem;
-    line-height: 1.7;
+  .an-badge-dot{
+    width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
   }
-  .z2h-analytics-project{
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    margin-top: 1rem;
-    padding: .42rem .85rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: rgba(255,255,255,.78);
-    color: var(--text-1);
-    font-size: .875rem;
-  }
-  .z2h-analytics-grid{
-    position: relative;
+  .an-badge.live .an-badge-dot{ background: #16a34a; }
+  .an-badge.soon .an-badge-dot{ background: #d97706; }
+
+  /* ---- Metric grid ---- */
+  .an-grid{
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: .75rem;
-    margin-top: 2rem;
   }
-  .z2h-analytics-metric{
-    min-height: 92px;
-    border: 1px solid var(--border);
+  @media (max-width: 900px){ .an-grid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px){ .an-grid{ grid-template-columns: 1fr; } }
+
+  .an-metric{
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem 1rem;
+    display: flex; flex-direction: column; gap: .5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    transition: box-shadow .2s ease, border-color .2s ease;
+  }
+  .an-metric:hover{ box-shadow: 0 4px 12px rgba(0,0,0,.07); border-color: #d4d4d8; }
+
+  .an-metric-label{
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #a1a1aa;
+  }
+  .an-metric-value{
+    font-size: 2rem; font-weight: 700; line-height: 1;
+    color: #18181b; letter-spacing: -.03em;
+  }
+  .an-metric-sub{
+    font-size: .75rem; color: #a1a1aa; margin-top: auto;
+  }
+
+  /* Dimmed / coming soon metrics */
+  .an-metric.dim .an-metric-value{
+    color: #d4d4d8;
+    font-size: 1.6rem;
+    letter-spacing: 0;
+    font-weight: 600;
+  }
+  .an-metric.dim{ border-style: dashed; }
+
+  /* ---- Coming soon note ---- */
+  .an-soon-note{
+    margin-top: .85rem;
+    padding: .85rem 1rem;
+    border: 1px solid #e4e4e7;
     border-radius: 8px;
-    background: rgba(255,255,255,.74);
-    padding: .9rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    background: #fafafa;
+    display: flex; align-items: flex-start; gap: .65rem;
   }
-  .z2h-analytics-metric span{
-    color: var(--text-2);
-    font-size: .72rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    font-weight: 700;
+  .an-soon-icon{
+    flex-shrink: 0; width: 28px; height: 28px;
+    border-radius: 6px; background: #fffbeb;
+    border: 1px solid #fde68a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem;
   }
-  .z2h-analytics-metric strong{
-    color: #94a3b8;
-    font-size: 1.45rem;
-    line-height: 1;
-    font-weight: 700;
+  .an-soon-note p{
+    margin: 0; font-size: .82rem; color: #71717a; line-height: 1.55;
   }
-  @media (max-width: 900px){
-    .z2h-analytics-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  }
-  @media (max-width: 560px){
-    .z2h-analytics-grid{ grid-template-columns: 1fr; }
-  }
+  .an-soon-note strong{ color: #18181b; font-weight: 600; }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="z2h-analytics-shell">
-  <div class="z2h-analytics-panel">
-    <div class="z2h-analytics-content">
-      <div class="z2h-analytics-eyebrow">
-        <span class="z2h-analytics-dot" aria-hidden="true"></span>
-        Feature under construction
+<div class="container-fluid px-0">
+
+  {# ---- Page header ---- #}
+  <div class="an-head">
+    <div class="an-head-inner d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+      <div class="flex-grow-1">
+        <div class="an-eyebrow">Analytics</div>
+        <h1 class="an-head-title">Project Overview</h1>
+        <p class="an-head-sub">Content health and platform metrics for your active project.</p>
       </div>
-
-      <h1 class="z2h-analytics-title">Analytics is coming soon.</h1>
-      <p class="z2h-analytics-copy mb-0">
-        Latente is preparing standardized website analytics for project traffic,
-        audience behavior, conversions, and frontend performance.
-      </p>
-
-      <div class="z2h-analytics-project">
-        <strong>{{ current_tenant.name }}</strong>
-        {% if current_tenant.slug %}
-          <code>/{{ current_tenant.slug }}</code>
-        {% elif is_superadmin %}
-          <span class="text-muted">all projects</span>
+      <div>
+        {% if show_all %}
+          <span class="an-project-pill">
+            <span class="dot" aria-hidden="true"></span>
+            All projects
+          </span>
+        {% elif selected_tenant %}
+          <span class="an-project-pill">
+            <span class="dot" aria-hidden="true"></span>
+            <strong>{{ selected_tenant.name }}</strong>
+            {% if selected_tenant.slug %}<code class="ms-1">/{{ selected_tenant.slug }}</code>{% endif %}
+          </span>
         {% else %}
-          <span class="text-muted">no active project</span>
+          <span class="an-project-pill text-muted">No project selected</span>
         {% endif %}
-      </div>
-
-      <div class="z2h-analytics-grid" aria-label="Planned analytics categories">
-        <div class="z2h-analytics-metric">
-          <span>Views</span>
-          <strong>--</strong>
-        </div>
-        <div class="z2h-analytics-metric">
-          <span>Visitors</span>
-          <strong>--</strong>
-        </div>
-        <div class="z2h-analytics-metric">
-          <span>Top Pages</span>
-          <strong>--</strong>
-        </div>
-        <div class="z2h-analytics-metric">
-          <span>Conversions</span>
-          <strong>--</strong>
-        </div>
-        <div class="z2h-analytics-metric">
-          <span>Performance</span>
-          <strong>--</strong>
-        </div>
       </div>
     </div>
   </div>
-</section>
+
+  {# ---- Superadmin project selector ---- #}
+  {% if is_superadmin %}
+  <div class="an-selector">
+    <span class="an-selector-label">Viewing</span>
+    <a href="/admin/analytics?tenant=all"
+       class="an-pill {% if selected_slug == 'all' %}active{% endif %}">
+      All projects
+    </a>
+    {% for t in all_tenants %}
+    <a href="/admin/analytics?tenant={{ t.slug }}"
+       class="an-pill {% if selected_slug == t.slug %}active{% endif %}">
+      {{ t.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ---- Content Overview (LIVE) ---- #}
+  <div class="an-section">
+    <div class="an-section-head">
+      <span class="an-section-title">Content Overview</span>
+      <span class="an-badge live">
+        <span class="an-badge-dot" aria-hidden="true"></span>
+        Live
+      </span>
+    </div>
+
+    {% if stats %}
+    <div class="an-grid">
+      <div class="an-metric">
+        <span class="an-metric-label">Published</span>
+        <span class="an-metric-value">{{ stats.published }}</span>
+        <span class="an-metric-sub">Live pages</span>
+      </div>
+      <div class="an-metric">
+        <span class="an-metric-label">Drafts</span>
+        <span class="an-metric-value">{{ stats.drafts }}</span>
+        <span class="an-metric-sub">Unpublished</span>
+      </div>
+      <div class="an-metric">
+        <span class="an-metric-label">Sections</span>
+        <span class="an-metric-value">{{ stats.sections }}</span>
+        <span class="an-metric-sub">Content types</span>
+      </div>
+      <div class="an-metric">
+        <span class="an-metric-label">Last published</span>
+        <span class="an-metric-value" style="font-size:1.3rem; letter-spacing:-.01em;">{{ stats.last_published }}</span>
+        <span class="an-metric-sub">Most recent update</span>
+      </div>
+    </div>
+    {% else %}
+    <div class="z2h-empty">Select a project to view content metrics.</div>
+    {% endif %}
+  </div>
+
+  {# ---- Traffic & Engagement (COMING SOON) ---- #}
+  <div class="an-section">
+    <div class="an-section-head">
+      <span class="an-section-title">Traffic &amp; Engagement</span>
+      <span class="an-badge soon">
+        <span class="an-badge-dot" aria-hidden="true"></span>
+        Coming soon
+      </span>
+    </div>
+
+    <div class="an-grid">
+      <div class="an-metric dim">
+        <span class="an-metric-label">Page Views</span>
+        <span class="an-metric-value">--</span>
+        <span class="an-metric-sub">Last 30 days</span>
+      </div>
+      <div class="an-metric dim">
+        <span class="an-metric-label">Unique Visitors</span>
+        <span class="an-metric-value">--</span>
+        <span class="an-metric-sub">Last 30 days</span>
+      </div>
+      <div class="an-metric dim">
+        <span class="an-metric-label">Avg. Time on Page</span>
+        <span class="an-metric-value">--</span>
+        <span class="an-metric-sub">Per session</span>
+      </div>
+      <div class="an-metric dim">
+        <span class="an-metric-label">Form Submissions</span>
+        <span class="an-metric-value">--</span>
+        <span class="an-metric-sub">Contact &amp; newsletter</span>
+      </div>
+    </div>
+
+    <div class="an-soon-note mt-3">
+      <div class="an-soon-icon" aria-hidden="true">⏱</div>
+      <p>
+        <strong>Website analytics integration is in development.</strong>
+        Traffic data, visitor behavior, and conversion tracking will appear here
+        once the analytics connector is activated for your project.
+      </p>
+    </div>
+  </div>
+
+</div>
 {% endblock %}
