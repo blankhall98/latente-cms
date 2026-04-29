@@ -127,6 +127,7 @@
     color: #18181b;
     font-size: .7rem;
     font-weight: 700;
+    line-height: 1;
     letter-spacing: .02em;
     flex-shrink: 0;
     transition: border-color .25s ease, background-color .25s ease;
@@ -145,7 +146,7 @@
     margin-bottom: .2rem;
     margin-top: .05rem;
   }
-  .support-step span{
+  .support-step > span:not(.support-step-num){
     display: block;
     color: #52525b;
     font-size: .85rem;
