@@ -2004,7 +2004,7 @@ def admin_publish_page(
     Publish page: if data.__draft exists, promote it to root; otherwise publish current root.
     Delivery always reads entry.data (without __draft).
     """
-    _require_web_user(request)
+    user = _require_web_user(request)
     active = _get_active_tenant(request)
     tid = int((active or {}).get("id") or 0)
     if not tid:
