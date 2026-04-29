@@ -110,7 +110,7 @@ a:hover{ color: #1d4ed8; }
 }
 .z2h-nav .container{ padding: .55rem 1rem; }
 
-/* Brand — letter-spacing reveal on load */
+/* Brand — letter-spacing reveal on load, gentle expansion on hover */
 .z2h-brand--badge{
   font-size: .68rem;
   font-weight: 700;
@@ -120,7 +120,17 @@ a:hover{ color: #1d4ed8; }
   background: transparent;
   border: none;
   padding: 0;
+  text-decoration: none;
+  display: inline-block;
   animation: navBrandReveal 1.3s cubic-bezier(.22,.61,.36,1) .05s both;
+  transition:
+    letter-spacing .55s cubic-bezier(.4,0,.2,1),
+    color .3s ease;
+}
+.z2h-brand--badge:hover{
+  letter-spacing: .3em;
+  color: #3f3f46;
+  text-decoration: none;
 }
 @keyframes navBrandReveal {
   from { opacity: 0; letter-spacing: .04em; }
@@ -183,7 +193,7 @@ a:hover{ color: #1d4ed8; }
 }
 
 @media (prefers-reduced-motion: reduce){
-  .z2h-brand--badge{ animation: none; opacity: 1; letter-spacing: .2em; }
+  .z2h-brand--badge{ animation: none !important; opacity: 1; letter-spacing: .2em; transition: none !important; }
   .navbar .nav-link,
   .navbar .nav-link::after{ transition: none !important; }
 }

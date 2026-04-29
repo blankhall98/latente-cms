@@ -80,7 +80,7 @@
   <nav class="z2h-nav navbar" role="navigation" aria-label="Main">
     <div class="container d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center gap-3">
-        <div class="z2h-brand--badge" aria-label="Product">Blank CMS</div>
+        <a href="/admin" class="z2h-brand--badge" aria-label="Go to dashboard">Blank CMS</a>
         {% if request.session and request.session.get('active_tenant') %}
           <div class="z2h-badge" title="Active project">/{{ request.session['active_tenant']['slug'] }}</div>
         {% else %}
