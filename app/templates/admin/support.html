@@ -3,252 +3,281 @@
 
 {% block extra_head %}
 <style>
+  /* ============================================================
+     Support — professional, consistent with app design system
+     ============================================================ */
+
   .support-shell{
-    max-width: 1120px;
+    max-width: 1100px;
     margin-inline: auto;
     color: #18181b;
   }
+
+  /* ---- Report-style header (matches analytics / pages) ---- */
   .support-header{
     position: relative;
-    padding: 1.15rem 0 1.45rem;
-    border-bottom: 1px solid #d4d4d8;
-    animation: supportFadeUp .7s cubic-bezier(.22,.61,.36,1) both;
-  }
-  .support-header::after{
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -1px;
-    width: 132px;
-    height: 1px;
-    background: #18181b;
-    transform: scaleX(0);
-    transform-origin: left center;
-    animation: supportLine .9s cubic-bezier(.22,.61,.36,1) .25s forwards;
+    padding: 1rem 0 1.3rem;
+    border-bottom: 2px solid #18181b;
+    margin-bottom: 1.75rem;
+    animation: supportFadeUp .65s cubic-bezier(.22,.61,.36,1) both;
   }
   .support-kicker{
-    font-size: .84rem;
-    font-weight: 600;
-    letter-spacing: 0;
-    color: #71717a;
-    margin-bottom: .35rem;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #a1a1aa;
+    margin-bottom: .3rem;
   }
   .support-title{
-    font-size: 2rem;
-    font-weight: 650;
-    letter-spacing: 0;
-    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 0 0 .65rem;
+    line-height: 1;
   }
   .support-meta{
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: .5rem;
-    margin-top: .75rem;
     color: #71717a;
-    font-size: .9rem;
+    font-size: .8rem;
   }
+  .support-meta strong{ color: #18181b; font-weight: 600; }
   .support-meta code{
     background: #f4f4f5;
     border: 1px solid #e4e4e7;
-    border-radius: 5px;
+    border-radius: 4px;
     color: #3f3f46;
-    padding: .1rem .35rem;
+    padding: .08rem .3rem;
+    font-size: .78rem;
   }
+  .support-meta .sep{
+    width: 1px; height: 11px; background: #d4d4d8; flex-shrink: 0;
+  }
+
+  /* ---- Grid ---- */
   .support-grid{
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 400px;
-    gap: 2.25rem;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 2.5rem;
     align-items: start;
-    margin-top: 2rem;
   }
-  .support-panel{
-    min-width: 0;
-  }
+  .support-panel{ min-width: 0; }
+
+  /* ---- Section headers — same as analytics ---- */
   .support-panel h2{
-    font-size: .9rem;
-    font-weight: 650;
-    letter-spacing: 0;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #71717a;
     margin: 0 0 1.1rem;
-    padding-bottom: .65rem;
+    padding-bottom: .55rem;
     border-bottom: 1px solid #e4e4e7;
   }
-  .support-form-card{
-    position: sticky;
-    top: 86px;
-    background: rgba(255,255,255,.92);
-    border: 1px solid #e4e4e7;
-    border-radius: 8px;
-    padding: 1.15rem;
-    box-shadow: 0 18px 45px rgba(15,23,42,.08), 0 2px 8px rgba(15,23,42,.04);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    animation: supportFadeUp .7s cubic-bezier(.22,.61,.36,1) .12s both;
-  }
+
+  /* ---- Steps ---- */
   .support-steps{
     position: relative;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    margin: 0; padding: 0; list-style: none;
   }
   .support-step{
     position: relative;
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: .95rem;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 1rem;
     align-items: start;
-    padding: 0 0 1.35rem;
+    padding: 0 0 1.25rem;
     opacity: 0;
-    transform: translateY(8px);
-    animation: supportFadeUp .62s cubic-bezier(.22,.61,.36,1) forwards;
+    transform: translateY(6px);
+    animation: supportFadeUp .55s cubic-bezier(.22,.61,.36,1) forwards;
   }
-  .support-step:last-child{
-    padding-bottom: 0;
-  }
-  .support-step:nth-child(1){ animation-delay: .08s; }
-  .support-step:nth-child(2){ animation-delay: .16s; }
-  .support-step:nth-child(3){ animation-delay: .24s; }
-  .support-step:nth-child(4){ animation-delay: .32s; }
-  .support-step:nth-child(5){ animation-delay: .40s; }
+  .support-step:last-child{ padding-bottom: 0; }
+  .support-step:nth-child(1){ animation-delay: .06s; }
+  .support-step:nth-child(2){ animation-delay: .12s; }
+  .support-step:nth-child(3){ animation-delay: .18s; }
+  .support-step:nth-child(4){ animation-delay: .24s; }
+  .support-step:nth-child(5){ animation-delay: .30s; }
+
+  /* Connector line between steps */
   .support-step:not(:last-child)::before{
     content: "";
     position: absolute;
-    left: 16px;
-    top: 38px;
-    bottom: .25rem;
+    left: 13px;
+    top: 32px;
+    bottom: .2rem;
     width: 1px;
     background: #e4e4e7;
   }
+
+  /* Step number — square, precise, not circular */
   .support-step-num{
     position: relative;
     z-index: 1;
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
+    border-radius: 4px;
     background: #ffffff;
     border: 1px solid #d4d4d8;
     color: #18181b;
-    font-size: .75rem;
+    font-size: .7rem;
     font-weight: 700;
-    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    letter-spacing: .02em;
+    flex-shrink: 0;
+    transition: border-color .25s ease, background-color .25s ease;
   }
   .support-step:hover .support-step-num{
-    transform: translateY(-2px);
     border-color: #18181b;
-    box-shadow: 0 8px 20px rgba(15,23,42,.08);
+    background: #18181b;
+    color: #ffffff;
   }
+
   .support-step strong{
     display: block;
     color: #18181b;
-    font-size: .96rem;
-    font-weight: 650;
-    margin-bottom: .15rem;
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .2rem;
+    margin-top: .05rem;
   }
   .support-step span{
     display: block;
     color: #52525b;
-    font-size: .86rem;
-    line-height: 1.6;
-  }
-  .support-note{
-    margin-top: 1.6rem;
-    padding: .8rem 0 .8rem 1rem;
-    border-left: 1px solid #18181b;
-    color: #52525b;
     font-size: .85rem;
+    line-height: 1.65;
+  }
+
+  /* Advisory note — left-border style matching analytics */
+  .support-note{
+    margin-top: 1.5rem;
+    padding: .65rem 0 .65rem .9rem;
+    border-left: 2px solid #e4e4e7;
+    color: #71717a;
+    font-size: .82rem;
     line-height: 1.6;
   }
-  .support-alert{
+
+  /* ---- Form card — standard card, no drama ---- */
+  .support-form-card{
+    position: sticky;
+    top: 80px;
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
     border-radius: 6px;
-    font-size: .88rem;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.04);
+    animation: supportFadeUp .65s cubic-bezier(.22,.61,.36,1) .1s both;
+  }
+
+  /* Alert */
+  .support-alert{
+    border-radius: 4px;
+    font-size: .85rem;
     margin-bottom: 1rem;
     border-width: 1px;
   }
+
+  /* Form labels — uppercase tracked, matching login */
+  .support-form .form-label{
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #71717a;
+    margin-bottom: .35rem;
+  }
+
+  /* Inputs — match login page style */
   .support-form .form-control,
   .support-form .form-select{
-    background-color: #fafafa;
-    border-color: #e4e4e7;
+    background: #ffffff;
+    border: 1px solid #d4d4d8;
     border-radius: 6px;
-    font-size: .9rem;
-    transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    font-size: .875rem;
+    color: #18181b;
+    transition: border-color .2s ease, box-shadow .2s ease;
   }
+  .support-form .form-control::placeholder{ color: #a1a1aa; }
+  .support-form .form-control:hover,
+  .support-form .form-select:hover{ border-color: #a1a1aa; }
   .support-form .form-control:focus,
   .support-form .form-select:focus{
-    background-color: #ffffff;
+    background: #ffffff;
     border-color: #18181b;
-    box-shadow: 0 0 0 4px rgba(24,24,27,.08);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(24,24,27,.07);
+    outline: none;
+  }
+  .support-form .form-text{
+    font-size: .75rem;
+    color: #a1a1aa;
+    margin-top: .3rem;
   }
   .support-form textarea{
-    min-height: 156px;
+    min-height: 150px;
     resize: vertical;
   }
+
+  /* Actions */
   .support-form-actions{
     display: flex;
     justify-content: flex-end;
     gap: .5rem;
     margin-top: 1rem;
+    padding-top: .85rem;
+    border-top: 1px solid #f4f4f5;
   }
+
+  /* Submit — shimmer on hover, consistent with app */
   .support-submit{
     position: relative;
     overflow: hidden;
-    min-width: 132px;
+    min-width: 120px;
     border-radius: 6px;
-    transition: transform .22s ease, box-shadow .22s ease, background-color .22s ease;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    transition: box-shadow .25s ease, background-color .2s ease;
   }
   .support-submit::after{
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,.22) 45%, transparent 70%);
+    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,.18) 45%, transparent 70%);
     transform: translateX(-120%);
-    transition: transform .55s cubic-bezier(.22,.61,.36,1);
+    transition: transform .5s cubic-bezier(.22,.61,.36,1);
   }
-  .support-submit:hover{
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(37,99,235,.18);
-  }
-  .support-submit:hover::after{
-    transform: translateX(120%);
-  }
+  .support-submit:hover{ box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+  .support-submit:hover::after{ transform: translateX(120%); }
+  .support-submit:active{ transform: scale(.98); }
+
+  /* ---- Animations ---- */
   @keyframes supportFadeUp{
-    from{ opacity: 0; transform: translateY(8px); }
-    to{ opacity: 1; transform: translateY(0); }
+    from{ opacity: 0; transform: translateY(6px); }
+    to{   opacity: 1; transform: translateY(0); }
   }
-  @keyframes supportLine{
-    to{ transform: scaleX(1); }
-  }
+
+  /* ---- Responsive ---- */
   @media (max-width: 991.98px){
-    .support-grid{
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-    .support-form-card{
-      position: static;
-    }
+    .support-grid{ grid-template-columns: 1fr; gap: 1.5rem; }
+    .support-form-card{ position: static; }
   }
   @media (max-width: 575.98px){
-    .support-title{ font-size: 1.55rem; }
-    .support-grid{ margin-top: 1.4rem; }
+    .support-title{ font-size: 1.2rem; }
     .support-form-card{ padding: 1rem; }
   }
+
   @media (prefers-reduced-motion: reduce){
-    .support-header,
-    .support-header::after,
-    .support-form-card,
-    .support-step{
-      animation: none !important;
-      opacity: 1 !important;
-      transform: none !important;
+    .support-header, .support-form-card, .support-step{
+      animation: none !important; opacity: 1 !important; transform: none !important;
     }
-    .support-step-num,
-    .support-submit,
-    .support-submit::after,
-    .support-form .form-control,
-    .support-form .form-select{
+    .support-step-num, .support-submit, .support-submit::after,
+    .support-form .form-control, .support-form .form-select{
       transition: none !important;
     }
   }
