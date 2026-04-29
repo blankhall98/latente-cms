@@ -4,215 +4,225 @@
 {% block extra_head %}
 <style>
   /* ============================================================
-     Analytics — premium, intentional
+     Analytics — professional statistical summary
      ============================================================ */
 
-  /* Page header */
-  .an-head{
-    border: 1px solid #e4e4e7;
-    border-radius: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
-    padding: clamp(20px, 3.5vw, 36px);
-    margin-bottom: 1.5rem;
-    position: relative; overflow: hidden;
+  .an-root{ max-width: 900px; }
+
+  /* ---- Report header ---- */
+  .an-report-head{
+    padding-bottom: 1.1rem;
+    border-bottom: 2px solid #18181b;
+    margin-bottom: 1.75rem;
   }
-  .an-head::before{
-    content:""; position:absolute; inset:0; pointer-events:none;
-    background:
-      radial-gradient(700px 320px at 8% -12%, rgba(37,99,235,.04), transparent 60%),
-      radial-gradient(500px 260px at 92% -8%,  rgba(99,102,241,.03), transparent 55%);
+  .an-report-label{
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #a1a1aa;
+    margin-bottom: .3rem;
   }
-  .an-head-inner{ position: relative; }
-  .an-eyebrow{
-    display: inline-flex; align-items: center; gap: .4rem;
-    font-size: .68rem; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: #71717a;
-    margin-bottom: .5rem;
+  .an-report-title{
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #18181b;
+    letter-spacing: -.01em;
+    margin: 0 0 .75rem 0;
+    line-height: 1;
   }
-  .an-head-title{
-    font-size: clamp(1.4rem, 3vw, 2rem);
-    font-weight: 700; letter-spacing: -.02em;
-    color: #18181b; margin: 0 0 .35rem 0;
-    line-height: 1.1;
+  .an-report-meta{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    font-size: .8rem;
+    color: #71717a;
   }
-  .an-head-sub{
-    font-size: .875rem; color: #71717a; margin: 0;
-  }
-  .an-project-pill{
-    display: inline-flex; align-items: center; gap: .45rem;
-    padding: .3rem .75rem; border: 1px solid #e4e4e7;
-    border-radius: 7px; background: #ffffff;
-    font-size: .82rem; color: #18181b;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04);
-  }
-  .an-project-pill .dot{
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #18181b; opacity: .5; flex-shrink: 0;
+  .an-report-meta strong{ color: #18181b; font-weight: 600; }
+  .an-report-meta .sep{
+    width: 1px; height: 12px; background: #d4d4d8; flex-shrink: 0;
   }
 
-  /* ---- Superadmin project selector ---- */
-  .an-selector{
-    display: flex; flex-wrap: wrap; gap: .4rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.25rem;
+  /* ---- Superadmin selector — flat tabs ---- */
+  .an-tabs{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 1.75rem;
     border-bottom: 1px solid #e4e4e7;
   }
-  .an-selector-label{
-    width: 100%;
-    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: #a1a1aa;
-    margin-bottom: .1rem;
-  }
-  .an-pill{
-    display: inline-flex; align-items: center; gap: .35rem;
-    padding: .28rem .7rem; border: 1px solid #e4e4e7;
-    border-radius: 6px; background: #ffffff; color: #71717a;
-    font-size: .78rem; font-weight: 500;
+  .an-tab{
+    padding: .5rem .9rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: #71717a;
     text-decoration: none;
-    transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color .2s ease, border-color .2s ease;
+    white-space: nowrap;
   }
-  .an-pill:hover{ border-color: #a1a1aa; color: #18181b; }
-  .an-pill.active{
-    border-color: #18181b; background: #18181b;
-    color: #ffffff; font-weight: 600;
+  .an-tab:hover{ color: #18181b; }
+  .an-tab.active{
+    color: #18181b;
+    border-bottom-color: #18181b;
   }
 
-  /* ---- Section wrapper ---- */
-  .an-section{ margin-bottom: 1.25rem; }
+  /* ---- Section header ---- */
+  .an-section{ margin-bottom: 2rem; }
   .an-section-head{
-    display: flex; align-items: center; gap: .65rem;
-    margin-bottom: .85rem;
-  }
-  .an-section-title{
-    font-size: .68rem; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: #71717a;
-  }
-  .an-badge{
-    display: inline-flex; align-items: center; gap: .3rem;
-    padding: .14rem .45rem; border-radius: 4px;
-    font-size: .62rem; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase;
-  }
-  .an-badge.live{
-    background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d;
-  }
-  .an-badge.soon{
-    background: #fffbeb; border: 1px solid #fde68a; color: #713f12;
-  }
-  .an-badge-dot{
-    width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
-  }
-  .an-badge.live .an-badge-dot{ background: #16a34a; }
-  .an-badge.soon .an-badge-dot{ background: #d97706; }
-
-  /* ---- Metric grid ---- */
-  .an-grid{
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
+    align-items: center;
     gap: .75rem;
+    margin-bottom: 0;
+    padding-bottom: .55rem;
+    border-bottom: 1px solid #e4e4e7;
   }
-  @media (max-width: 900px){ .an-grid{ grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px){ .an-grid{ grid-template-columns: 1fr; } }
+  .an-section-label{
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #71717a;
+    flex: 1;
+  }
+  .an-status{
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: .12rem .4rem;
+    border-radius: 2px;
+  }
+  .an-status.live{
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #14532d;
+  }
+  .an-status.soon{
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #713f12;
+  }
 
-  .an-metric{
-    background: #ffffff;
+  /* ---- Metric table — single bordered container with dividers ---- */
+  .an-table{
+    width: 100%;
     border: 1px solid #e4e4e7;
-    border-radius: 10px;
-    padding: 1.1rem 1.2rem 1rem;
-    display: flex; flex-direction: column; gap: .5rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04);
-    transition: box-shadow .2s ease, border-color .2s ease;
+    border-collapse: collapse;
+    background: #ffffff;
+    table-layout: fixed;
   }
-  .an-metric:hover{ box-shadow: 0 4px 12px rgba(0,0,0,.07); border-color: #d4d4d8; }
-
-  .an-metric-label{
-    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: #a1a1aa;
+  .an-table th{
+    padding: .6rem .9rem;
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #a1a1aa;
+    text-align: left;
+    border-bottom: 1px solid #e4e4e7;
+    border-right: 1px solid #e4e4e7;
+    background: #fafafa;
+    white-space: nowrap;
   }
-  .an-metric-value{
-    font-size: 2rem; font-weight: 700; line-height: 1;
-    color: #18181b; letter-spacing: -.03em;
+  .an-table th:last-child{ border-right: none; }
+  .an-table td{
+    padding: 1.1rem .9rem .85rem;
+    border-right: 1px solid #e4e4e7;
+    text-align: left;
+    vertical-align: bottom;
   }
-  .an-metric-sub{
-    font-size: .75rem; color: #a1a1aa; margin-top: auto;
+  .an-table td:last-child{ border-right: none; }
+  .an-value{
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #18181b;
+    line-height: 1;
+    letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
   }
-
-  /* Dimmed / coming soon metrics */
-  .an-metric.dim .an-metric-value{
+  .an-value.dim{
     color: #d4d4d8;
     font-size: 1.6rem;
     letter-spacing: 0;
     font-weight: 600;
   }
-  .an-metric.dim{ border-style: dashed; }
+  .an-value-sub{
+    display: block;
+    font-size: .72rem;
+    color: #a1a1aa;
+    margin-top: .35rem;
+    letter-spacing: .02em;
+  }
 
   /* ---- Coming soon note ---- */
-  .an-soon-note{
-    margin-top: .85rem;
-    padding: .85rem 1rem;
-    border: 1px solid #e4e4e7;
-    border-radius: 8px;
-    background: #fafafa;
-    display: flex; align-items: flex-start; gap: .65rem;
-  }
-  .an-soon-icon{
-    flex-shrink: 0; width: 28px; height: 28px;
-    border-radius: 6px; background: #fffbeb;
-    border: 1px solid #fde68a;
-    display: flex; align-items: center; justify-content: center;
+  .an-note{
+    margin-top: .75rem;
+    padding: .7rem .9rem;
+    border-left: 2px solid #fde68a;
+    background: #fffbeb;
     font-size: .8rem;
+    color: #71717a;
+    line-height: 1.55;
   }
-  .an-soon-note p{
-    margin: 0; font-size: .82rem; color: #71717a; line-height: 1.55;
+  .an-note strong{ color: #18181b; font-weight: 600; }
+
+  /* ---- Empty state ---- */
+  .an-empty{
+    padding: 1.5rem .9rem;
+    border: 1px solid #e4e4e7;
+    background: #fafafa;
+    font-size: .875rem;
+    color: #a1a1aa;
   }
-  .an-soon-note strong{ color: #18181b; font-weight: 600; }
+
+  @media (max-width: 640px){
+    .an-table, .an-table thead, .an-table tbody,
+    .an-table th, .an-table td, .an-table tr{ display: block; width: 100%; }
+    .an-table th{ border-right: none; border-bottom: none; }
+    .an-table td{ border-right: none; border-top: 1px solid #e4e4e7; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-0">
+<div class="an-root">
 
-  {# ---- Page header ---- #}
-  <div class="an-head">
-    <div class="an-head-inner d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-      <div class="flex-grow-1">
-        <div class="an-eyebrow">Analytics</div>
-        <h1 class="an-head-title">Project Overview</h1>
-        <p class="an-head-sub">Content health and platform metrics for your active project.</p>
-      </div>
-      <div>
-        {% if show_all %}
-          <span class="an-project-pill">
-            <span class="dot" aria-hidden="true"></span>
-            All projects
-          </span>
-        {% elif selected_tenant %}
-          <span class="an-project-pill">
-            <span class="dot" aria-hidden="true"></span>
-            <strong>{{ selected_tenant.name }}</strong>
-            {% if selected_tenant.slug %}<code class="ms-1">/{{ selected_tenant.slug }}</code>{% endif %}
-          </span>
-        {% else %}
-          <span class="an-project-pill text-muted">No project selected</span>
+  {# ---- Report header ---- #}
+  <div class="an-report-head">
+    <p class="an-report-label">Blank CMS &mdash; Analytics</p>
+    <h1 class="an-report-title">Project Statistical Summary</h1>
+    <div class="an-report-meta">
+      {% if show_all %}
+        <span>Scope: <strong>All projects</strong></span>
+        <span class="sep" aria-hidden="true"></span>
+        <span>Projects: <strong>{{ all_tenants | length }}</strong></span>
+      {% elif selected_tenant %}
+        <span>Project: <strong>{{ selected_tenant.name }}</strong></span>
+        {% if selected_tenant.slug %}
+          <span class="sep" aria-hidden="true"></span>
+          <span>Slug: <strong>/{{ selected_tenant.slug }}</strong></span>
         {% endif %}
-      </div>
+      {% else %}
+        <span class="text-muted">No project selected</span>
+      {% endif %}
     </div>
   </div>
 
-  {# ---- Superadmin project selector ---- #}
+  {# ---- Superadmin project tabs ---- #}
   {% if is_superadmin %}
-  <div class="an-selector">
-    <span class="an-selector-label">Viewing</span>
+  <div class="an-tabs" role="tablist" aria-label="Project selector">
     <a href="/admin/analytics?tenant=all"
-       class="an-pill {% if selected_slug == 'all' %}active{% endif %}">
-      All projects
-    </a>
+       class="an-tab {% if selected_slug == 'all' %}active{% endif %}"
+       role="tab">All projects</a>
     {% for t in all_tenants %}
     <a href="/admin/analytics?tenant={{ t.slug }}"
-       class="an-pill {% if selected_slug == t.slug %}active{% endif %}">
-      {{ t.name }}
-    </a>
+       class="an-tab {% if selected_slug == t.slug %}active{% endif %}"
+       role="tab">{{ t.name }}</a>
     {% endfor %}
   </div>
   {% endif %}
@@ -220,81 +230,88 @@
   {# ---- Content Overview (LIVE) ---- #}
   <div class="an-section">
     <div class="an-section-head">
-      <span class="an-section-title">Content Overview</span>
-      <span class="an-badge live">
-        <span class="an-badge-dot" aria-hidden="true"></span>
-        Live
-      </span>
+      <span class="an-section-label">Content Overview</span>
+      <span class="an-status live">Live</span>
     </div>
 
     {% if stats %}
-    <div class="an-grid">
-      <div class="an-metric">
-        <span class="an-metric-label">Published</span>
-        <span class="an-metric-value">{{ stats.published }}</span>
-        <span class="an-metric-sub">Live pages</span>
-      </div>
-      <div class="an-metric">
-        <span class="an-metric-label">Drafts</span>
-        <span class="an-metric-value">{{ stats.drafts }}</span>
-        <span class="an-metric-sub">Unpublished</span>
-      </div>
-      <div class="an-metric">
-        <span class="an-metric-label">Sections</span>
-        <span class="an-metric-value">{{ stats.sections }}</span>
-        <span class="an-metric-sub">Content types</span>
-      </div>
-      <div class="an-metric">
-        <span class="an-metric-label">Last published</span>
-        <span class="an-metric-value" style="font-size:1.3rem; letter-spacing:-.01em;">{{ stats.last_published }}</span>
-        <span class="an-metric-sub">Most recent update</span>
-      </div>
-    </div>
+    <table class="an-table" aria-label="Content metrics">
+      <thead>
+        <tr>
+          <th scope="col">Published</th>
+          <th scope="col">Drafts</th>
+          <th scope="col">Sections</th>
+          <th scope="col">Last Published</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="an-value">{{ stats.published }}</span>
+            <span class="an-value-sub">Live pages</span>
+          </td>
+          <td>
+            <span class="an-value">{{ stats.drafts }}</span>
+            <span class="an-value-sub">Pending review</span>
+          </td>
+          <td>
+            <span class="an-value">{{ stats.sections }}</span>
+            <span class="an-value-sub">Content types</span>
+          </td>
+          <td>
+            <span class="an-value" style="font-size:1.25rem; letter-spacing:0; font-weight:600;">{{ stats.last_published }}</span>
+            <span class="an-value-sub">Most recent update</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     {% else %}
-    <div class="z2h-empty">Select a project to view content metrics.</div>
+    <div class="an-empty">Select a project to view content metrics.</div>
     {% endif %}
   </div>
 
   {# ---- Traffic & Engagement (COMING SOON) ---- #}
   <div class="an-section">
     <div class="an-section-head">
-      <span class="an-section-title">Traffic &amp; Engagement</span>
-      <span class="an-badge soon">
-        <span class="an-badge-dot" aria-hidden="true"></span>
-        Coming soon
-      </span>
+      <span class="an-section-label">Traffic &amp; Engagement</span>
+      <span class="an-status soon">Coming soon</span>
     </div>
 
-    <div class="an-grid">
-      <div class="an-metric dim">
-        <span class="an-metric-label">Page Views</span>
-        <span class="an-metric-value">--</span>
-        <span class="an-metric-sub">Last 30 days</span>
-      </div>
-      <div class="an-metric dim">
-        <span class="an-metric-label">Unique Visitors</span>
-        <span class="an-metric-value">--</span>
-        <span class="an-metric-sub">Last 30 days</span>
-      </div>
-      <div class="an-metric dim">
-        <span class="an-metric-label">Avg. Time on Page</span>
-        <span class="an-metric-value">--</span>
-        <span class="an-metric-sub">Per session</span>
-      </div>
-      <div class="an-metric dim">
-        <span class="an-metric-label">Form Submissions</span>
-        <span class="an-metric-value">--</span>
-        <span class="an-metric-sub">Contact &amp; newsletter</span>
-      </div>
-    </div>
+    <table class="an-table" aria-label="Traffic metrics — not yet available">
+      <thead>
+        <tr>
+          <th scope="col">Page Views</th>
+          <th scope="col">Unique Visitors</th>
+          <th scope="col">Avg. Time on Page</th>
+          <th scope="col">Form Submissions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="an-value dim">—</span>
+            <span class="an-value-sub">Last 30 days</span>
+          </td>
+          <td>
+            <span class="an-value dim">—</span>
+            <span class="an-value-sub">Last 30 days</span>
+          </td>
+          <td>
+            <span class="an-value dim">—</span>
+            <span class="an-value-sub">Per session</span>
+          </td>
+          <td>
+            <span class="an-value dim">—</span>
+            <span class="an-value-sub">Contact &amp; newsletter</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    <div class="an-soon-note mt-3">
-      <div class="an-soon-icon" aria-hidden="true">⏱</div>
-      <p>
-        <strong>Website analytics integration is in development.</strong>
-        Traffic data, visitor behavior, and conversion tracking will appear here
-        once the analytics connector is activated for your project.
-      </p>
+    <div class="an-note">
+      <strong>Analytics integration in development.</strong>
+      Traffic data, visitor behavior, and conversion tracking will populate this section
+      once the analytics connector is activated for your project.
     </div>
   </div>
 
