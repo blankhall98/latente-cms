@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(.venv/Scripts/python -m scripts.reprocess_images --dry-run)",
+      "Bash(.venv/Scripts/python -m scripts.reprocess_images)",
+      "Bash(heroku run:*)",
+      "Bash(heroku config:get FIREBASE_CREDENTIALS_PATH FIREBASE_SERVICE_ACCOUNT_JSON --app latente-cms-core)"
+    ]
+  }
+}

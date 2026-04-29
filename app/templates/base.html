@@ -99,6 +99,11 @@
            href="/admin/pages"
            {% if is_pages %}aria-current="page"{% endif %}>Pages</a>
 
+        {% set is_analytics = path.startswith('/admin/analytics') %}
+        <a class="nav-link {{ 'active' if is_analytics else '' }}"
+           href="/admin/analytics"
+           {% if is_analytics %}aria-current="page"{% endif %}>Analytics</a>
+
         {% if not (request.session.get('hide_projects_nav')) %}
           {% set is_projects = path.startswith('/admin/projects') %}
           <a class="nav-link {{ 'active' if is_projects else '' }}"

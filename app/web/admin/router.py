@@ -960,6 +960,38 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     )
 
 
+# --------------------------- Analytics ---------------------------
+@router.get("/admin/analytics")
+def admin_analytics(request: Request, db: Session = Depends(get_db)):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=302)
+
+    is_superadmin = bool(auth.get("is_superadmin"))
+    active = _get_active_tenant(request)
+
+    if active:
+        if is_superadmin:
+            projects_count = db.scalar(select(func.count(Tenant.id))) or 0
+        else:
+            projects_count = db.scalar(
+                select(func.count(UserTenant.tenant_id))
+                .where(and_(UserTenant.user_id == int(auth["id"]), UserTenant.status == _active_status_value()))
+            ) or 0
+        _set_single_project_flag(request, db, auth, projects_count)
+
+    return templates.TemplateResponse(
+        "admin/analytics.html",
+        {
+            "request": request,
+            "user": {"email": auth.get("email")},
+            "current_tenant": active or {"name": "-", "slug": None, "id": None},
+            "is_superadmin": is_superadmin,
+        },
+    )
+
+
 # --------------------------- Projects ---------------------------
 @router.get("/admin/projects")
 def projects_list(request: Request, db: Session = Depends(get_db)):
