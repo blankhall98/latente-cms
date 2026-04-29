@@ -13,6 +13,7 @@ import json
 from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query, UploadFile, File
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import select, and_, func, not_, or_, case
 from sqlalchemy.orm import Session
 
@@ -29,6 +30,7 @@ from app.services.ui_schema_service import (
 )
 from app.services.firebase_storage import is_firebase_configured, upload_file_to_firebase
 from app.services.image_processing import should_process_image, process_image_to_webp
+from app.services.mail_service import send_contact_email
 from app.services.versioning_service import create_entry_snapshot
 
 # Optional server-side schema validation toggle
@@ -40,6 +42,21 @@ router = APIRouter(include_in_schema=False)
 # Must match auth router
 SESSION_USER_KEY = "user"
 SESSION_ACTIVE_TENANT_KEY = "active_tenant"
+_EMAIL_ADAPTER = TypeAdapter(EmailStr)
+
+_SUPPORT_TOPICS = {
+    "general": "General support",
+    "publishing": "Publishing content",
+    "media": "Images or media",
+    "access": "Login or access",
+    "bug": "Platform issue",
+}
+
+_SUPPORT_PRIORITIES = {
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent",
+}
 
 
 # --------------------------- Helpers ---------------------------
@@ -185,6 +202,48 @@ def _normalize_gender_label(raw_gender: str) -> str:
     if v in {"prefer not to say", "prefer_not_to_say", "prefer-not-to-say", "na", "n/a"}:
         return "Prefer not to say"
     return "Other"
+
+
+def _normalize_support_email(raw_email: str) -> str:
+    return str(_EMAIL_ADAPTER.validate_python((raw_email or "").strip()))
+
+
+def _support_choice(mapping: dict[str, str], value: str, default: str) -> tuple[str, str]:
+    key = (value or "").strip().lower()
+    if key not in mapping:
+        key = default
+    return key, mapping[key]
+
+
+def _support_template_context(
+    *,
+    request: Request,
+    user: dict,
+    active: dict | None,
+    form: dict[str, str] | None = None,
+    sent: bool = False,
+    error: str | None = None,
+) -> dict:
+    user_email = (user.get("email") or "").strip()
+    full_name = (user.get("full_name") or "").strip()
+    return {
+        "request": request,
+        "user": {"email": user_email, "full_name": full_name},
+        "current_tenant": active or {"name": "-", "slug": None, "id": None},
+        "support_email": settings.SUPPORT_EMAIL,
+        "support_topics": _SUPPORT_TOPICS,
+        "support_priorities": _SUPPORT_PRIORITIES,
+        "sent": sent,
+        "error": error,
+        "form": form
+        or {
+            "name": full_name,
+            "sender_email": user_email,
+            "topic": "general",
+            "priority": "normal",
+            "message": "",
+        },
+    }
 
 
 def _build_owa_popup_metrics(submissions: list[OwaPopupSubmission]) -> dict[str, Any]:
@@ -1062,6 +1121,144 @@ def admin_analytics(
             "stats": stats,
         },
     )
+
+
+# --------------------------- Support ---------------------------
+@router.get("/admin/support")
+def admin_support(request: Request):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login?next=/admin/support", status_code=302)
+
+    active = _get_active_tenant(request)
+    sent = request.query_params.get("sent") == "1"
+    return templates.TemplateResponse(
+        "admin/support.html",
+        _support_template_context(
+            request=request,
+            user=auth,
+            active=active,
+            sent=sent,
+        ),
+    )
+
+
+@router.post("/admin/support")
+def admin_support_submit(
+    request: Request,
+    name: str = Form(""),
+    sender_email: str = Form(""),
+    topic: str = Form("general"),
+    priority: str = Form("normal"),
+    message: str = Form(""),
+):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login?next=/admin/support", status_code=302)
+
+    active = _get_active_tenant(request)
+    form = {
+        "name": (name or "").strip(),
+        "sender_email": (sender_email or "").strip(),
+        "topic": (topic or "general").strip().lower(),
+        "priority": (priority or "normal").strip().lower(),
+        "message": (message or "").strip(),
+    }
+
+    sender_name = form["name"] or (auth.get("full_name") or "").strip() or (auth.get("email") or "").strip() or "Dashboard user"
+    try:
+        reply_to = _normalize_support_email(form["sender_email"] or (auth.get("email") or ""))
+    except ValidationError:
+        return templates.TemplateResponse(
+            "admin/support.html",
+            _support_template_context(
+                request=request,
+                user=auth,
+                active=active,
+                form=form,
+                error="Please enter a valid reply-to email address.",
+            ),
+            status_code=400,
+        )
+
+    if len(form["message"]) < 10:
+        return templates.TemplateResponse(
+            "admin/support.html",
+            _support_template_context(
+                request=request,
+                user=auth,
+                active=active,
+                form=form,
+                error="Please describe the issue in at least 10 characters.",
+            ),
+            status_code=400,
+        )
+
+    if len(form["message"]) > 4000:
+        return templates.TemplateResponse(
+            "admin/support.html",
+            _support_template_context(
+                request=request,
+                user=auth,
+                active=active,
+                form=form,
+                error="Please keep the support request below 4,000 characters.",
+            ),
+            status_code=400,
+        )
+
+    _, topic_label = _support_choice(_SUPPORT_TOPICS, form["topic"], "general")
+    _, priority_label = _support_choice(_SUPPORT_PRIORITIES, form["priority"], "normal")
+    project_name = (active or {}).get("name") or "No active project"
+    project_slug = (active or {}).get("slug") or "-"
+
+    subject = f"[Latente CMS Support] {priority_label}: {topic_label}"
+    fields = {
+        "Project": f"{project_name} /{project_slug}" if project_slug != "-" else project_name,
+        "Logged-in user": auth.get("email") or "-",
+        "Reply-to email": reply_to,
+        "Topic": topic_label,
+        "Priority": priority_label,
+        "Message": form["message"],
+    }
+
+    try:
+        send_contact_email(
+            to_email=settings.SUPPORT_EMAIL,
+            sender_name=sender_name,
+            sender_email=reply_to,
+            subject=subject,
+            fields=fields,
+            tenant_name="Latente CMS Support",
+        )
+    except RuntimeError:
+        return templates.TemplateResponse(
+            "admin/support.html",
+            _support_template_context(
+                request=request,
+                user=auth,
+                active=active,
+                form=form,
+                error="Support email is not configured yet.",
+            ),
+            status_code=503,
+        )
+    except Exception:
+        return templates.TemplateResponse(
+            "admin/support.html",
+            _support_template_context(
+                request=request,
+                user=auth,
+                active=active,
+                form=form,
+                error="The message could not be sent. Please try again later.",
+            ),
+            status_code=503,
+        )
+
+    return RedirectResponse(url="/admin/support?sent=1", status_code=303)
 
 
 # --------------------------- Projects ---------------------------

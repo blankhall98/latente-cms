@@ -155,6 +155,7 @@ class Settings(BaseSettings):
     SMTP_USER: str | None = os.getenv("SMTP_USER")
     SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD")
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "Latente CMS")
+    SUPPORT_EMAIL: str = os.getenv("SUPPORT_EMAIL", "xblankhallx@gmail.com")
     # Key of the section that holds contact_email per tenant
     CONTACT_SETTINGS_SECTION: str = os.getenv("CONTACT_SETTINGS_SECTION", "settings")
     # Max contact form submissions per IP per minute
