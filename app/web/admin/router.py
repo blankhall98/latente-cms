@@ -29,6 +29,7 @@ from app.services.ui_schema_service import (
 )
 from app.services.firebase_storage import is_firebase_configured, upload_file_to_firebase
 from app.services.image_processing import should_process_image, process_image_to_webp
+from app.services.versioning_service import create_entry_snapshot
 
 # Optional server-side schema validation toggle
 ENABLE_SERVER_VALIDATION = False
@@ -1772,7 +1773,7 @@ def owa_popup_submission_delete(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    _require_web_user(request)
+    user = _require_web_user(request)
     active = _get_active_tenant(request)
     tid = int((active or {}).get("id") or 0)
     if not tid:
@@ -1964,6 +1965,12 @@ def admin_publish_page(
     entry.updated_at = now
 
     db.add(entry)
+    create_entry_snapshot(
+        db,
+        entry=entry,
+        reason="publish",
+        created_by=int(user["id"]) if user.get("id") is not None else None,
+    )
     db.commit()
     db.refresh(entry)
 

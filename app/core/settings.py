@@ -14,6 +14,22 @@ class Settings(BaseSettings):
     ENV: str = "dev"
     DEBUG: bool = True
 
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def _parse_debug(cls, v):
+        """
+        Accept common deploy environment labels without failing startup.
+        Heroku-style environments sometimes expose values such as "release";
+        for DEBUG those should be treated as production-safe false values.
+        """
+        if isinstance(v, str):
+            s = v.strip().lower()
+            if s in {"release", "prod", "production", "stage", "staging"}:
+                return False
+            if s in {"dev", "development", "local"}:
+                return True
+        return v
+
     # ============== Auth / JWT =============
     JWT_SECRET_KEY: str = "dev-secret"
     JWT_ALGORITHM: str = "HS256"

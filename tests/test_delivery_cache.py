@@ -1,6 +1,8 @@
 # tests/test_delivery_cache.py
 from __future__ import annotations
 
+import uuid
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -52,13 +54,15 @@ def _mk_section_schema_entry(db: Session, tenant_id: int, section_key="LandingPa
 
 def test_list_if_modified_since_304(db: Session):
     # Arrange: 1 entry publicado
-    t = _mk_tenant(db)
+    tenant_slug = f"tenant-{uuid.uuid4().hex[:8]}"
+    t = _mk_tenant(db, slug=tenant_slug)
     _, e = _mk_section_schema_entry(db, t.id, section_key="LandingPages", slug="home")
     transition_entry_status(db, e, "published")
     db.commit()
 
     # Primera llamada (200) — obtenemos Last-Modified + ETag
-    r1 = client.get("/delivery/v1/entries?tenant_slug=latente&section_key=LandingPages")
+    url = f"/delivery/v1/entries?tenant_slug={tenant_slug}&section_key=LandingPages"
+    r1 = client.get(url)
     assert r1.status_code == 200
     lm = r1.headers.get("Last-Modified")
     etag = r1.headers.get("ETag")
@@ -67,7 +71,7 @@ def test_list_if_modified_since_304(db: Session):
 
     # If-Modified-Since → 304 (sin cambios)
     r2 = client.get(
-        "/delivery/v1/entries?tenant_slug=latente&section_key=LandingPages",
+        url,
         headers={"If-Modified-Since": lm},
     )
     assert r2.status_code == 304
@@ -78,13 +82,14 @@ def test_list_if_modified_since_304(db: Session):
 
 def test_detail_if_modified_since_304(db: Session):
     # Arrange: 1 entry publicado
-    t = _mk_tenant(db)
+    tenant_slug = f"tenant-{uuid.uuid4().hex[:8]}"
+    t = _mk_tenant(db, slug=tenant_slug)
     _, e = _mk_section_schema_entry(db, t.id, section_key="LandingPages", slug="home")
     transition_entry_status(db, e, "published")
     db.commit()
 
     # Primera llamada (200)
-    url = "/delivery/v1/tenants/latente/sections/LandingPages/entries/home"
+    url = f"/delivery/v1/tenants/{tenant_slug}/sections/LandingPages/entries/home"
     r1 = client.get(url)
     assert r1.status_code == 200
     lm = r1.headers.get("Last-Modified")
@@ -101,13 +106,14 @@ def test_detail_if_modified_since_304(db: Session):
 
 def test_cache_control_policies_list_vs_detail(db: Session):
     # Arrange
-    t = _mk_tenant(db)
+    tenant_slug = f"tenant-{uuid.uuid4().hex[:8]}"
+    t = _mk_tenant(db, slug=tenant_slug)
     _, e = _mk_section_schema_entry(db, t.id, section_key="LandingPages", slug="home")
     transition_entry_status(db, e, "published")
     db.commit()
 
     # Lista → cache corta (max-age=60, swr=120)
-    r_list = client.get("/delivery/v1/entries?tenant_slug=latente&section_key=LandingPages")
+    r_list = client.get(f"/delivery/v1/entries?tenant_slug={tenant_slug}&section_key=LandingPages")
     assert r_list.status_code == 200
     cc_list = r_list.headers.get("Cache-Control", "")
     assert "public" in cc_list
@@ -115,7 +121,7 @@ def test_cache_control_policies_list_vs_detail(db: Session):
     assert "stale-while-revalidate=120" in cc_list
 
     # Detalle → cache más larga (max-age=300, swr=600)
-    r_det = client.get("/delivery/v1/tenants/latente/sections/LandingPages/entries/home")
+    r_det = client.get(f"/delivery/v1/tenants/{tenant_slug}/sections/LandingPages/entries/home")
     assert r_det.status_code == 200
     cc_det = r_det.headers.get("Cache-Control", "")
     assert "public" in cc_det

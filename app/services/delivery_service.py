@@ -1,16 +1,41 @@
 # app/services/delivery_service.py
 from __future__ import annotations
-from typing import Tuple, List, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_, desc
 
+import hashlib
+from datetime import datetime
+from typing import Any, List, Optional, Tuple
+
+from sqlalchemy import and_, desc, func, select
+from sqlalchemy.orm import Session
+
+from app.models.auth import Tenant
 from app.models.content import Entry, Section
-from app.models.auth import Tenant  # ajusta si tu Tenant vive en otro módulo
 from app.schemas.delivery import DeliveryEntryOut
 
-# Opcional: si tu proyecto ya tiene versionado (Paso 17)
+INTERNAL_DELIVERY_KEYS = {"__draft"}
+
+
+def strip_internal_delivery_fields(value: Any) -> Any:
+    """
+    Remove CMS-only fields from public Delivery payloads.
+
+    Admin stores unpublished edits under data.__draft. Public delivery must
+    keep returning the published data shape without exposing that draft branch.
+    """
+    if isinstance(value, dict):
+        return {
+            key: strip_internal_delivery_fields(item)
+            for key, item in value.items()
+            if key not in INTERNAL_DELIVERY_KEYS
+        }
+    if isinstance(value, list):
+        return [strip_internal_delivery_fields(item) for item in value]
+    return value
+
+
 try:
     from app.models.content import EntryVersion
+
     HAS_ENTRY_VERSION = True
 except Exception:  # pragma: no cover
     EntryVersion = None  # type: ignore
@@ -19,8 +44,8 @@ except Exception:  # pragma: no cover
 
 def _base_published_query():
     """
-    Entries con status='published'. Útil para listados.
-    (Para detalle, usamos _effective_published_payload)
+    Entries with status='published'. Useful for list endpoints.
+    Detail endpoints prefer the persisted publish snapshot when available.
     """
     return (
         select(Entry)
@@ -30,55 +55,62 @@ def _base_published_query():
     )
 
 
-def _latest_published_snapshot(db: Session, entry_id: int) -> Optional[dict]:
+def _as_db_naive(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=None)
+
+
+def _latest_published_snapshot(
+    db: Session,
+    entry_id: int,
+    *,
+    not_older_than: datetime | None = None,
+) -> Optional[dict]:
     """
-    Intenta recuperar el último snapshot 'publicado' para un entry dado.
-    Asume que en tu modelo EntryVersion guardas `data` del entry al momento del publish.
-    Se intenta filtrar por 'reason' si existe; si no, se toma el más reciente.
+    Return the latest persisted publish snapshot for an entry.
+
+    This uses the existing entry_versions table, so it does not require a
+    production database migration. It is the stable public payload created at
+    publish time, before later draft edits are stored.
     """
     if not HAS_ENTRY_VERSION:
         return None
 
-    # Primero intentamos por razón = publish (si la columna existe)
     q = select(EntryVersion).where(EntryVersion.entry_id == entry_id)
+    q_pub = q.where(EntryVersion.reason.in_(["publish", "PUBLISH", "published"]))
 
-    # Filtrado defensivo por 'reason' si la columna existe:
-    # Nota: cambia 'reason' por el nombre real en tu modelo (p.ej. 'action')
-    try:
-        q_pub = q.where(EntryVersion.reason.in_(["publish", "PUBLISH", "published"]))
-        row = db.scalars(q_pub.order_by(desc(getattr(EntryVersion, "created_at", EntryVersion.id)))).first()
-        if row and getattr(row, "data", None):
-            return dict(row.data)
-    except Exception:
-        pass
-
-    # Caída general: último snapshot por created_at (o id)
-    row = db.scalars(q.order_by(desc(getattr(EntryVersion, "created_at", EntryVersion.id)))).first()
+    row = db.scalars(q_pub.order_by(desc(EntryVersion.version_idx), desc(EntryVersion.id))).first()
     if row and getattr(row, "data", None):
+        snapshot_created_at = _as_db_naive(getattr(row, "created_at", None))
+        min_created_at = _as_db_naive(not_older_than)
+        if (
+            snapshot_created_at is not None
+            and min_created_at is not None
+            and snapshot_created_at < min_created_at
+        ):
+            return None
         return dict(row.data)
+
     return None
 
 
 def _effective_published_payload(db: Session, entry: Entry) -> Optional[dict]:
     """
-    Regresa el payload 'publicado' efectivo de un entry:
-    - Si el entry está en 'published' y tiene data, usa esa data.
-    - Si NO, intenta el último snapshot publicado (o último snapshot disponible).
-    - Si no hay nada, devuelve None.
+    Return the public payload for an entry.
+
+    Prefer the publish snapshot so Delivery stays stable after later draft
+    edits. Fallback to Entry.data for old published entries that predate
+    snapshots.
     """
-    status_val = getattr(entry, "status", None)
-    data_val = getattr(entry, "data", None)
-
-    # Caso 1: la fila está publicada y tiene data
-    if (status_val == "published") and isinstance(data_val, dict) and data_val:
-        return data_val
-
-    # Caso 2: intentar snapshot
     snap = _latest_published_snapshot(db, int(entry.id))
     if isinstance(snap, dict) and snap:
         return snap
 
-    # Sin data efectiva publicada
+    data_val = getattr(entry, "data", None)
+    if (getattr(entry, "status", None) == "published") and isinstance(data_val, dict) and data_val:
+        return data_val
+
     return None
 
 
@@ -91,9 +123,8 @@ def fetch_published_entries(
     offset: int,
 ) -> Tuple[List[DeliveryEntryOut], int, str | None]:
     """
-    Listado público. Por simplicidad conservamos el criterio base: status='published'.
-    (Si más adelante quieres listar también entradas actualmente en draft pero con snapshot publicado,
-     podemos añadir una ruta alternativa para 'published_effective_list'.)
+    Public list endpoint. It intentionally keeps the current behavior:
+    only entries with status='published' are listed.
     """
     q = _base_published_query().where(Tenant.slug == tenant_slug)
     cnt = _base_published_query().where(Tenant.slug == tenant_slug)
@@ -128,16 +159,14 @@ def fetch_published_entries(
                 slug=e.slug,
                 status=e.status,
                 schema_version=e.schema_version,
-                data=e.data or {},  # en lista mantenemos criterio simple
+                data=strip_internal_delivery_fields(e.data or {}),
                 updated_at=e.updated_at,
                 published_at=getattr(e, "published_at", None),
             )
         )
 
-    # ETag simple de lista: hash de (tenant|section|slug|total|max_ts)
     etag = None
     try:
-        import hashlib
         max_updated = max((i.updated_at for i in items if i.updated_at), default=None)
         max_published = max((i.published_at for i in items if i.published_at), default=None)
         key = f"{tenant_slug}|{section_key or ''}|{slug or ''}|{total}|{max_updated or ''}|{max_published or ''}"
@@ -155,14 +184,23 @@ def fetch_single_published_entry(
     slug: str,
 ) -> Optional[DeliveryEntryOut]:
     """
-    Detalle público "efectivo": devuelve SIEMPRE la última versión publicada disponible.
-    - Si la fila está en published → usa su data.
-    - Si la fila está en draft → usa el último snapshot publicado (o el más reciente).
-    - Si no existe data publicada → None.
+    Public detail endpoint.
+
+    It first reads entry metadata without Entry.data. If a publish snapshot
+    exists, Delivery uses that snapshot; otherwise it falls back to Entry.data
+    for old published rows.
     """
-    # Primero localizamos la fila por claves (sin depender del status)
     row = db.execute(
-        select(Entry, Section, Tenant)
+        select(
+            Entry.id,
+            Entry.tenant_id,
+            Entry.section_id,
+            Entry.slug,
+            Entry.status,
+            Entry.schema_version,
+            Entry.updated_at,
+            Entry.published_at,
+        )
         .join(Section, Section.id == Entry.section_id)
         .join(Tenant, Tenant.id == Entry.tenant_id)
         .where(
@@ -173,25 +211,32 @@ def fetch_single_published_entry(
             )
         )
         .limit(1)
-    ).first()
+    ).mappings().first()
 
     if not row:
         return None
 
-    entry, section, tenant = row
-    effective = _effective_published_payload(db, entry)
+    effective = _latest_published_snapshot(
+        db,
+        int(row["id"]),
+        not_older_than=row["updated_at"],
+    )
+    if not isinstance(effective, dict) or not effective:
+        if row["status"] != "published":
+            return None
+        effective = db.scalar(select(Entry.data).where(Entry.id == row["id"]))
+
     if not isinstance(effective, dict) or not effective:
         return None
 
     return DeliveryEntryOut(
-        id=entry.id,
-        tenant_id=entry.tenant_id,
-        section_id=entry.section_id,
-        slug=entry.slug,
-        status="published",  # porque devolvemos la vista publicada efectiva
-        schema_version=entry.schema_version,
-        data=effective,
-        updated_at=entry.updated_at,
-        published_at=getattr(entry, "published_at", None),
+        id=row["id"],
+        tenant_id=row["tenant_id"],
+        section_id=row["section_id"],
+        slug=row["slug"],
+        status="published",
+        schema_version=row["schema_version"],
+        data=strip_internal_delivery_fields(effective),
+        updated_at=row["updated_at"],
+        published_at=row["published_at"],
     )
-

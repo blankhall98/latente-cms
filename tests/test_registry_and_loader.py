@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.auth import Tenant
 from app.services.content_service import create_section, add_schema_version
-from app.services.registry_service import can_activate_version
+from app.services.registry_service import can_activate_version, check_additive_compatibility
 from app.seeds.content_loader import SectionFile, bulk_load_tenant_schemas
 
 
@@ -75,12 +75,8 @@ def test_registry_compat_additive_ok(db: Session):
     assert errs == []
 
 
-def test_registry_compat_breaking_rejected(db: Session):
-    """Activar v2 falla si remuevo un campo requerido de v1 (modo additive_only)."""
-    tenant = _make_tenant(db)
-    section = create_section(db, tenant_id=tenant.id, key="LandingPages", name="Landing Pages")
-    db.flush()
-
+def test_additive_compatibility_breaking_rejected():
+    """La regla additive_only rechaza remover campos requeridos existentes."""
     v1 = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -98,9 +94,7 @@ def test_registry_compat_breaking_rejected(db: Session):
         }
     }
 
-    add_schema_version(db, tenant_id=tenant.id, section_id=section.id, version=1, schema=v1, title="v1", is_active=True)
-    add_schema_version(db, tenant_id=tenant.id, section_id=section.id, version=2, schema=v2, title="v2", is_active=False)
-    ok, errs = can_activate_version(db, tenant_id=tenant.id, section_id=section.id, target_version=2)
+    ok, errs = check_additive_compatibility(v1, v2)
 
     assert ok is False
     assert any("Campos requeridos ausentes" in e for e in errs)
