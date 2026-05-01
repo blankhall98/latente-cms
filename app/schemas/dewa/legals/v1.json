@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/legals/v1.json",
+  "title": "DEWA - Legals v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Legals",
+    "order": ["legalSectionOne", "legalSectionTwo", "legalSectionThree"]
+  },
+  "properties": {
+    "legalSectionOne": {
+      "$ref": "#/$defs/LegalSection",
+      "x-ui": { "label": "Section 1" }
+    },
+    "legalSectionTwo": {
+      "$ref": "#/$defs/LegalSection",
+      "x-ui": { "label": "Section 2" }
+    },
+    "legalSectionThree": {
+      "$ref": "#/$defs/LegalSection",
+      "x-ui": { "label": "Section 3" }
+    }
+  },
+  "required": ["legalSectionOne", "legalSectionTwo", "legalSectionThree"],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedLongTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Long Text", "order": ["en", "es"] },
+      "properties": {
+        "en": {
+          "type": "string",
+          "maxLength": 12000,
+          "x-ui": {
+            "label": "English",
+            "textarea": true,
+            "rows": 24,
+            "help": "Large legal text area, approximately 1,000 words."
+          }
+        },
+        "es": {
+          "type": "string",
+          "maxLength": 12000,
+          "x-ui": {
+            "label": "Spanish",
+            "textarea": true,
+            "rows": 24,
+            "help": "Large legal text area, approximately 1,000 words."
+          }
+        }
+      },
+      "required": ["en", "es"]
+    },
+    "LegalSection": {
+      "type": "object",
+      "x-ui": { "label": "Legal Section", "order": ["sectionTitle", "sectionText"] },
+      "properties": {
+        "sectionTitle": {
+          "$ref": "#/$defs/LocalizedText",
+          "x-ui": { "label": "Section Title" }
+        },
+        "sectionText": {
+          "$ref": "#/$defs/LocalizedLongTextarea",
+          "x-ui": { "label": "Section Text" }
+        }
+      },
+      "required": ["sectionTitle", "sectionText"]
+    }
+  }
+}
