@@ -10,10 +10,10 @@
   /* ---- Shell — two-column layout ---- */
   .an-shell{
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 290px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     gap: 2.5rem;
     align-items: start;
-    max-width: 1240px;
+    max-width: 1300px;
   }
   .an-root{ min-width: 0; }
 
@@ -21,134 +21,145 @@
   .an-ai-panel{
     position: sticky;
     top: 80px;
-    border: 1px solid #e4e4e7;
-    border-radius: 8px;
+    border: 1px solid #d4d4d8;
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.05);
+    box-shadow:
+      0 2px 4px rgba(0,0,0,.06),
+      0 8px 24px rgba(0,0,0,.08),
+      0 24px 48px rgba(0,0,0,.05);
+  }
+  /* Premium rainbow top rule */
+  .an-ai-panel::before{
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 30%, #ec4899 65%, #f59e0b 100%);
   }
 
   /* Header */
   .an-ai-head{
-    background: #18181b;
-    padding: 1rem 1.1rem .85rem;
+    background: linear-gradient(160deg, #18181b 0%, #1e1e22 100%);
+    padding: .9rem 1.1rem .8rem;
     display: flex;
     align-items: center;
-    gap: .75rem;
+    gap: .7rem;
   }
   .an-ai-icon{
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: #27272a;
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #2d2d32, #232327);
     border: 1px solid #3f3f46;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
   }
-  .an-ai-icon svg{ width: 16px; height: 16px; }
+  .an-ai-icon svg{ width: 17px; height: 17px; }
   .an-ai-head-text{ flex: 1; min-width: 0; }
   .an-ai-name{
-    font-size: .8rem;
+    font-size: .82rem;
     font-weight: 700;
     color: #ffffff;
     letter-spacing: -.01em;
     line-height: 1;
-    margin-bottom: .3rem;
+    margin-bottom: .32rem;
   }
   .an-ai-badge{
     display: inline-flex;
     align-items: center;
-    gap: .25rem;
-    font-size: .58rem;
+    gap: .22rem;
+    font-size: .57rem;
     font-weight: 700;
-    letter-spacing: .12em;
+    letter-spacing: .13em;
     text-transform: uppercase;
     color: #fbbf24;
-    background: rgba(251,191,36,.12);
-    border: 1px solid rgba(251,191,36,.25);
+    background: rgba(251,191,36,.1);
+    border: 1px solid rgba(251,191,36,.22);
     border-radius: 3px;
-    padding: .1rem .35rem;
+    padding: .1rem .38rem;
   }
   .an-ai-badge::before{
     content: "";
     width: 5px; height: 5px;
     border-radius: 50%;
     background: #fbbf24;
-    animation: an-pulse 1.8s ease-in-out infinite;
+    animation: an-pulse 2s ease-in-out infinite;
   }
   @keyframes an-pulse{
-    0%, 100%{ opacity: 1; } 50%{ opacity: .3; }
+    0%, 100%{ opacity: 1; transform: scale(1); }
+    50%{ opacity: .3; transform: scale(.7); }
   }
 
   /* Body */
   .an-ai-body{
     background: #ffffff;
-    padding: 1rem 1.1rem;
+    padding: .9rem 1.1rem .75rem;
   }
   .an-ai-desc{
-    font-size: .78rem;
+    font-size: .775rem;
     color: #52525b;
-    line-height: 1.65;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
+    line-height: 1.6;
+    margin-bottom: .85rem;
+    padding-bottom: .85rem;
     border-bottom: 1px solid #f4f4f5;
   }
-  .an-ai-desc strong{ color: #18181b; }
+  .an-ai-desc strong{ color: #18181b; font-weight: 600; }
 
   /* Example conversation */
   .an-ai-convo{
     display: flex;
     flex-direction: column;
-    gap: .65rem;
-    margin-bottom: 1rem;
+    gap: .55rem;
+    margin-bottom: .85rem;
   }
   .an-ai-msg{
     display: flex;
     flex-direction: column;
-    gap: .3rem;
+    gap: .25rem;
   }
   .an-ai-msg-label{
-    font-size: .6rem;
+    font-size: .58rem;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: #a1a1aa;
-    padding: 0 .4rem;
+    color: #d4d4d8;
+    padding: 0 .35rem;
   }
   .an-ai-bubble-user{
     align-self: flex-end;
     background: #18181b;
-    color: #ffffff;
-    font-size: .75rem;
+    color: #f4f4f5;
+    font-size: .73rem;
     line-height: 1.5;
-    padding: .45rem .7rem;
+    padding: .42rem .68rem;
     border-radius: 10px 10px 2px 10px;
-    max-width: 90%;
+    max-width: 88%;
+    letter-spacing: .005em;
   }
   .an-ai-bubble-ai{
     align-self: flex-start;
-    background: #f4f4f5;
-    border: 1px solid #e4e4e7;
-    font-size: .75rem;
-    line-height: 1.5;
-    padding: .45rem .7rem;
+    background: #f8f8f9;
+    border: 1px solid #ebebed;
+    padding: .5rem .7rem;
     border-radius: 2px 10px 10px 10px;
     max-width: 95%;
     position: relative;
+    min-height: 46px;
   }
-  /* Blurred/redacted AI response lines */
   .an-ai-redacted{
     display: flex;
     flex-direction: column;
-    gap: .3rem;
-    filter: blur(3.5px);
+    gap: .28rem;
+    filter: blur(3px);
     user-select: none;
     pointer-events: none;
   }
   .an-ai-redacted span{
     display: block;
-    height: 7px;
-    background: #71717a;
+    height: 6.5px;
+    background: linear-gradient(90deg, #a1a1aa, #c4c4c8);
     border-radius: 3px;
-    opacity: .55;
+    opacity: .5;
   }
   .an-ai-lock{
     position: absolute;
@@ -159,61 +170,57 @@
     border-radius: inherit;
   }
   .an-ai-lock-pill{
-    background: rgba(255,255,255,.92);
+    background: rgba(255,255,255,.95);
     border: 1px solid #e4e4e7;
     border-radius: 20px;
-    padding: .18rem .55rem;
-    font-size: .62rem;
+    padding: .2rem .6rem;
+    font-size: .6rem;
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
     color: #71717a;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
   }
 
   /* Disabled input */
   .an-ai-input-row{
     display: flex;
-    gap: .4rem;
-    margin-bottom: .85rem;
-    padding-top: .85rem;
+    gap: .35rem;
+    padding-top: .75rem;
     border-top: 1px solid #f4f4f5;
   }
   .an-ai-input{
     flex: 1;
     border: 1px solid #e4e4e7;
-    border-radius: 6px;
-    padding: .5rem .7rem;
-    font-size: .78rem;
-    color: #a1a1aa;
+    border-radius: 7px;
+    padding: .45rem .75rem;
+    font-size: .775rem;
+    color: #c4c4c8;
     background: #fafafa;
     cursor: not-allowed;
     font-family: inherit;
+    outline: none;
   }
   .an-ai-send{
-    width: 32px; height: 32px;
-    border-radius: 6px;
+    width: 30px; height: 30px;
+    border-radius: 7px;
     border: 1px solid #e4e4e7;
     background: #f4f4f5;
-    color: #a1a1aa;
+    color: #d4d4d8;
     display: flex; align-items: center; justify-content: center;
     cursor: not-allowed;
-    font-size: .85rem;
+    font-size: .8rem;
     flex-shrink: 0;
   }
 
   /* Footer note */
   .an-ai-foot{
-    font-size: .7rem;
+    font-size: .69rem;
     color: #a1a1aa;
-    line-height: 1.55;
-    padding: .65rem .9rem;
+    line-height: 1.6;
+    padding: .65rem 1.1rem .7rem;
     background: #fafafa;
-    border-top: 1px solid #f4f4f5;
-  }
-  .an-ai-foot a{
-    color: #71717a;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    border-top: 1px solid #f0f0f1;
   }
 
   @media (max-width: 1100px){
@@ -878,11 +885,11 @@
 
   <div class="an-ai-head">
     <div class="an-ai-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z" opacity=".3"/>
-        <circle cx="12" cy="10" r="3"/>
-        <path d="M9 21h6M12 18v3" opacity=".5"/>
-        <path d="M5 6.5C3.5 7.8 2.5 9.8 2.5 12M19 6.5C20.5 7.8 21.5 9.8 21.5 12" opacity=".3"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3c-1.2 5.4-5 7-5 7h10s-3.8-1.6-5-7z" fill="#3f3f46" stroke="none"/>
+        <rect x="7" y="10" width="10" height="7" rx="2" fill="none" stroke="#71717a"/>
+        <path d="M9 14h1.5M13.5 14H15M9 12.5h6" stroke-width="1.2"/>
+        <path d="M10 17v2M14 17v2M8 19h8" stroke-width="1.3"/>
       </svg>
     </div>
     <div class="an-ai-head-text">
@@ -893,12 +900,11 @@
 
   <div class="an-ai-body">
     <p class="an-ai-desc">
-      Ask <strong>business intelligence questions</strong> in plain language.
-      The AI will use your Google Analytics history, content activity,
-      and editorial data to give you precise, contextual answers.
+      Ask <strong>business intelligence questions</strong> in plain language —
+      powered by your GA4 traffic data, content history, and editorial activity.
     </p>
 
-    {# Example conversation #}
+    {# Example conversation — one pair #}
     <div class="an-ai-convo">
 
       <div class="an-ai-msg">
@@ -912,13 +918,12 @@
         <span class="an-ai-msg-label">Analytics AI</span>
         <div class="an-ai-bubble-ai">
           <div class="an-ai-redacted">
-            <span style="width:92%"></span>
-            <span style="width:78%"></span>
-            <span style="width:85%"></span>
-            <span style="width:55%"></span>
+            <span style="width:93%"></span>
+            <span style="width:80%"></span>
+            <span style="width:60%"></span>
           </div>
           <div class="an-ai-lock">
-            <span class="an-ai-lock-pill">Unlock soon</span>
+            <span class="an-ai-lock-pill">Available soon</span>
           </div>
         </div>
       </div>
@@ -935,11 +940,10 @@
         <div class="an-ai-bubble-ai">
           <div class="an-ai-redacted">
             <span style="width:88%"></span>
-            <span style="width:70%"></span>
-            <span style="width:40%"></span>
+            <span style="width:65%"></span>
           </div>
           <div class="an-ai-lock">
-            <span class="an-ai-lock-pill">Unlock soon</span>
+            <span class="an-ai-lock-pill">Available soon</span>
           </div>
         </div>
       </div>
@@ -955,9 +959,8 @@
   </div>
 
   <div class="an-ai-foot">
-    This feature will connect to a language model with access to your
-    GA4 data, content history, and editorial activity —
-    turning raw numbers into business-ready answers.
+    Connects to a language model trained on your GA4 data, content publishes,
+    and editorial activity — turning raw numbers into business-ready answers.
   </div>
 
 </aside>
