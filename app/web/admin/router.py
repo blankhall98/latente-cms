@@ -34,6 +34,7 @@ from app.services.image_processing import should_process_image, process_image_to
 from app.services.mail_service import send_contact_email
 from app.services.versioning_service import create_entry_snapshot
 from app.services.ga_service import fetch_ga4_report
+from app.services.report_service import generate_analytics_pdf
 
 # Optional server-side schema validation toggle
 ENABLE_SERVER_VALIDATION = False
@@ -1176,6 +1177,8 @@ def analytics_report(
     db: Session = Depends(get_db),
     tenant: str | None = Query(None),
 ):
+    from fastapi.responses import Response as FastAPIResponse
+
     try:
         auth = _require_web_user(request)
     except HTTPException:
@@ -1199,17 +1202,23 @@ def analytics_report(
     stats    = _content_stats(db, tenant_id=_tid)
     activity = _activity_stats(db, tenant_id=_tid)
     ga       = fetch_ga4_report(selected_tenant["slug"])
+    generated_on = datetime.now(timezone.utc).strftime("%B %d, %Y")
 
-    return templates.TemplateResponse(
-        "admin/analytics_report.html",
-        {
-            "request": request,
-            "tenant": selected_tenant,
-            "stats": stats,
-            "activity": activity,
-            "ga": ga,
-            "generated_on": datetime.now(timezone.utc).strftime("%B %d, %Y"),
-        },
+    pdf_bytes = generate_analytics_pdf(
+        tenant=selected_tenant,
+        stats=stats,
+        activity=activity,
+        ga=ga,
+        generated_on=generated_on,
+    )
+
+    slug = selected_tenant["slug"]
+    filename = f"analytics-{slug}-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.pdf"
+
+    return FastAPIResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

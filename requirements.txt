@@ -70,3 +70,4 @@ wheel==0.45.1
 firebase-admin==6.5.0
 Pillow==10.4.0
 google-analytics-data==0.21.0
+fpdf2==2.8.7

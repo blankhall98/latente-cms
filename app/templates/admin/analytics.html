@@ -326,10 +326,9 @@
       <h1 class="an-report-title">Project Statistical Summary</h1>
       {% if selected_tenant and not show_all %}
       <a href="/admin/analytics/report?tenant={{ selected_tenant.slug }}"
-         target="_blank"
          class="an-report-btn"
-         aria-label="Download analytics report">
-        ↓ Download Report
+         aria-label="Download analytics report as PDF">
+        ↓ Download PDF
       </a>
       {% endif %}
     </div>
