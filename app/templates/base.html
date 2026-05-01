@@ -267,6 +267,43 @@
     html[data-night="1"] .pf-feat-locked{ color:#3f3f46; }
     html[data-night="1"] .pf-plan-current{ background:#f0f0f1; color:#0a0a0b; }
 
+    /* ── Dashboard / Pages / Projects hero & table ── */
+    html[data-night="1"] .z2h-admin-hero{ border-bottom-color:#27272a; }
+    html[data-night="1"] .z2h-admin-hero::after{ background:#f0f0f1; }
+    html[data-night="1"] .z2h-admin-hero__eyebrow{ color:#52525b; }
+    html[data-night="1"] .z2h-admin-hero__title{ color:#f0f0f1 !important; }
+    html[data-night="1"] .z2h-admin-hero__meta{ color:#71717a; }
+    html[data-night="1"] .z2h-admin-hero__meta strong{ color:#f0f0f1; }
+    html[data-night="1"] .z2h-admin-token{
+      background:rgba(255,255,255,.06); border-color:#27272a;
+      color:#f0f0f1; box-shadow:none;
+    }
+    html[data-night="1"] .z2h-admin-token.is-muted{ color:#52525b; background:transparent; }
+    html[data-night="1"] .z2h-admin-token.z2h-chip-status.published{ background:#071209; border-color:#14532d; color:#86efac; }
+    html[data-night="1"] .z2h-admin-token.z2h-chip-status.draft{ background:#1a1200; border-color:#713f12; color:#fde68a; }
+    html[data-night="1"] .z2h-admin-code{ background:#18181b; border-color:#27272a; color:#9898a3; }
+    html[data-night="1"] .z2h-admin-back{ color:#71717a; }
+    html[data-night="1"] .z2h-section-head{ border-bottom-color:#27272a; }
+    html[data-night="1"] .z2h-section-head h2,
+    html[data-night="1"] .z2h-section-head .h6{ color:#52525b !important; }
+    html[data-night="1"] .z2h-table-wrap{ background:#111114; border-color:#27272a; border-radius:8px; }
+    html[data-night="1"] .z2h-table thead th{ color:#52525b; border-color:#27272a; }
+    html[data-night="1"] .z2h-table tbody tr{ border-top-color:#27272a; }
+    html[data-night="1"] .z2h-table td{ color:#f0f0f1; }
+    html[data-night="1"] .z2h-table td[data-th]::before{ color:#52525b; }
+    html[data-night="1"] .z2h-table a{ color:#f0f0f1; }
+    html[data-night="1"] .z2h-empty{ background:#111114; border-color:#27272a; color:#52525b; }
+
+    /* ── Analytics — override inline style colors on table cells ── */
+    html[data-night="1"] .an-table td,
+    html[data-night="1"] .an-two-col td{ color:#f0f0f1 !important; }
+    html[data-night="1"] .an-table td span,
+    html[data-night="1"] .an-two-col td span{ color:#f0f0f1 !important; }
+
+    /* ── General heading safety net ── */
+    html[data-night="1"] h1,html[data-night="1"] h2,
+    html[data-night="1"] h3,html[data-night="1"] h4{ color:#f0f0f1; }
+
     /* ── Support ── */
     html[data-night="1"] .support-shell{ color:#f0f0f1; }
     html[data-night="1"] .support-header{ border-bottom-color:#f0f0f1; }
