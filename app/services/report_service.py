@@ -93,7 +93,7 @@ def _kpi_row(pdf: FPDF, cols: list[tuple[str, str, str]]) -> None:
         pdf.set_font("Helvetica", "B", fs)
         pdf.set_text_color(*_Z900)
         pdf.set_xy(cx + 2, y0 + th + 1.5)
-        pdf.cell(cw - 4, row_h - th - 2, value, align="L")
+        pdf.cell(cw - 4, row_h - th - 2, _safe(str(value)), align="L")
 
     pdf.set_xy(pdf.l_margin, y0 + row_h)
     pdf.ln(1)
@@ -128,11 +128,11 @@ def _insights_strip(pdf: FPDF, insights: dict) -> None:
         pdf.set_font("Helvetica", "B", 7)
         pdf.set_text_color(*color)
         pdf.set_xy(cx + 2, y0 + 0.8)
-        pdf.cell(cw - 4, 2.5, val)
+        pdf.cell(cw - 4, 2.5, _safe(val))
         pdf.set_font("Helvetica", "", 5.5)
         pdf.set_text_color(*_Z500)
         pdf.set_xy(cx + 2, y0 + 3.5)
-        pdf.cell(cw - 4, 2, lbl)
+        pdf.cell(cw - 4, 2, _safe(lbl))
         if i < len(items) - 1:
             pdf.set_draw_color(*_Z200)
             pdf.line(cx + cw, y0 + 1, cx + cw, y0 + h - 1)
@@ -225,10 +225,10 @@ def _two_col_tables(
             pdf.set_font("Helvetica", "", 7)
             pdf.set_text_color(*_Z900)
             pdf.set_xy(cx + 2, ry + 1)
-            pdf.cell(cw * 0.65, rh - 2, label[:28])
+            pdf.cell(cw * 0.65, rh - 2, _safe(label[:28]))
             pdf.set_font("Helvetica", "B", 7)
             pdf.set_xy(cx + cw * 0.65, ry + 1)
-            pdf.cell(cw * 0.35 - 2, rh - 2, value, align="R")
+            pdf.cell(cw * 0.35 - 2, rh - 2, _safe(value), align="R")
 
         # Vertical divider
         pdf.set_draw_color(*_Z200)
@@ -287,7 +287,7 @@ def _simple_table(pdf: FPDF, headers: list[str], rows: list[list[str]], col_widt
             if ci == 0 and len(cell) > 2 and cell.startswith("/"):
                 pdf.set_font("Courier", "", 6.5)
                 pdf.set_text_color(*_Z500)
-            pdf.cell(cw - 4, rh - 2, cell[:52] if ci == 0 else cell, align=align)
+            pdf.cell(cw - 4, rh - 2, _safe(cell[:52] if ci == 0 else cell), align=align)
             x += cw
 
     pdf.set_xy(pdf.l_margin, y0 + th + len(rows) * rh)
@@ -328,7 +328,7 @@ def generate_analytics_pdf(
 
     pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(*_Z900)
-    pdf.cell(0, 11, tenant["name"], new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 11, _safe(tenant["name"]), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(*_Z500)
@@ -404,7 +404,7 @@ def generate_analytics_pdf(
     pdf.set_font("Helvetica", "", 6)
     pdf.set_text_color(*_Z400)
     pdf.set_xy(20, 279)
-    pdf.cell(85, 4, f"{tenant['name']} - Analytics Report")
+    pdf.cell(85, 4, _safe(f"{tenant['name']} - Analytics Report"))
     pdf.set_xy(20, 279)
     pdf.cell(170, 4, f"Prepared by Blank CMS  ·  {generated_on}", align="R")
 
