@@ -180,6 +180,15 @@
     color: #a1a1aa;
   }
 
+  /* ---- Two-column sub-grid (sources + devices) ---- */
+  .an-two-col{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 640px){ .an-two-col{ grid-template-columns: 1fr; } }
+
   /* ---- Daily sessions bar chart ---- */
   .an-chart-wrap{
     margin-top: .75rem;
@@ -378,7 +387,8 @@
       <thead>
         <tr>
           <th scope="col">Sessions</th>
-          <th scope="col">Users</th>
+          <th scope="col">New Users</th>
+          <th scope="col">Returning</th>
           <th scope="col">Page Views</th>
           <th scope="col">Avg. Session</th>
         </tr>
@@ -387,19 +397,23 @@
         <tr>
           <td>
             <span class="an-value">{{ "{:,}".format(ga.sessions) }}</span>
-            <span class="an-value-sub">Total sessions</span>
+            <span class="an-value-sub">Last 30 days</span>
           </td>
           <td>
-            <span class="an-value">{{ "{:,}".format(ga.users) }}</span>
-            <span class="an-value-sub">Unique visitors</span>
+            <span class="an-value">{{ "{:,}".format(ga.new_users) }}</span>
+            <span class="an-value-sub">First visit</span>
+          </td>
+          <td>
+            <span class="an-value">{{ "{:,}".format(ga.returning) }}</span>
+            <span class="an-value-sub">Came back</span>
           </td>
           <td>
             <span class="an-value">{{ "{:,}".format(ga.pageviews) }}</span>
-            <span class="an-value-sub">Page views</span>
+            <span class="an-value-sub">Total views</span>
           </td>
           <td>
             <span class="an-value" style="font-size:1.5rem;">{{ ga.avg_duration }}</span>
-            <span class="an-value-sub">Avg. duration</span>
+            <span class="an-value-sub">Per session</span>
           </td>
         </tr>
       </tbody>
@@ -420,6 +434,62 @@
         <span>{{ ga.series[14].label }}</span>
         <span>{{ ga.series[-1].label }}</span>
       </div>
+    </div>
+
+    {# Traffic sources + Device split — side by side #}
+    <div class="an-two-col">
+
+      {% if ga.sources %}
+      <div>
+        <div class="an-section-head" style="margin-top:1.5rem;">
+          <span class="an-section-label">Traffic Sources</span>
+        </div>
+        <table class="an-table" aria-label="Traffic sources">
+          <thead>
+            <tr>
+              <th scope="col">Channel</th>
+              <th scope="col" style="width:30%">Sessions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for src in ga.sources %}
+            <tr>
+              <td style="font-size:.82rem; color:#3f3f46; padding-top:.6rem; padding-bottom:.6rem;">{{ src.channel }}</td>
+              <td style="font-size:.92rem; font-weight:700; color:#18181b; font-variant-numeric:tabular-nums;">{{ "{:,}".format(src.sessions) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if ga.devices %}
+      <div>
+        <div class="an-section-head" style="margin-top:1.5rem;">
+          <span class="an-section-label">Device Split</span>
+        </div>
+        <table class="an-table" aria-label="Sessions by device">
+          <thead>
+            <tr>
+              {% for name in ga.devices %}
+              <th scope="col">{{ name }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {% for name, count in ga.devices.items() %}
+              <td>
+                <span class="an-value" style="font-size:1.6rem;">{{ "{:,}".format(count) }}</span>
+                <span class="an-value-sub">Sessions</span>
+              </td>
+              {% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
     </div>
 
     {# Top pages #}

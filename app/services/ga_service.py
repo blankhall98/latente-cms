@@ -76,6 +76,7 @@ def fetch_ga4_report(tenant_slug: str) -> dict | None:
             metrics=[
                 Metric(name="sessions"),
                 Metric(name="totalUsers"),
+                Metric(name="newUsers"),
                 Metric(name="screenPageViews"),
                 Metric(name="averageSessionDuration"),
             ],
@@ -83,8 +84,10 @@ def fetch_ga4_report(tenant_slug: str) -> dict | None:
         row = overview.rows[0] if overview.rows else None
         sessions   = int(float(row.metric_values[0].value)) if row else 0
         users      = int(float(row.metric_values[1].value)) if row else 0
-        pageviews  = int(float(row.metric_values[2].value)) if row else 0
-        raw_dur    = float(row.metric_values[3].value) if row else 0
+        new_users  = int(float(row.metric_values[2].value)) if row else 0
+        returning  = max(users - new_users, 0)
+        pageviews  = int(float(row.metric_values[3].value)) if row else 0
+        raw_dur    = float(row.metric_values[4].value) if row else 0
         mins, secs = int(raw_dur // 60), int(raw_dur % 60)
         avg_duration = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
 
@@ -134,14 +137,50 @@ def fetch_ga4_report(tenant_slug: str) -> dict | None:
             for i in range(30, 0, -1)
         ]
 
+        # ── Traffic sources ─────────────────────────────────────────────────
+        sources_resp = client.run_report(RunReportRequest(
+            property=prop,
+            date_ranges=[date_range],
+            dimensions=[Dimension(name="sessionDefaultChannelGrouping")],
+            metrics=[Metric(name="sessions")],
+            order_bys=[OrderBy(
+                metric=OrderBy.MetricOrderBy(metric_name="sessions"),
+                desc=True,
+            )],
+            limit=6,
+        ))
+        sources = [
+            {
+                "channel": r.dimension_values[0].value,
+                "sessions": int(r.metric_values[0].value),
+            }
+            for r in sources_resp.rows
+        ]
+
+        # ── Device split ────────────────────────────────────────────────────
+        devices_resp = client.run_report(RunReportRequest(
+            property=prop,
+            date_ranges=[date_range],
+            dimensions=[Dimension(name="deviceCategory")],
+            metrics=[Metric(name="sessions")],
+        ))
+        devices = {
+            r.dimension_values[0].value.capitalize(): int(r.metric_values[0].value)
+            for r in devices_resp.rows
+        }
+
         return {
             "sessions": sessions,
             "users": users,
+            "new_users": new_users,
+            "returning": returning,
             "pageviews": pageviews,
             "avg_duration": avg_duration,
             "top_pages": top_pages,
             "series": series,
             "max_sessions": max((d["sessions"] for d in series), default=1) or 1,
+            "sources": sources,
+            "devices": devices,
         }
 
     except Exception as exc:
