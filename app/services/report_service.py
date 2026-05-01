@@ -3,6 +3,18 @@ from __future__ import annotations
 
 from fpdf import FPDF, XPos, YPos
 
+def _safe(text: str) -> str:
+    """Replace characters outside Latin-1 (fpdf2 built-in font limit)."""
+    return (
+        text
+        .replace("—", "-")   # em dash
+        .replace("–", "-")   # en dash
+        .replace("↑", "+")   # up arrow
+        .replace("↓", "-")   # down arrow
+        .replace("·", ".")   # middle dot (actually fine, but keep safe)
+    )
+
+
 # ── Palette (zinc) ────────────────────────────────────────────────────────────
 _Z900 = (24,  24,  27)   # #18181b  — primary text / dark fill
 _Z500 = (113, 113, 122)  # #71717a  — secondary text
@@ -25,7 +37,7 @@ def _section_head(pdf: FPDF, label: str, badge: str = "", badge_color: tuple = _
     pdf.set_font("Helvetica", "B", 6)
     pdf.set_text_color(*_Z500)
     pdf.set_xy(pdf.l_margin, y)
-    pdf.cell(0, 4, label.upper(), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 4, _safe(label).upper(), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_draw_color(*_Z200)
     pdf.line(pdf.l_margin, pdf.get_y(), 210 - pdf.r_margin, pdf.get_y())
@@ -100,9 +112,9 @@ def _insights_strip(pdf: FPDF, insights: dict) -> None:
     items: list[tuple[str, str, tuple]] = []
     ins = insights
     if ins.get("trend_pct") is not None:
-        arrow = "↑" if ins["trend_dir"] == "up" else "↓"
+        arrow = "+" if ins["trend_dir"] == "up" else "-"
         color = _GREEN if ins["trend_dir"] == "up" else _RED
-        items.append((f"{arrow} {ins['trend_pct']}%", "vs prev 15 days", color))
+        items.append((f"{arrow}{ins['trend_pct']}%", "vs prev 15 days", color))
     items.append((f"~{ins.get('daily_avg', 0)}", "avg sessions / day", _Z900))
     peak = ins.get("peak_sessions", 0)
     plbl = ins.get("peak_label", "")
@@ -306,13 +318,13 @@ def generate_analytics_pdf(
     pdf.set_font("Helvetica", "", 6.5)
     pdf.set_text_color(161, 161, 170)
     pdf.set_xy(20, 4.5)
-    pdf.cell(170, 5, f"Generated {generated_on}  |  Confidential — internal use only", align="R")
+    pdf.cell(170, 5, f"Generated {generated_on}  |  Confidential - internal use only", align="R")
 
     # ── Title block ───────────────────────────────────────────────────────────
     pdf.set_xy(20, 20)
     pdf.set_font("Helvetica", "B", 6.5)
     pdf.set_text_color(*_Z400)
-    pdf.cell(0, 4, "ANALYTICS REPORT — LAST 30 DAYS", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 4, "ANALYTICS REPORT - LAST 30 DAYS", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(*_Z900)
@@ -331,7 +343,7 @@ def generate_analytics_pdf(
 
     # ── Traffic & Engagement (GA4) ────────────────────────────────────────────
     if ga:
-        _section_head(pdf, "Traffic & Engagement — Last 30 Days", "Google Analytics", _BLUE)
+        _section_head(pdf, "Traffic & Engagement - Last 30 Days", "Google Analytics", _BLUE)
 
         _kpi_row(pdf, [
             (f"{ga['sessions']:,}",  "Sessions",    "lg"),
@@ -344,7 +356,7 @@ def generate_analytics_pdf(
         if ga.get("insights"):
             _insights_strip(pdf, ga["insights"])
 
-        _section_head(pdf, "Sessions — Last 30 Days")
+        _section_head(pdf, "Sessions - Last 30 Days")
         _bar_chart(pdf, ga["series"], ga["max_sessions"])
 
         # Sources + Devices side by side
@@ -377,7 +389,7 @@ def generate_analytics_pdf(
 
     # ── Editorial activity ────────────────────────────────────────────────────
     if activity:
-        _section_head(pdf, "Editorial Activity — Last 30 Days", "Live", _GREEN)
+        _section_head(pdf, "Editorial Activity - Last 30 Days", "Live", _GREEN)
         _kpi_row(pdf, [
             (str(activity["publishes_30d"]), "Publishes",         "lg"),
             (str(activity["edits_30d"]),     "Edits",             "lg"),
@@ -392,7 +404,7 @@ def generate_analytics_pdf(
     pdf.set_font("Helvetica", "", 6)
     pdf.set_text_color(*_Z400)
     pdf.set_xy(20, 279)
-    pdf.cell(85, 4, f"{tenant['name']} — Analytics Report")
+    pdf.cell(85, 4, f"{tenant['name']} - Analytics Report")
     pdf.set_xy(20, 279)
     pdf.cell(170, 4, f"Prepared by Blank CMS  ·  {generated_on}", align="R")
 
