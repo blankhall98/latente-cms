@@ -112,6 +112,11 @@
              {% if is_projects %}aria-current="page"{% endif %}>Projects</a>
         {% endif %}
 
+        {% set is_profile = path.startswith('/admin/profile') %}
+        <a class="nav-link {{ 'active' if is_profile else '' }}"
+           href="/admin/profile"
+           {% if is_profile %}aria-current="page"{% endif %}>Profile</a>
+
         <form action="/logout" method="post" class="ms-2" aria-label="Sign out">
           <!-- Same effect as login CTA, in red -->
           <button class="btn btn-sm z2h-logout" type="submit" id="z2h-logout-btn">

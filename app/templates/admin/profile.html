@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+{% block title %}Profile · Blank CMS{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ============================================================
+     Profile — consistent with analytics / support design system
+     ============================================================ */
+  .pf-shell{
+    max-width: 900px;
+  }
+
+  /* ---- Page header ---- */
+  .pf-header{
+    padding-bottom: 1.1rem;
+    border-bottom: 2px solid #18181b;
+    margin-bottom: 1.75rem;
+  }
+  .pf-kicker{
+    font-size: .68rem; font-weight: 700; letter-spacing: .18em;
+    text-transform: uppercase; color: #a1a1aa; margin-bottom: .3rem;
+  }
+  .pf-title{
+    font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em;
+    margin: 0 0 .55rem; line-height: 1; color: #18181b;
+  }
+  .pf-meta{ font-size: .8rem; color: #71717a; }
+  .pf-meta strong{ color: #18181b; font-weight: 600; }
+
+  /* ---- Section header ---- */
+  .pf-section{ margin-bottom: 2rem; }
+  .pf-section-head{
+    display: flex; align-items: center; gap: .75rem;
+    margin-bottom: 1.1rem; padding-bottom: .55rem;
+    border-bottom: 1px solid #e4e4e7;
+  }
+  .pf-section-label{
+    font-size: .68rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: #71717a; flex: 1;
+  }
+  .pf-badge{
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; padding: .12rem .4rem; border-radius: 2px;
+  }
+  .pf-badge--live{ background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+  .pf-badge--soon{ background: #fffbeb; border: 1px solid #fde68a; color: #713f12; }
+
+  /* ---- Alerts ---- */
+  .pf-alert{
+    border-radius: 4px; font-size: .85rem;
+    margin-bottom: 1.25rem; border-width: 1px;
+  }
+
+  /* ---- Account card ---- */
+  .pf-account-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .pf-field{ margin-bottom: .9rem; }
+  .pf-label{
+    display: block; font-size: .7rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: #71717a; margin-bottom: .35rem;
+  }
+  .pf-value{
+    font-size: .9rem; color: #18181b; font-weight: 500;
+    padding: .5rem .75rem;
+    background: #f4f4f5; border: 1px solid #e4e4e7;
+    border-radius: 6px; display: block;
+  }
+
+  /* Change password form */
+  .pf-pw-form .form-label{
+    font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #71717a; margin-bottom: .35rem;
+  }
+  .pf-pw-form .form-control{
+    border: 1px solid #d4d4d8; border-radius: 6px;
+    font-size: .875rem; color: #18181b;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .pf-pw-form .form-control:focus{
+    border-color: #18181b;
+    box-shadow: 0 0 0 3px rgba(24,24,27,.07); outline: none;
+  }
+  .pf-pw-btn{
+    font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; border-radius: 6px;
+    padding: .42rem 1rem;
+  }
+
+  /* ---- Projects grid ---- */
+  .pf-projects{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  .pf-project-card{
+    border: 1px solid #e4e4e7; border-radius: 6px;
+    padding: .9rem 1rem; background: #ffffff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .pf-project-card:hover{
+    border-color: #a1a1aa;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .pf-project-card.active{
+    border-color: #18181b;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .pf-project-name{
+    font-size: .88rem; font-weight: 700; color: #18181b;
+    margin-bottom: .2rem; line-height: 1.2;
+  }
+  .pf-project-slug{
+    font-size: .72rem; color: #71717a; font-family: monospace;
+    margin-bottom: .75rem;
+  }
+  .pf-project-footer{
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pf-active-pill{
+    font-size: .58rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; background: #18181b; color: #ffffff;
+    border-radius: 3px; padding: .12rem .4rem;
+  }
+  .pf-switch-btn{
+    font-size: .68rem; font-weight: 600; color: #71717a;
+    text-decoration: none; letter-spacing: .03em;
+    padding: .2rem .5rem; border: 1px solid #e4e4e7; border-radius: 4px;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .pf-switch-btn:hover{ color: #18181b; border-color: #a1a1aa; }
+
+  /* ---- Team table ---- */
+  .pf-team-table{
+    width: 100%; border-collapse: collapse;
+    border: 1px solid #e4e4e7; background: #ffffff;
+  }
+  .pf-team-table th{
+    padding: .55rem .85rem; font-size: .65rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: #a1a1aa;
+    text-align: left; border-bottom: 1px solid #e4e4e7;
+    background: #fafafa;
+  }
+  .pf-team-table td{
+    padding: .8rem .85rem; font-size: .85rem; color: #18181b;
+    border-bottom: 1px solid #f4f4f5; vertical-align: middle;
+  }
+  .pf-team-table tr:last-child td{ border-bottom: none; }
+  .pf-team-role{
+    font-size: .7rem; color: #71717a; font-weight: 500;
+  }
+  .pf-team-you{
+    font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #a1a1aa; margin-left: .4rem;
+  }
+  .pf-remove-btn{
+    font-size: .68rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: #71717a;
+    background: transparent; border: 1px solid #e4e4e7;
+    border-radius: 4px; padding: .22rem .55rem; cursor: pointer;
+    transition: color .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .pf-remove-btn:hover{
+    color: #dc2626; border-color: #fecaca; background: #fef2f2;
+  }
+
+  /* Invite form */
+  .pf-invite-form{
+    display: flex; gap: .5rem; margin-top: 1rem; align-items: center;
+  }
+  .pf-invite-input{
+    flex: 1; border: 1px solid #d4d4d8; border-radius: 6px;
+    padding: .45rem .75rem; font-size: .85rem; color: #18181b;
+    font-family: inherit;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .pf-invite-input:focus{
+    border-color: #18181b;
+    box-shadow: 0 0 0 3px rgba(24,24,27,.07); outline: none;
+  }
+  .pf-invite-btn{
+    font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; border-radius: 6px;
+    padding: .44rem 1rem; white-space: nowrap;
+  }
+
+  /* Temp password reveal box */
+  .pf-creds-box{
+    margin-top: 1rem; padding: .85rem 1rem;
+    background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;
+  }
+  .pf-creds-box p{ font-size: .82rem; color: #166534; margin-bottom: .35rem; }
+  .pf-creds-box code{
+    font-size: .85rem; font-weight: 700; color: #14532d;
+    background: #dcfce7; border: 1px solid #bbf7d0;
+    border-radius: 4px; padding: .15rem .45rem; letter-spacing: .04em;
+  }
+  .pf-creds-note{
+    font-size: .72rem; color: #166534; margin-top: .4rem; margin-bottom: 0;
+    opacity: .8;
+  }
+
+  /* ---- Plan cards ---- */
+  .pf-plans{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  .pf-plan-card{
+    border: 1px solid #e4e4e7; border-radius: 8px;
+    overflow: hidden; background: #ffffff;
+  }
+  .pf-plan-card.pro{
+    border-color: #d4d4d8;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  }
+  .pf-plan-head{
+    padding: .9rem 1.1rem .8rem;
+    border-bottom: 1px solid #f4f4f5;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pf-plan-card.pro .pf-plan-head{
+    background: #18181b;
+  }
+  /* Rainbow top rule for Pro */
+  .pf-plan-card.pro::before{
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b);
+  }
+  .pf-plan-name{
+    font-size: .82rem; font-weight: 700; color: #18181b; letter-spacing: -.01em;
+  }
+  .pf-plan-card.pro .pf-plan-name{ color: #ffffff; }
+  .pf-plan-current{
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; background: #18181b; color: #ffffff;
+    border-radius: 3px; padding: .12rem .4rem;
+  }
+  .pf-plan-soon{
+    display: inline-flex; align-items: center; gap: .2rem;
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #fbbf24;
+    background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.25);
+    border-radius: 3px; padding: .1rem .38rem;
+  }
+  .pf-plan-soon::before{
+    content: ""; width: 5px; height: 5px; border-radius: 50%;
+    background: #fbbf24; animation: pf-pulse 2s ease-in-out infinite;
+  }
+  @keyframes pf-pulse{
+    0%,100%{ opacity:1; } 50%{ opacity:.3; }
+  }
+  .pf-plan-body{ padding: .85rem 1.1rem 1rem; }
+  .pf-plan-desc{
+    font-size: .77rem; color: #52525b; line-height: 1.55;
+    margin-bottom: .85rem;
+  }
+  .pf-plan-card.pro .pf-plan-desc{ color: #52525b; }
+  .pf-plan-features{ list-style: none; margin: 0; padding: 0; }
+  .pf-plan-features li{
+    display: flex; align-items: flex-start; gap: .55rem;
+    font-size: .8rem; color: #3f3f46; line-height: 1.5;
+    margin-bottom: .45rem;
+  }
+  .pf-plan-features li:last-child{ margin-bottom: 0; }
+  .pf-feat-icon{
+    width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;
+  }
+  .pf-feat-icon--check{ color: #16a34a; }
+  .pf-feat-icon--lock{ color: #a1a1aa; }
+  .pf-feat-locked{ color: #a1a1aa; }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 768px){
+    .pf-account-grid{ grid-template-columns: 1fr; }
+    .pf-plans{ grid-template-columns: 1fr; }
+    .pf-invite-form{ flex-direction: column; align-items: stretch; }
+  }
+  @media (max-width: 575px){
+    .pf-projects{ grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pf-shell">
+
+  {# ---- Header ---- #}
+  <div class="pf-header">
+    <p class="pf-kicker">Blank CMS</p>
+    <h1 class="pf-title">Profile</h1>
+    <p class="pf-meta">
+      Signed in as <strong>{{ user_obj.email if user_obj else user.email }}</strong>
+      {% if is_superadmin %}&nbsp;&middot;&nbsp;<strong>Superadmin</strong>{% endif %}
+    </p>
+  </div>
+
+  {# ---- Alerts ---- #}
+  {% if pw_changed %}
+    <div class="alert alert-success pf-alert" role="status">Password updated successfully.</div>
+  {% endif %}
+  {% if form_error %}
+    <div class="alert alert-danger pf-alert" role="alert">{{ form_error }}</div>
+  {% endif %}
+  {% if invited_email %}
+    <div class="pf-creds-box">
+      <p><strong>{{ invited_email }}</strong> now has access to
+        <strong>{{ current_tenant.name }}</strong>.</p>
+      {% if temp_pw %}
+        <p>Share these credentials — the password will not be shown again:</p>
+        <p>Email: <code>{{ invited_email }}</code> &nbsp; Password: <code>{{ temp_pw }}</code></p>
+        <p class="pf-creds-note">The user should change their password after first login.</p>
+      {% else %}
+        <p class="pf-creds-note">This user already had an account — access to this project has been granted.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# ---- Account ---- #}
+  <div class="pf-section">
+    <div class="pf-section-head">
+      <span class="pf-section-label">Account</span>
+      <span class="pf-badge pf-badge--live">Live</span>
+    </div>
+
+    <div class="pf-account-grid">
+      {# Read-only info #}
+      <div>
+        <div class="pf-field">
+          <span class="pf-label">Email</span>
+          <span class="pf-value">{{ user_obj.email if user_obj else user.email }}</span>
+        </div>
+        <div class="pf-field">
+          <span class="pf-label">Name</span>
+          <span class="pf-value">{{ user_obj.full_name if user_obj and user_obj.full_name else "—" }}</span>
+        </div>
+      </div>
+
+      {# Change password #}
+      <form class="pf-pw-form" action="/admin/profile/password" method="post">
+        <div class="mb-2">
+          <label class="form-label" for="pf-cur-pw">Current password</label>
+          <input class="form-control form-control-sm" id="pf-cur-pw"
+                 name="current_password" type="password" required autocomplete="current-password">
+        </div>
+        <div class="mb-2">
+          <label class="form-label" for="pf-new-pw">New password</label>
+          <input class="form-control form-control-sm" id="pf-new-pw"
+                 name="new_password" type="password" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="pf-conf-pw">Confirm new password</label>
+          <input class="form-control form-control-sm" id="pf-conf-pw"
+                 name="confirm_password" type="password" required autocomplete="new-password">
+        </div>
+        <button class="btn btn-dark pf-pw-btn" type="submit">Update password</button>
+      </form>
+    </div>
+  </div>
+
+  {# ---- My Projects ---- #}
+  <div class="pf-section">
+    <div class="pf-section-head">
+      <span class="pf-section-label">My Projects</span>
+      <span class="pf-badge pf-badge--live">Live</span>
+    </div>
+
+    {% if my_tenants %}
+    <div class="pf-projects">
+      {% for t in my_tenants %}
+      {% set is_active = (current_tenant and current_tenant.id == t.id) %}
+      <div class="pf-project-card {% if is_active %}active{% endif %}">
+        <div class="pf-project-name">{{ t.name }}</div>
+        <div class="pf-project-slug">/{{ t.slug }}</div>
+        <div class="pf-project-footer">
+          {% if is_active %}
+            <span class="pf-active-pill">Active</span>
+          {% else %}
+            <span></span>
+            <a class="pf-switch-btn" href="/admin/projects">Switch</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted small">No projects assigned yet.</p>
+    {% endif %}
+  </div>
+
+  {# ---- Team Access (superadmin only) ---- #}
+  {% if is_superadmin and current_tenant and current_tenant.id %}
+  <div class="pf-section">
+    <div class="pf-section-head">
+      <span class="pf-section-label">Team &mdash; {{ current_tenant.name }}</span>
+      <span class="pf-badge pf-badge--live">Live</span>
+    </div>
+
+    {% if team %}
+    <table class="pf-team-table">
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Role</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in team %}
+        <tr>
+          <td>
+            {{ member.email }}
+            {% if member.is_self %}<span class="pf-team-you">you</span>{% endif %}
+            {% if member.full_name %}<br><small class="text-muted">{{ member.full_name }}</small>{% endif %}
+          </td>
+          <td><span class="pf-team-role">{{ member.role }}</span></td>
+          <td class="text-end">
+            {% if not member.is_self %}
+            <form action="/admin/profile/remove/{{ member.user_tenant_id }}" method="post" style="display:inline">
+              <button type="submit" class="pf-remove-btn"
+                onclick="return confirm('Remove {{ member.email }} from {{ current_tenant.name }}?')">
+                Remove
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted small">No team members yet.</p>
+    {% endif %}
+
+    <form class="pf-invite-form" action="/admin/profile/invite" method="post">
+      <input class="pf-invite-input" type="email" name="email"
+             placeholder="colleague@company.com" required maxlength="320"
+             aria-label="Email address to invite">
+      <button class="btn btn-dark pf-invite-btn" type="submit">Invite</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {# ---- Plan ---- #}
+  <div class="pf-section">
+    <div class="pf-section-head">
+      <span class="pf-section-label">Plan</span>
+    </div>
+
+    <div class="pf-plans">
+
+      {# Free #}
+      <div class="pf-plan-card">
+        <div class="pf-plan-head">
+          <span class="pf-plan-name">Free</span>
+          <span class="pf-plan-current">Current plan</span>
+        </div>
+        <div class="pf-plan-body">
+          <p class="pf-plan-desc">Everything you need to manage content and monitor your projects.</p>
+          <ul class="pf-plan-features">
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg>
+              Content management &amp; publishing
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg>
+              Google Analytics integration
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg>
+              Editorial activity tracking
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg>
+              Basic analytics PDF report
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg>
+              Support form
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {# Pro #}
+      <div class="pf-plan-card pro">
+        <div class="pf-plan-head">
+          <span class="pf-plan-name">Pro</span>
+          <span class="pf-plan-soon">Coming soon</span>
+        </div>
+        <div class="pf-plan-body">
+          <p class="pf-plan-desc">Unlock AI-powered insights and premium reporting for your team.</p>
+          <ul class="pf-plan-features">
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg>
+              Everything in Free
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--lock" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+              <span class="pf-feat-locked">Analytics AI chat — unlimited queries</span>
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--lock" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+              <span class="pf-feat-locked">Premium business intelligence reports</span>
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--lock" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+              <span class="pf-feat-locked">Scheduled automated reports</span>
+            </li>
+            <li>
+              <svg class="pf-feat-icon pf-feat-icon--lock" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+              <span class="pf-feat-locked">Priority support</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

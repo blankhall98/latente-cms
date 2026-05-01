@@ -9,6 +9,8 @@ import re
 import time
 import uuid
 import json
+import secrets
+from urllib.parse import quote
 
 from fastapi import APIRouter, Request, Depends, HTTPException, Form, Query, UploadFile, File
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -19,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.core.settings import settings
 from app.db.session import get_db
-from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
+from app.models.auth import Tenant, User, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
 from app.models.audit import ContentAuditLog
 from app.models.owa_popup import OwaPopupSubmission
@@ -32,6 +34,7 @@ from app.services.ui_schema_service import (
 from app.services.firebase_storage import is_firebase_configured, upload_file_to_firebase
 from app.services.image_processing import should_process_image, process_image_to_webp
 from app.services.mail_service import send_contact_email
+from app.services.passwords import verify_password, hash_password
 from app.services.versioning_service import create_entry_snapshot
 from app.services.ga_service import fetch_ga4_report
 from app.services.report_service import generate_analytics_pdf
@@ -1220,6 +1223,204 @@ def analytics_report(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# --------------------------- Profile ---------------------------
+
+@router.get("/admin/profile")
+def admin_profile(
+    request: Request,
+    db: Session = Depends(get_db),
+    pw: str | None = Query(None),
+    invited: str | None = Query(None),
+    temp_pw: str | None = Query(None),
+    error: str | None = Query(None),
+):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=302)
+
+    is_superadmin = bool(auth.get("is_superadmin"))
+    active = _get_active_tenant(request)
+    user_id = int(auth["id"])
+
+    user_obj = db.get(User, user_id)
+
+    if is_superadmin:
+        tenants_rows = db.scalars(
+            select(Tenant).where(Tenant.is_active.is_(True)).order_by(Tenant.name)
+        ).all()
+        my_tenants = [{"id": t.id, "name": t.name, "slug": t.slug} for t in tenants_rows]
+    else:
+        pairs = db.execute(
+            select(Tenant, UserTenant)
+            .join(UserTenant, UserTenant.tenant_id == Tenant.id)
+            .where(
+                UserTenant.user_id == user_id,
+                UserTenant.status == _active_status_value(),
+                Tenant.is_active.is_(True),
+            )
+            .order_by(Tenant.name)
+        ).all()
+        my_tenants = [{"id": t.id, "name": t.name, "slug": t.slug} for t, _ in pairs]
+
+    team = []
+    if is_superadmin and active:
+        team_rows = db.execute(
+            select(User, UserTenant, Role)
+            .join(UserTenant, UserTenant.user_id == User.id)
+            .join(Role, UserTenant.role_id == Role.id)
+            .where(
+                UserTenant.tenant_id == int(active["id"]),
+                UserTenant.status == _active_status_value(),
+            )
+            .order_by(User.email)
+        ).all()
+        team = [
+            {
+                "user_tenant_id": ut.id,
+                "email": u.email,
+                "full_name": u.full_name or "",
+                "role": r.label,
+                "is_self": u.id == user_id,
+            }
+            for u, ut, r in team_rows
+        ]
+
+    error_messages = {
+        "wrong_password": "Current password is incorrect.",
+        "mismatch": "New passwords do not match.",
+        "too_short": "Password must be at least 8 characters.",
+        "already_member": "That user already has access to this project.",
+        "no_project": "No active project selected.",
+    }
+
+    return templates.TemplateResponse(
+        "admin/profile.html",
+        {
+            "request": request,
+            "user": auth,
+            "user_obj": user_obj,
+            "is_superadmin": is_superadmin,
+            "current_tenant": active or {"name": "—", "slug": None, "id": None},
+            "my_tenants": my_tenants,
+            "team": team,
+            "pw_changed": pw == "changed",
+            "invited_email": invited,
+            "temp_pw": temp_pw,
+            "form_error": error_messages.get(error or ""),
+        },
+    )
+
+
+@router.post("/admin/profile/password")
+def change_password(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=302)
+
+    user_obj = db.get(User, int(auth["id"]))
+    if not user_obj:
+        return RedirectResponse(url="/admin/profile?error=wrong_password", status_code=302)
+
+    if not verify_password(current_password, user_obj.hashed_password):
+        return RedirectResponse(url="/admin/profile?error=wrong_password", status_code=302)
+    if new_password != confirm_password:
+        return RedirectResponse(url="/admin/profile?error=mismatch", status_code=302)
+    if len(new_password) < 8:
+        return RedirectResponse(url="/admin/profile?error=too_short", status_code=302)
+
+    user_obj.hashed_password = hash_password(new_password)
+    db.commit()
+    return RedirectResponse(url="/admin/profile?pw=changed", status_code=302)
+
+
+@router.post("/admin/profile/invite")
+def invite_user(
+    request: Request,
+    db: Session = Depends(get_db),
+    email: str = Form(...),
+):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=302)
+    if not auth.get("is_superadmin"):
+        raise HTTPException(status_code=403)
+
+    active = _get_active_tenant(request)
+    if not active:
+        return RedirectResponse(url="/admin/profile?error=no_project", status_code=302)
+
+    email = email.strip().lower()
+    temp_pw: str | None = None
+
+    existing_user = db.scalar(select(User).where(User.email == email))
+    if existing_user:
+        user_obj = existing_user
+    else:
+        temp_pw = secrets.token_urlsafe(9)
+        user_obj = User(
+            email=email,
+            hashed_password=hash_password(temp_pw),
+            is_active=True,
+            is_superadmin=False,
+        )
+        db.add(user_obj)
+        db.flush()
+
+    existing_ut = db.scalar(
+        select(UserTenant).where(
+            UserTenant.user_id == user_obj.id,
+            UserTenant.tenant_id == int(active["id"]),
+        )
+    )
+    if existing_ut:
+        return RedirectResponse(url="/admin/profile?error=already_member", status_code=302)
+
+    editor_role = db.scalar(select(Role).where(Role.key == "editor"))
+    ut = UserTenant(
+        user_id=user_obj.id,
+        tenant_id=int(active["id"]),
+        role_id=editor_role.id if editor_role else 3,
+        status=UserTenantStatus.active,
+    )
+    db.add(ut)
+    db.commit()
+
+    redirect = f"/admin/profile?invited={quote(email)}"
+    if temp_pw:
+        redirect += f"&temp_pw={quote(temp_pw)}"
+    return RedirectResponse(url=redirect, status_code=302)
+
+
+@router.post("/admin/profile/remove/{user_tenant_id}")
+def remove_user_access(
+    user_tenant_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=302)
+    if not auth.get("is_superadmin"):
+        raise HTTPException(status_code=403)
+
+    ut = db.get(UserTenant, user_tenant_id)
+    if ut and ut.user_id != int(auth["id"]):
+        db.delete(ut)
+        db.commit()
+
+    return RedirectResponse(url="/admin/profile", status_code=302)
 
 
 # --------------------------- Support ---------------------------
