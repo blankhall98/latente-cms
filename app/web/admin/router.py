@@ -1170,6 +1170,49 @@ def admin_analytics(
     )
 
 
+@router.get("/admin/analytics/report")
+def analytics_report(
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant: str | None = Query(None),
+):
+    try:
+        auth = _require_web_user(request)
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=302)
+
+    is_superadmin = bool(auth.get("is_superadmin"))
+    active = _get_active_tenant(request)
+
+    selected_tenant: dict | None = None
+    if is_superadmin and tenant:
+        t = db.scalar(select(Tenant).where(Tenant.slug == tenant, Tenant.is_active.is_(True)))
+        if t:
+            selected_tenant = {"id": t.id, "name": t.name, "slug": t.slug}
+    else:
+        selected_tenant = active
+
+    if not selected_tenant:
+        return RedirectResponse(url="/admin/analytics", status_code=302)
+
+    _tid = selected_tenant["id"]
+    stats    = _content_stats(db, tenant_id=_tid)
+    activity = _activity_stats(db, tenant_id=_tid)
+    ga       = fetch_ga4_report(selected_tenant["slug"])
+
+    return templates.TemplateResponse(
+        "admin/analytics_report.html",
+        {
+            "request": request,
+            "tenant": selected_tenant,
+            "stats": stats,
+            "activity": activity,
+            "ga": ga,
+            "generated_on": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+        },
+    )
+
+
 # --------------------------- Support ---------------------------
 @router.get("/admin/support")
 def admin_support(request: Request):

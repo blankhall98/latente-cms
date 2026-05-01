@@ -225,6 +225,32 @@
     .an-insights{ gap: .75rem 1rem; }
   }
 
+  /* ---- Download report button ---- */
+  .an-report-btn{
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    flex-shrink: 0;
+    padding: .35rem .75rem;
+    border: 1px solid #d4d4d8;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #3f3f46;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+    white-space: nowrap;
+    margin-top: .1rem;
+  }
+  .an-report-btn:hover{
+    border-color: #18181b;
+    color: #18181b;
+    background: #fafafa;
+  }
+
   /* ---- Two-column sub-grid (sources + devices) ---- */
   .an-two-col{
     display: grid;
@@ -296,7 +322,17 @@
   {# ---- Report header ---- #}
   <div class="an-report-head">
     <p class="an-report-label">Blank CMS &mdash; Analytics</p>
-    <h1 class="an-report-title">Project Statistical Summary</h1>
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;">
+      <h1 class="an-report-title">Project Statistical Summary</h1>
+      {% if selected_tenant and not show_all %}
+      <a href="/admin/analytics/report?tenant={{ selected_tenant.slug }}"
+         target="_blank"
+         class="an-report-btn"
+         aria-label="Download analytics report">
+        ↓ Download Report
+      </a>
+      {% endif %}
+    </div>
     <div class="an-report-meta">
       {% if show_all %}
         <span>Scope: <strong>All projects</strong></span>

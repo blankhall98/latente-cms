@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Analytics Report — {{ tenant.name }}</title>
+  <style>
+    /* ============================================================
+       Analytics Report — print-first, consultancy style
+       ============================================================ */
+
+    @page {
+      size: A4;
+      margin: 1.8cm 2cm 2cm;
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+        font-size: 7pt;
+        color: #a1a1aa;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+      font-size: 9pt;
+      color: #18181b;
+      background: #ffffff;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ---- Cover header ----------------------------------------- */
+    .rpt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: .9rem;
+      border-bottom: 2px solid #18181b;
+      margin-bottom: 1.4rem;
+    }
+    .rpt-brand {
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+    }
+    .rpt-meta {
+      text-align: right;
+      font-size: 7.5pt;
+      color: #71717a;
+    }
+    .rpt-meta strong { color: #18181b; }
+
+    .rpt-title-block { margin-bottom: 1.6rem; }
+    .rpt-kicker {
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      margin-bottom: .25rem;
+    }
+    .rpt-title {
+      font-size: 18pt;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      color: #18181b;
+      line-height: 1.1;
+      margin-bottom: .2rem;
+    }
+    .rpt-subtitle {
+      font-size: 9pt;
+      color: #71717a;
+    }
+
+    /* ---- Section headers -------------------------------------- */
+    .rpt-section { margin-bottom: 1.3rem; }
+    .rpt-section-head {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding-bottom: .3rem;
+      border-bottom: 1px solid #e4e4e7;
+      margin-bottom: .65rem;
+    }
+    .rpt-section-label {
+      font-size: 6.5pt;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #71717a;
+      flex: 1;
+    }
+    .rpt-badge {
+      font-size: 5.5pt;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: .12rem .35rem;
+      border-radius: 2px;
+    }
+    .rpt-badge--live {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #14532d;
+    }
+    .rpt-badge--ga {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+    }
+
+    /* ---- KPI table -------------------------------------------- */
+    .rpt-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e4e4e7;
+      background: #ffffff;
+    }
+    .rpt-table th {
+      padding: .35rem .6rem;
+      font-size: 6pt;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      text-align: left;
+      border-bottom: 1px solid #e4e4e7;
+      border-right: 1px solid #e4e4e7;
+      background: #fafafa;
+      white-space: nowrap;
+    }
+    .rpt-table th:last-child { border-right: none; }
+    .rpt-table td {
+      padding: .55rem .6rem .4rem;
+      border-right: 1px solid #e4e4e7;
+      vertical-align: bottom;
+    }
+    .rpt-table td:last-child { border-right: none; }
+    .rpt-table tr + tr td { border-top: 1px solid #e4e4e7; }
+
+    .rpt-val {
+      display: block;
+      font-size: 16pt;
+      font-weight: 700;
+      color: #18181b;
+      letter-spacing: -.03em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .rpt-val--md { font-size: 11pt; letter-spacing: 0; }
+    .rpt-val--sm { font-size: 9pt; font-weight: 600; letter-spacing: 0; }
+    .rpt-val-sub {
+      display: block;
+      font-size: 6.5pt;
+      color: #a1a1aa;
+      margin-top: .2rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    /* ---- Insights strip --------------------------------------- */
+    .rpt-insights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem 1.2rem;
+      align-items: center;
+      padding: .4rem .6rem;
+      border: 1px solid #e4e4e7;
+      border-top: none;
+      background: #fafafa;
+      margin-bottom: 1.3rem;
+    }
+    .rpt-insight { display: flex; align-items: baseline; gap: .3rem; }
+    .rpt-insight-val {
+      font-size: 8pt;
+      font-weight: 700;
+      color: #18181b;
+      font-variant-numeric: tabular-nums;
+    }
+    .rpt-insight-val--up { color: #16a34a; }
+    .rpt-insight-val--down { color: #dc2626; }
+    .rpt-insight-lbl {
+      font-size: 6.5pt;
+      color: #71717a;
+      letter-spacing: .03em;
+    }
+    .rpt-insight-sep {
+      width: 1px; height: 14px; background: #d4d4d8; flex-shrink: 0;
+    }
+
+    /* ---- Bar chart -------------------------------------------- */
+    .rpt-chart-wrap {
+      border: 1px solid #e4e4e7;
+      background: #ffffff;
+      padding: .6rem .6rem .35rem;
+      margin-bottom: 0;
+    }
+    .rpt-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.5px;
+      height: 52pt;
+    }
+    .rpt-bar-col {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      height: 100%;
+    }
+    .rpt-bar {
+      width: 100%;
+      background: #18181b;
+      border-radius: 1px 1px 0 0;
+      min-height: 1.5pt;
+    }
+    .rpt-chart-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: .25rem;
+      font-size: 6pt;
+      color: #a1a1aa;
+    }
+
+    /* ---- Two-column grid -------------------------------------- */
+    .rpt-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    /* ---- Inline data table (pages, sources) ------------------- */
+    .rpt-list {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e4e4e7;
+    }
+    .rpt-list th {
+      padding: .28rem .55rem;
+      font-size: 6pt;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      text-align: left;
+      border-bottom: 1px solid #e4e4e7;
+      border-right: 1px solid #e4e4e7;
+      background: #fafafa;
+    }
+    .rpt-list th:last-child { border-right: none; }
+    .rpt-list td {
+      padding: .28rem .55rem;
+      font-size: 7.5pt;
+      border-top: 1px solid #f4f4f5;
+      border-right: 1px solid #e4e4e7;
+      color: #3f3f46;
+    }
+    .rpt-list td:last-child { border-right: none; }
+    .rpt-list td.num {
+      font-weight: 700;
+      color: #18181b;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .rpt-list td.mono { font-family: "SFMono-Regular", Consolas, monospace; font-size: 7pt; }
+
+    /* ---- Divider ---------------------------------------------- */
+    .rpt-divider {
+      border: none;
+      border-top: 1px solid #e4e4e7;
+      margin: 1.3rem 0;
+    }
+
+    /* ---- Footer ----------------------------------------------- */
+    .rpt-footer {
+      margin-top: 2rem;
+      padding-top: .6rem;
+      border-top: 1px solid #e4e4e7;
+      display: flex;
+      justify-content: space-between;
+      font-size: 6.5pt;
+      color: #a1a1aa;
+    }
+
+    /* ---- Print controls (hidden when printing) ---------------- */
+    .rpt-print-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #18181b;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1.5rem;
+      gap: 1rem;
+      z-index: 999;
+    }
+    .rpt-print-bar p { font-size: .8rem; color: #a1a1aa; }
+    .rpt-print-btn {
+      background: #ffffff;
+      color: #18181b;
+      border: none;
+      border-radius: 5px;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: .5rem 1.1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .rpt-close-btn {
+      background: transparent;
+      color: #71717a;
+      border: 1px solid #3f3f46;
+      border-radius: 5px;
+      font-size: .78rem;
+      font-weight: 600;
+      padding: .5rem 1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    @media print {
+      .rpt-print-bar { display: none !important; }
+      body { padding-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Report header ──────────────────────────────────────── -->
+  <div class="rpt-header">
+    <span class="rpt-brand">Blank CMS</span>
+    <div class="rpt-meta">
+      <div>Generated on <strong>{{ generated_on }}</strong></div>
+      <div>Confidential — internal use only</div>
+    </div>
+  </div>
+
+  <!-- ── Title block ───────────────────────────────────────── -->
+  <div class="rpt-title-block">
+    <p class="rpt-kicker">Analytics Report &mdash; Last 30 Days</p>
+    <h1 class="rpt-title">{{ tenant.name }}</h1>
+    <p class="rpt-subtitle">Project slug: /{{ tenant.slug }}</p>
+  </div>
+
+  <!-- ── Traffic overview (GA4) ────────────────────────────── -->
+  {% if ga %}
+  <div class="rpt-section">
+    <div class="rpt-section-head">
+      <span class="rpt-section-label">Traffic &amp; Engagement</span>
+      <span class="rpt-badge rpt-badge--ga">Google Analytics</span>
+    </div>
+
+    <table class="rpt-table" aria-label="Traffic overview">
+      <thead>
+        <tr>
+          <th>Sessions</th>
+          <th>New Users</th>
+          <th>Returning</th>
+          <th>Page Views</th>
+          <th>Avg. Session</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="rpt-val">{{ "{:,}".format(ga.sessions) }}</span><span class="rpt-val-sub">Total</span></td>
+          <td><span class="rpt-val">{{ "{:,}".format(ga.new_users) }}</span><span class="rpt-val-sub">First visit</span></td>
+          <td><span class="rpt-val">{{ "{:,}".format(ga.returning) }}</span><span class="rpt-val-sub">Came back</span></td>
+          <td><span class="rpt-val">{{ "{:,}".format(ga.pageviews) }}</span><span class="rpt-val-sub">Total views</span></td>
+          <td><span class="rpt-val rpt-val--md">{{ ga.avg_duration }}</span><span class="rpt-val-sub">Per session</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Insights strip -->
+    {% if ga.insights %}
+    {% set ins = ga.insights %}
+    <div class="rpt-insights">
+      {% if ins.trend_pct is not none %}
+      <div class="rpt-insight">
+        <span class="rpt-insight-val {% if ins.trend_dir == 'up' %}rpt-insight-val--up{% else %}rpt-insight-val--down{% endif %}">
+          {% if ins.trend_dir == 'up' %}↑{% else %}↓{% endif %} {{ ins.trend_pct }}%
+        </span>
+        <span class="rpt-insight-lbl">vs. previous 15 days</span>
+      </div>
+      <span class="rpt-insight-sep"></span>
+      {% endif %}
+      <div class="rpt-insight">
+        <span class="rpt-insight-val">~{{ ins.daily_avg }}</span>
+        <span class="rpt-insight-lbl">avg. sessions / day</span>
+      </div>
+      <span class="rpt-insight-sep"></span>
+      <div class="rpt-insight">
+        <span class="rpt-insight-val">{{ ins.peak_sessions }}</span>
+        <span class="rpt-insight-lbl">peak on {{ ins.peak_label }}</span>
+      </div>
+      {% if ins.busiest_weekday %}
+      <span class="rpt-insight-sep"></span>
+      <div class="rpt-insight">
+        <span class="rpt-insight-val">{{ ins.busiest_weekday }}s</span>
+        <span class="rpt-insight-lbl">busiest day of week</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- 30-day sessions chart -->
+    <div class="rpt-chart-wrap">
+      <div class="rpt-chart">
+        {% for day in ga.series %}
+          {% set pct = (day.sessions / ga.max_sessions * 100) | round | int %}
+          <div class="rpt-bar-col">
+            <div class="rpt-bar" style="height: {{ [pct, 2] | max }}%"></div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="rpt-chart-labels">
+        <span>{{ ga.series[0].label }}</span>
+        <span>{{ ga.series[14].label }}</span>
+        <span>{{ ga.series[-1].label }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sources + Devices ─────────────────────────────────── -->
+  <div class="rpt-two-col rpt-section">
+    {% if ga.sources %}
+    <div>
+      <div class="rpt-section-head">
+        <span class="rpt-section-label">Traffic Sources</span>
+      </div>
+      <table class="rpt-list">
+        <thead><tr><th>Channel</th><th style="text-align:right">Sessions</th></tr></thead>
+        <tbody>
+          {% for src in ga.sources %}
+          <tr>
+            <td>{{ src.channel }}</td>
+            <td class="num">{{ "{:,}".format(src.sessions) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if ga.devices %}
+    <div>
+      <div class="rpt-section-head">
+        <span class="rpt-section-label">Device Split</span>
+      </div>
+      <table class="rpt-list">
+        <thead><tr><th>Device</th><th style="text-align:right">Sessions</th></tr></thead>
+        <tbody>
+          {% for name, count in ga.devices.items() %}
+          <tr>
+            <td>{{ name }}</td>
+            <td class="num">{{ "{:,}".format(count) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Top pages ─────────────────────────────────────────── -->
+  {% if ga.top_pages %}
+  <div class="rpt-section">
+    <div class="rpt-section-head">
+      <span class="rpt-section-label">Top Pages by Views</span>
+    </div>
+    <table class="rpt-list">
+      <thead><tr><th>Page</th><th style="text-align:right">Views</th></tr></thead>
+      <tbody>
+        {% for page in ga.top_pages %}
+        <tr>
+          <td class="mono">{{ page.path }}</td>
+          <td class="num">{{ "{:,}".format(page.views) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% endif %}{# end if ga #}
+
+  <hr class="rpt-divider">
+
+  <!-- ── Content health ────────────────────────────────────── -->
+  {% if stats %}
+  <div class="rpt-section">
+    <div class="rpt-section-head">
+      <span class="rpt-section-label">Content Health</span>
+      <span class="rpt-badge rpt-badge--live">Live</span>
+    </div>
+    <table class="rpt-table">
+      <thead>
+        <tr>
+          <th>Published</th><th>Drafts</th><th>Sections</th><th>Last Published</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="rpt-val">{{ stats.published }}</span><span class="rpt-val-sub">Live pages</span></td>
+          <td><span class="rpt-val">{{ stats.drafts }}</span><span class="rpt-val-sub">Pending</span></td>
+          <td><span class="rpt-val">{{ stats.sections }}</span><span class="rpt-val-sub">Content types</span></td>
+          <td><span class="rpt-val rpt-val--md">{{ stats.last_published }}</span><span class="rpt-val-sub">Most recent</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ── Editorial activity ────────────────────────────────── -->
+  {% if activity %}
+  <div class="rpt-section">
+    <div class="rpt-section-head">
+      <span class="rpt-section-label">Editorial Activity &mdash; Last 30 Days</span>
+      <span class="rpt-badge rpt-badge--live">Live</span>
+    </div>
+    <table class="rpt-table">
+      <thead>
+        <tr>
+          <th>Publishes</th><th>Edits</th><th>Active Editors</th><th>Most Edited Section</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="rpt-val">{{ activity.publishes_30d }}</span><span class="rpt-val-sub">Published</span></td>
+          <td><span class="rpt-val">{{ activity.edits_30d }}</span><span class="rpt-val-sub">Changes</span></td>
+          <td><span class="rpt-val">{{ activity.editors_30d }}</span><span class="rpt-val-sub">Contributors</span></td>
+          <td><span class="rpt-val rpt-val--sm">{{ activity.top_section }}</span><span class="rpt-val-sub">Most active</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ── Footer ────────────────────────────────────────────── -->
+  <div class="rpt-footer">
+    <span>{{ tenant.name }} &mdash; Analytics Report</span>
+    <span>Prepared by Blank CMS &middot; {{ generated_on }}</span>
+  </div>
+
+  <!-- ── Print control bar (screen only) ───────────────────── -->
+  <div class="rpt-print-bar">
+    <p>Preview ready &mdash; save as PDF using your browser's print dialog.</p>
+    <div style="display:flex; gap:.5rem;">
+      <button class="rpt-close-btn" onclick="window.close()">Close</button>
+      <button class="rpt-print-btn" onclick="window.print()">Save as PDF</button>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function () {
+      // Small delay so fonts and layout settle before the print dialog opens
+      setTimeout(function () { window.print(); }, 600);
+    });
+  </script>
+</body>
+</html>
