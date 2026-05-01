@@ -10,15 +10,15 @@
   "properties": {
     "legalSectionOne": {
       "$ref": "#/$defs/LegalSection",
-      "x-ui": { "label": "Section 1" }
+      "x-ui": { "label": "Section 1", "order": ["sectionTitle", "sectionText"] }
     },
     "legalSectionTwo": {
       "$ref": "#/$defs/LegalSection",
-      "x-ui": { "label": "Section 2" }
+      "x-ui": { "label": "Section 2", "order": ["sectionTitle", "sectionText"] }
     },
     "legalSectionThree": {
       "$ref": "#/$defs/LegalSection",
-      "x-ui": { "label": "Section 3" }
+      "x-ui": { "label": "Section 3", "order": ["sectionTitle", "sectionText"] }
     }
   },
   "required": ["legalSectionOne", "legalSectionTwo", "legalSectionThree"],

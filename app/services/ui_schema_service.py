@@ -587,6 +587,24 @@ def _schema_object_order_and_labels(schema: Dict[str, Any] | None) -> Tuple[List
     return order, labels
 
 
+def _is_dewa_legals_schema(schema: Dict[str, Any] | None) -> bool:
+    if not isinstance(schema, dict):
+        return False
+    schema_id = str(schema.get("$id") or "").lower()
+    title = str(schema.get("title") or "").lower()
+    return "/schemas/dewa/legals/" in schema_id or title.startswith("dewa - legals")
+
+
+def _localized_english_title(value: Any) -> str:
+    if not isinstance(value, dict):
+        return ""
+    section_title = value.get("sectionTitle")
+    if not isinstance(section_title, dict):
+        return ""
+    title = section_title.get("en")
+    return title.strip() if isinstance(title, str) else ""
+
+
 def build_sections_ui_fallback_for_object_page(
     data: Dict[str, Any],
     schema: Dict[str, Any] | None = None,
@@ -600,6 +618,7 @@ def build_sections_ui_fallback_for_object_page(
         return sections_ui
 
     schema_order, schema_labels = _schema_object_order_and_labels(schema)
+    use_section_title_labels = _is_dewa_legals_schema(schema)
 
     order = _ANRO_ORDER
     labels = dict(_ANRO_LABELS)
@@ -623,6 +642,8 @@ def build_sections_ui_fallback_for_object_page(
     for idx, key in enumerate(keys):
         sec = data.get(key) if key in data else {}
         label = labels.get(key, key.replace("_", " ").title())
+        if use_section_title_labels:
+            label = _localized_english_title(sec) or label
         if isinstance(sec, dict) and "type" not in sec:
             sec = {"type": label, **sec}
         sections_ui.append({

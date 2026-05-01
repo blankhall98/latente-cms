@@ -103,6 +103,7 @@
             <button type="button"
                     class="z2h-side-item{% if loop.first %} active{% endif %}"
                     data-panel-id="{{ _pid }}"
+                    data-default-label="{{ it.label }}"
                     aria-controls="{{ _pid }}"
                     role="tab"
                     aria-selected="{{ 'true' if loop.first else 'false' }}">
@@ -130,6 +131,7 @@
                  tabindex="-1"
                  data-section-index="{{ it.index if it.index is defined else loop.index0 }}"
                  data-section-type="{{ S.type or '' }}"
+                 data-default-label="{{ it.label }}"
                  data-section-key="{{ it.key if it.key is defined else '' }}">
 
           <div class="z2h-panel-head d-flex align-items-center justify-content-between mb-2">
@@ -753,6 +755,9 @@
     if(keys.includes('left') && keys.includes('middle') && keys.includes('right')){
       return ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
     }
+    if(keys.includes('sectionTitle') && keys.includes('sectionText')){
+      return ['sectionTitle','sectionText', ...keys.filter(k=>!['sectionTitle','sectionText'].includes(k))];
+    }
     // Fallback for common nav pattern when no explicit order is present
     if((!ord || !ord.length) && keys.includes('left') && keys.includes('middle') && keys.includes('right')){
       return ['left','middle','right', ...keys.filter(k=>!['left','middle','right'].includes(k))];
@@ -1241,6 +1246,38 @@
     }
   }
 
+  function updateDewaLegalsPanelLabel(panel){
+    try{
+      const tenant = (root?.dataset?.tenant || '').trim().toLowerCase();
+      const pageSection = (root?.dataset?.sectionKey || '').trim().toLowerCase();
+      if(tenant !== 'dewa' || pageSection !== 'legals') return;
+      if(!panel) return;
+
+      const titleInput = panel.querySelector('[name="af:sectionTitle.en"]');
+      const englishTitle = (titleInput?.value || '').trim();
+      const fallback = panel.getAttribute('data-default-label') || '';
+      const prefixMatch = fallback.match(/^(\d{2}\s*-\s*)/);
+      const prefix = prefixMatch ? prefixMatch[1] : '';
+      const nextLabel = englishTitle ? (prefix + englishTitle) : fallback;
+
+      const panelTitle = panel.querySelector('.z2h-panel-title');
+      if(panelTitle) panelTitle.textContent = nextLabel;
+
+      const sideButton = document.querySelector(`.z2h-side-item[data-panel-id="${panel.id}"]`);
+      const sideLabel = sideButton?.querySelector('.z2h-side-label');
+      if(sideLabel) sideLabel.textContent = nextLabel;
+    }catch(_){}
+  }
+
+  function bindDewaLegalsPanelLabel(panel){
+    updateDewaLegalsPanelLabel(panel);
+    const titleInput = panel?.querySelector('[name="af:sectionTitle.en"]');
+    if(!titleInput || titleInput.dataset.labelBound === '1') return;
+    titleInput.dataset.labelBound = '1';
+    titleInput.addEventListener('input', ()=> updateDewaLegalsPanelLabel(panel));
+    titleInput.addEventListener('change', ()=> updateDewaLegalsPanelLabel(panel));
+  }
+
     function renderSectionAutoForm(panel, schemaUI, secData){
       const host=panel.querySelector('.z2h-autoform'); if(!host) return;
       host.innerHTML='';
@@ -1383,6 +1420,7 @@
         }
         renderField(k, props[k], val, host);
       });
+      bindDewaLegalsPanelLabel(panel);
   }
 
   function serializeAutoForm(panel){
