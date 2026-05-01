@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 import time
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
@@ -122,8 +125,10 @@ def submit_contact_form(
             tenant_name=tenant.name,
         )
     except RuntimeError as exc:
+        logger.error("contact: mail service not configured for %s: %s", payload.tenant_slug, exc)
         raise HTTPException(status_code=503, detail="Mail service is not configured.") from exc
-    except Exception:
+    except Exception as exc:
+        logger.error("contact: send failed for %s → %s: %s", payload.tenant_slug, contact_email, exc, exc_info=True)
         raise HTTPException(
             status_code=503,
             detail="Failed to send message. Please try again later.",
