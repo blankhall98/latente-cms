@@ -7,7 +7,219 @@
      Analytics — professional statistical summary
      ============================================================ */
 
-  .an-root{ max-width: 900px; }
+  /* ---- Shell — two-column layout ---- */
+  .an-shell{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 290px;
+    gap: 2.5rem;
+    align-items: start;
+    max-width: 1240px;
+  }
+  .an-root{ min-width: 0; }
+
+  /* ---- AI Teaser Panel ---- */
+  .an-ai-panel{
+    position: sticky;
+    top: 80px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.05);
+  }
+
+  /* Header */
+  .an-ai-head{
+    background: #18181b;
+    padding: 1rem 1.1rem .85rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .an-ai-icon{
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .an-ai-icon svg{ width: 16px; height: 16px; }
+  .an-ai-head-text{ flex: 1; min-width: 0; }
+  .an-ai-name{
+    font-size: .8rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -.01em;
+    line-height: 1;
+    margin-bottom: .3rem;
+  }
+  .an-ai-badge{
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #fbbf24;
+    background: rgba(251,191,36,.12);
+    border: 1px solid rgba(251,191,36,.25);
+    border-radius: 3px;
+    padding: .1rem .35rem;
+  }
+  .an-ai-badge::before{
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #fbbf24;
+    animation: an-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes an-pulse{
+    0%, 100%{ opacity: 1; } 50%{ opacity: .3; }
+  }
+
+  /* Body */
+  .an-ai-body{
+    background: #ffffff;
+    padding: 1rem 1.1rem;
+  }
+  .an-ai-desc{
+    font-size: .78rem;
+    color: #52525b;
+    line-height: 1.65;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f4f4f5;
+  }
+  .an-ai-desc strong{ color: #18181b; }
+
+  /* Example conversation */
+  .an-ai-convo{
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    margin-bottom: 1rem;
+  }
+  .an-ai-msg{
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  .an-ai-msg-label{
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #a1a1aa;
+    padding: 0 .4rem;
+  }
+  .an-ai-bubble-user{
+    align-self: flex-end;
+    background: #18181b;
+    color: #ffffff;
+    font-size: .75rem;
+    line-height: 1.5;
+    padding: .45rem .7rem;
+    border-radius: 10px 10px 2px 10px;
+    max-width: 90%;
+  }
+  .an-ai-bubble-ai{
+    align-self: flex-start;
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    font-size: .75rem;
+    line-height: 1.5;
+    padding: .45rem .7rem;
+    border-radius: 2px 10px 10px 10px;
+    max-width: 95%;
+    position: relative;
+  }
+  /* Blurred/redacted AI response lines */
+  .an-ai-redacted{
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    filter: blur(3.5px);
+    user-select: none;
+    pointer-events: none;
+  }
+  .an-ai-redacted span{
+    display: block;
+    height: 7px;
+    background: #71717a;
+    border-radius: 3px;
+    opacity: .55;
+  }
+  .an-ai-lock{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+  }
+  .an-ai-lock-pill{
+    background: rgba(255,255,255,.92);
+    border: 1px solid #e4e4e7;
+    border-radius: 20px;
+    padding: .18rem .55rem;
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #71717a;
+  }
+
+  /* Disabled input */
+  .an-ai-input-row{
+    display: flex;
+    gap: .4rem;
+    margin-bottom: .85rem;
+    padding-top: .85rem;
+    border-top: 1px solid #f4f4f5;
+  }
+  .an-ai-input{
+    flex: 1;
+    border: 1px solid #e4e4e7;
+    border-radius: 6px;
+    padding: .5rem .7rem;
+    font-size: .78rem;
+    color: #a1a1aa;
+    background: #fafafa;
+    cursor: not-allowed;
+    font-family: inherit;
+  }
+  .an-ai-send{
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid #e4e4e7;
+    background: #f4f4f5;
+    color: #a1a1aa;
+    display: flex; align-items: center; justify-content: center;
+    cursor: not-allowed;
+    font-size: .85rem;
+    flex-shrink: 0;
+  }
+
+  /* Footer note */
+  .an-ai-foot{
+    font-size: .7rem;
+    color: #a1a1aa;
+    line-height: 1.55;
+    padding: .65rem .9rem;
+    background: #fafafa;
+    border-top: 1px solid #f4f4f5;
+  }
+  .an-ai-foot a{
+    color: #71717a;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (max-width: 1100px){
+    .an-shell{ grid-template-columns: 1fr; }
+    .an-ai-panel{ position: static; }
+  }
 
   /* ---- Report header ---- */
   .an-report-head{
@@ -317,6 +529,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="an-shell">
 <div class="an-root">
 
   {# ---- Report header ---- #}
@@ -658,5 +871,96 @@
     {% endif %}
   </div>
 
-</div>
+</div>{# /an-root #}
+
+{# ---- AI Chat Teaser ---- #}
+<aside class="an-ai-panel" aria-label="Analytics AI — coming soon">
+
+  <div class="an-ai-head">
+    <div class="an-ai-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z" opacity=".3"/>
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M9 21h6M12 18v3" opacity=".5"/>
+        <path d="M5 6.5C3.5 7.8 2.5 9.8 2.5 12M19 6.5C20.5 7.8 21.5 9.8 21.5 12" opacity=".3"/>
+      </svg>
+    </div>
+    <div class="an-ai-head-text">
+      <div class="an-ai-name">Analytics AI</div>
+      <div class="an-ai-badge">Coming soon</div>
+    </div>
+  </div>
+
+  <div class="an-ai-body">
+    <p class="an-ai-desc">
+      Ask <strong>business intelligence questions</strong> in plain language.
+      The AI will use your Google Analytics history, content activity,
+      and editorial data to give you precise, contextual answers.
+    </p>
+
+    {# Example conversation #}
+    <div class="an-ai-convo">
+
+      <div class="an-ai-msg">
+        <span class="an-ai-msg-label">You</span>
+        <div class="an-ai-bubble-user">
+          How did traffic change after our last content publish?
+        </div>
+      </div>
+
+      <div class="an-ai-msg">
+        <span class="an-ai-msg-label">Analytics AI</span>
+        <div class="an-ai-bubble-ai">
+          <div class="an-ai-redacted">
+            <span style="width:92%"></span>
+            <span style="width:78%"></span>
+            <span style="width:85%"></span>
+            <span style="width:55%"></span>
+          </div>
+          <div class="an-ai-lock">
+            <span class="an-ai-lock-pill">Unlock soon</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="an-ai-msg">
+        <span class="an-ai-msg-label">You</span>
+        <div class="an-ai-bubble-user">
+          Which pages drive the most returning visitors?
+        </div>
+      </div>
+
+      <div class="an-ai-msg">
+        <span class="an-ai-msg-label">Analytics AI</span>
+        <div class="an-ai-bubble-ai">
+          <div class="an-ai-redacted">
+            <span style="width:88%"></span>
+            <span style="width:70%"></span>
+            <span style="width:40%"></span>
+          </div>
+          <div class="an-ai-lock">
+            <span class="an-ai-lock-pill">Unlock soon</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    {# Disabled input #}
+    <div class="an-ai-input-row">
+      <input class="an-ai-input" type="text" placeholder="Ask about your analytics…" disabled aria-label="Chat input — coming soon">
+      <div class="an-ai-send" aria-hidden="true">↑</div>
+    </div>
+
+  </div>
+
+  <div class="an-ai-foot">
+    This feature will connect to a language model with access to your
+    GA4 data, content history, and editorial activity —
+    turning raw numbers into business-ready answers.
+  </div>
+
+</aside>
+
+</div>{# /an-shell #}
 {% endblock %}
