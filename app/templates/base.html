@@ -7,6 +7,8 @@
   <meta name="theme-color" content="#f7f4ef">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   {% block meta %}{% endblock %}
+  <!-- Night mode: apply before CSS loads to prevent flash -->
+  <script>if(localStorage.getItem('z2h-night')==='1')document.documentElement.setAttribute('data-night','1');</script>
 
   <!-- Bootstrap -->
   <link
@@ -71,6 +73,225 @@
   </style>
 
   {% block extra_head %}{% endblock %}
+
+  <!-- ================================================================
+       NIGHT MODE — must come after {% block extra_head %} so this
+       block wins the cascade over all template-specific inline styles.
+       ================================================================ -->
+  <style>
+    /* ── CSS variable overrides (handles all style.css components) ── */
+    html[data-night="1"]{
+      color-scheme: dark;
+      --bg:           #0a0a0b;
+      --surface:      #111114;
+      --surface-2:    #18181b;
+      --text-1:       #f0f0f1;
+      --text-2:       #9898a3;
+      --muted:        #52525b;
+      --border:       #27272a;
+      --accent-soft:  #0f1623;
+      --accent-mint:  #071209;
+      --danger-bg:    #1a0808;
+      --danger-border:#450a0a;
+      --danger-text:  #fca5a5;
+      --ok-bg:        #071209;
+      --ok-border:    #14532d;
+      --ok-text:      #86efac;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.4);
+      --shadow-md:    0 4px 20px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3);
+    }
+
+    /* ── Smooth transitions on theme switch ── */
+    html[data-night="1"] body,
+    html[data-night="1"] .z2h-nav,
+    html[data-night="1"] .z2h-footer,
+    html[data-night="1"] .an-table,
+    html[data-night="1"] .pf-plan-card,
+    html[data-night="1"] .pf-project-card,
+    html[data-night="1"] .support-form-card,
+    html[data-night="1"] .an-ai-panel{
+      transition: background-color .3s ease, border-color .3s ease, color .2s ease;
+    }
+
+    /* ── Navbar ── */
+    html[data-night="1"] .z2h-nav{
+      background: rgba(10,10,11,.93) !important;
+      border-bottom: 1px solid #1e1e21;
+      box-shadow: 0 1px 0 #1e1e21;
+    }
+    html[data-night="1"] .z2h-brand--badge{ color: #f0f0f1 !important; }
+    html[data-night="1"] .z2h-badge{ background:#18181b; color:#71717a; border-color:#27272a; }
+    html[data-night="1"] .z2h-nav .nav-link{ color: #71717a; }
+    html[data-night="1"] .z2h-nav .nav-link:hover{ color: #f0f0f1; }
+    html[data-night="1"] .z2h-nav .nav-link.active{ color: #f0f0f1; }
+    html[data-night="1"] .z2h-nav .nav-link.active::after{ background: #f0f0f1; }
+    html[data-night="1"] .z2h-logout{ border-color:#27272a; color:#52525b; }
+    html[data-night="1"] .z2h-logout:hover{ background:#1a0808; border-color:#7f1d1d; color:#ef4444; }
+
+    /* ── Night toggle button ── */
+    .z2h-night-btn{
+      width:28px; height:28px; border-radius:6px;
+      border:1px solid #e4e4e7; background:transparent;
+      color:#a1a1aa; cursor:pointer; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+    }
+    .z2h-night-btn:hover{ border-color:#a1a1aa; color:#18181b; }
+    .z2h-night-btn svg{ width:13px; height:13px; pointer-events:none; }
+    .z2h-night-sun{ display:none; }
+    html[data-night="1"] .z2h-night-moon{ display:none; }
+    html[data-night="1"] .z2h-night-sun{ display:block; }
+    html[data-night="1"] .z2h-night-btn{ border-color:#27272a; color:#71717a; }
+    html[data-night="1"] .z2h-night-btn:hover{ border-color:#52525b; color:#f0f0f1; background:#18181b; }
+
+    /* ── Footer ── */
+    html[data-night="1"] .z2h-footer{ background:#0a0a0b; border-top:1px solid #1e1e21; color:#52525b; }
+    html[data-night="1"] .z2h-footer small{ color:#3f3f46; }
+    html[data-night="1"] .z2h-footer-support{ background:#111114; border-color:#27272a; color:#71717a; }
+    html[data-night="1"] .z2h-footer-support:hover{ background:#18181b; border-color:#3f3f46; color:#a1a1aa; }
+
+    /* ── Bootstrap overrides ── */
+    html[data-night="1"] .form-control,
+    html[data-night="1"] .form-select{
+      background:#111114 !important; border-color:#27272a !important;
+      color:#f0f0f1 !important;
+    }
+    html[data-night="1"] .form-control:focus,
+    html[data-night="1"] .form-select:focus{
+      background:#111114 !important; border-color:#52525b !important;
+      box-shadow:0 0 0 3px rgba(255,255,255,.06) !important;
+    }
+    html[data-night="1"] .form-control::placeholder{ color:#3f3f46 !important; }
+    html[data-night="1"] .form-label{ color:#71717a !important; }
+    html[data-night="1"] .form-text{ color:#3f3f46 !important; }
+    html[data-night="1"] .card{ background:#111114; border-color:#27272a; color:#f0f0f1; }
+    html[data-night="1"] .card-header{ background:#18181b; border-color:#27272a; }
+    html[data-night="1"] hr{ border-color:#27272a; }
+    html[data-night="1"] small, html[data-night="1"] .text-muted{ color:#52525b !important; }
+    html[data-night="1"] .alert-success{ background:#071209; border-color:#14532d; color:#86efac; }
+    html[data-night="1"] .alert-danger{ background:#1a0808; border-color:#450a0a; color:#fca5a5; }
+    html[data-night="1"] .btn-dark{ background:#f0f0f1; border-color:#f0f0f1; color:#0a0a0b; }
+    html[data-night="1"] .btn-dark:hover{ background:#d4d4d8; border-color:#d4d4d8; color:#0a0a0b; }
+    html[data-night="1"] .btn-primary{ background:#1d4ed8; border-color:#1d4ed8; }
+
+    /* ── Analytics ── */
+    html[data-night="1"] .an-root,
+    html[data-night="1"] .an-shell{ color:#f0f0f1; }
+    html[data-night="1"] .an-report-head{ border-bottom-color:#f0f0f1; }
+    html[data-night="1"] .an-report-label{ color:#52525b; }
+    html[data-night="1"] .an-report-title{ color:#f0f0f1; }
+    html[data-night="1"] .an-report-meta{ color:#71717a; }
+    html[data-night="1"] .an-report-meta strong{ color:#f0f0f1; }
+    html[data-night="1"] .an-report-meta .sep{ background:#27272a; }
+    html[data-night="1"] .an-tabs{ border-bottom-color:#27272a; }
+    html[data-night="1"] .an-tab{ color:#52525b; }
+    html[data-night="1"] .an-tab:hover{ color:#f0f0f1; }
+    html[data-night="1"] .an-tab.active{ color:#f0f0f1; border-bottom-color:#f0f0f1; }
+    html[data-night="1"] .an-section-head{ border-bottom-color:#27272a; }
+    html[data-night="1"] .an-section-label{ color:#52525b; }
+    html[data-night="1"] .an-status.live{ background:#071209; border-color:#14532d; color:#86efac; }
+    html[data-night="1"] .an-status.soon{ background:#1a1200; border-color:#713f12; color:#fde68a; }
+    html[data-night="1"] .an-table{ background:#111114; border-color:#27272a; }
+    html[data-night="1"] .an-table th{ background:#18181b; color:#52525b; border-color:#27272a; }
+    html[data-night="1"] .an-table td{ border-color:#27272a; }
+    html[data-night="1"] .an-value{ color:#f0f0f1; }
+    html[data-night="1"] .an-value.dim{ color:#27272a; }
+    html[data-night="1"] .an-value-sub{ color:#52525b; }
+    html[data-night="1"] .an-empty{ background:#111114; border-color:#27272a; color:#52525b; }
+    html[data-night="1"] .an-note{ background:#1a1200; border-left-color:#713f12; color:#71717a; }
+    html[data-night="1"] .an-note strong{ color:#f0f0f1; }
+    html[data-night="1"] .an-note code{ background:#27272a; border-color:#3f3f46; color:#a1a1aa; }
+    html[data-night="1"] .an-chart-wrap{ background:#111114; border-color:#27272a; }
+    html[data-night="1"] .an-bar{ background:#f0f0f1; }
+    html[data-night="1"] .an-bar-col:hover .an-bar{ background:#9898a3; }
+    html[data-night="1"] .an-chart-labels{ color:#3f3f46; }
+    html[data-night="1"] .an-insights{ background:#111114; border-color:#27272a; }
+    html[data-night="1"] .an-insight-value{ color:#f0f0f1; }
+    html[data-night="1"] .an-insight-value.an-insight--up{ color:#4ade80; }
+    html[data-night="1"] .an-insight-value.an-insight--down{ color:#f87171; }
+    html[data-night="1"] .an-insight-label{ color:#52525b; }
+    html[data-night="1"] .an-insight-sep{ background:#27272a; }
+    html[data-night="1"] .an-report-btn{ background:#111114; border-color:#27272a; color:#9898a3; }
+    html[data-night="1"] .an-report-btn:hover{ background:#18181b; border-color:#52525b; color:#f0f0f1; }
+    html[data-night="1"] .an-two-col .an-section-head{ border-bottom-color:#27272a; }
+
+    /* Analytics AI panel */
+    html[data-night="1"] .an-ai-panel{ border-color:#27272a; box-shadow:0 2px 4px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.6); }
+    html[data-night="1"] .an-ai-body{ background:#111114; }
+    html[data-night="1"] .an-ai-desc{ color:#71717a; border-bottom-color:#1e1e21; }
+    html[data-night="1"] .an-ai-desc strong{ color:#f0f0f1; }
+    html[data-night="1"] .an-ai-bubble-ai{ background:#18181b; border-color:#2a2a2e; }
+    html[data-night="1"] .an-ai-bubble-ai::after{ background:linear-gradient(to bottom,transparent,#18181b); }
+    html[data-night="1"] .an-ai-redacted span{ background:linear-gradient(90deg,#27272a 0%,#333337 40%,#27272a 80%); }
+    html[data-night="1"] .an-ai-locked-note{ color:#3f3f46; }
+    html[data-night="1"] .an-ai-input{ background:#0f0f11; border-color:#27272a; color:#3f3f46; }
+    html[data-night="1"] .an-ai-foot{ background:#0d0d0f; border-top-color:#1e1e21; color:#52525b; }
+
+    /* ── Profile ── */
+    html[data-night="1"] .pf-shell{ color:#f0f0f1; }
+    html[data-night="1"] .pf-header{ border-bottom-color:#f0f0f1; }
+    html[data-night="1"] .pf-kicker{ color:#52525b; }
+    html[data-night="1"] .pf-title{ color:#f0f0f1; }
+    html[data-night="1"] .pf-meta{ color:#71717a; }
+    html[data-night="1"] .pf-meta strong{ color:#f0f0f1; }
+    html[data-night="1"] .pf-section-head{ border-bottom-color:#27272a; }
+    html[data-night="1"] .pf-section-label{ color:#52525b; }
+    html[data-night="1"] .pf-badge--live{ background:#071209; border-color:#14532d; color:#86efac; }
+    html[data-night="1"] .pf-badge--soon{ background:#1a1200; border-color:#713f12; color:#fde68a; }
+    html[data-night="1"] .pf-value{ background:#18181b; border-color:#27272a; color:#f0f0f1; }
+    html[data-night="1"] .pf-label{ color:#52525b; }
+    html[data-night="1"] .pf-project-card{ background:#111114; border-color:#27272a; }
+    html[data-night="1"] .pf-project-card:hover{ border-color:#52525b; }
+    html[data-night="1"] .pf-project-card.active{ border-color:#f0f0f1; }
+    html[data-night="1"] .pf-project-name{ color:#f0f0f1; }
+    html[data-night="1"] .pf-project-slug{ color:#52525b; }
+    html[data-night="1"] .pf-active-pill{ background:#f0f0f1; color:#0a0a0b; }
+    html[data-night="1"] .pf-switch-btn{ color:#52525b; border-color:#27272a; }
+    html[data-night="1"] .pf-switch-btn:hover{ color:#f0f0f1; border-color:#52525b; }
+    html[data-night="1"] .pf-team-table{ background:#111114; border-color:#27272a; }
+    html[data-night="1"] .pf-team-table th{ background:#18181b; color:#52525b; border-color:#27272a; }
+    html[data-night="1"] .pf-team-table td{ color:#f0f0f1; border-bottom-color:#1e1e21; }
+    html[data-night="1"] .pf-team-role{ color:#71717a; }
+    html[data-night="1"] .pf-team-you{ color:#52525b; }
+    html[data-night="1"] .pf-remove-btn{ color:#52525b; border-color:#27272a; }
+    html[data-night="1"] .pf-remove-btn:hover{ color:#f87171; border-color:#450a0a; background:#1a0808; }
+    html[data-night="1"] .pf-invite-input{ background:#111114; border-color:#27272a; color:#f0f0f1; }
+    html[data-night="1"] .pf-invite-input::placeholder{ color:#3f3f46; }
+    html[data-night="1"] .pf-invite-input:focus{ border-color:#52525b; box-shadow:0 0 0 3px rgba(255,255,255,.05); }
+    html[data-night="1"] .pf-creds-box{ background:#071209; border-color:#14532d; }
+    html[data-night="1"] .pf-creds-box p{ color:#86efac; }
+    html[data-night="1"] .pf-creds-box code{ background:#0c2414; border-color:#14532d; color:#86efac; }
+    html[data-night="1"] .pf-creds-note{ color:#4ade80; }
+    html[data-night="1"] .pf-plan-card{ background:#111114; border-color:#27272a; }
+    html[data-night="1"] .pf-plan-head{ border-bottom-color:#1e1e21; }
+    html[data-night="1"] .pf-plan-card:not(.pro) .pf-plan-name{ color:#f0f0f1; }
+    html[data-night="1"] .pf-plan-desc{ color:#71717a; }
+    html[data-night="1"] .pf-plan-features li{ color:#9898a3; }
+    html[data-night="1"] .pf-feat-locked{ color:#3f3f46; }
+    html[data-night="1"] .pf-plan-current{ background:#f0f0f1; color:#0a0a0b; }
+
+    /* ── Support ── */
+    html[data-night="1"] .support-shell{ color:#f0f0f1; }
+    html[data-night="1"] .support-header{ border-bottom-color:#f0f0f1; }
+    html[data-night="1"] .support-kicker{ color:#52525b; }
+    html[data-night="1"] .support-title{ color:#f0f0f1; }
+    html[data-night="1"] .support-meta{ color:#71717a; }
+    html[data-night="1"] .support-meta strong{ color:#f0f0f1; }
+    html[data-night="1"] .support-meta code{ background:#18181b; border-color:#27272a; color:#9898a3; }
+    html[data-night="1"] .support-meta .sep{ background:#27272a; }
+    html[data-night="1"] .support-panel h2{ color:#52525b; border-bottom-color:#27272a; }
+    html[data-night="1"] .support-step strong{ color:#f0f0f1; }
+    html[data-night="1"] .support-step span{ color:#71717a; }
+    html[data-night="1"] .support-step:not(:last-child)::before{ background:#27272a; }
+    html[data-night="1"] .support-step-num{ background:#111114; border-color:#27272a; color:#f0f0f1; }
+    html[data-night="1"] .support-step:hover .support-step-num{ background:#f0f0f1; border-color:#f0f0f1; color:#0a0a0b; }
+    html[data-night="1"] .support-note{ border-left-color:#27272a; color:#52525b; }
+    html[data-night="1"] .support-form-card{ background:#111114; border-color:#27272a; box-shadow:0 1px 3px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.3); }
+    html[data-night="1"] .support-form .form-label{ color:#52525b !important; }
+    html[data-night="1"] .support-form-actions{ border-top-color:#1e1e21; }
+    html[data-night="1"] .support-alert.alert-success{ background:#071209; border-color:#14532d; color:#86efac; }
+    html[data-night="1"] .support-alert.alert-danger{ background:#1a0808; border-color:#450a0a; color:#fca5a5; }
+  </style>
 </head>
 <body class="z2h-body {% block body_class %}{% endblock %}">
   {% set hide_navbar = hide_navbar | default(false) %}
@@ -116,6 +337,15 @@
         <a class="nav-link {{ 'active' if is_profile else '' }}"
            href="/admin/profile"
            {% if is_profile %}aria-current="page"{% endif %}>Profile</a>
+
+        <button class="z2h-night-btn" id="z2h-night-btn" aria-label="Toggle night mode" title="Toggle night mode">
+          <svg class="z2h-night-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="z2h-night-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
 
         <form action="/logout" method="post" class="ms-2" aria-label="Sign out">
           <!-- Same effect as login CTA, in red -->
@@ -196,5 +426,25 @@
   </script>
 
   {% block extra_scripts %}{% endblock %}
+
+  <script>
+    // Night mode toggle
+    (function(){
+      var KEY = 'z2h-night';
+      var html = document.documentElement;
+      var btn  = document.getElementById('z2h-night-btn');
+      if(!btn) return;
+      btn.addEventListener('click', function(){
+        var isNight = html.getAttribute('data-night') === '1';
+        if(isNight){
+          html.removeAttribute('data-night');
+          localStorage.removeItem(KEY);
+        } else {
+          html.setAttribute('data-night', '1');
+          localStorage.setItem(KEY, '1');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
