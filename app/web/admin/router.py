@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Optional, Dict, Tuple
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from collections import defaultdict
 import os
 import re
@@ -21,6 +21,7 @@ from app.core.settings import settings
 from app.db.session import get_db
 from app.models.auth import Tenant, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
+from app.models.audit import ContentAuditLog
 from app.models.owa_popup import OwaPopupSubmission
 
 # Enriched JSON Schema (with x-ui) for the auto-form
@@ -1055,6 +1056,49 @@ def _content_stats(db: Session, tenant_id: int | None, all_projects: bool = Fals
     return {"published": published, "drafts": drafts, "sections": sections, "last_published": lp}
 
 
+def _activity_stats(db: Session, tenant_id: int | None, all_projects: bool = False) -> dict:
+    """Read-only SELECT queries on ContentAuditLog for the last 30 days."""
+    if not all_projects and not tenant_id:
+        return {}
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    base: list = [ContentAuditLog.created_at >= cutoff]
+    if not all_projects:
+        base.append(ContentAuditLog.tenant_id == tenant_id)
+
+    publishes = db.scalar(
+        select(func.count(ContentAuditLog.id))
+        .where(*base, ContentAuditLog.action == "publish")
+    ) or 0
+
+    edits = db.scalar(
+        select(func.count(ContentAuditLog.id))
+        .where(*base, ContentAuditLog.action.in_(["create", "update", "publish"]))
+    ) or 0
+
+    editors = db.scalar(
+        select(func.count(ContentAuditLog.user_id.distinct()))
+        .where(*base, ContentAuditLog.user_id.isnot(None))
+    ) or 0
+
+    top_section_row = db.execute(
+        select(Section.name, func.count(ContentAuditLog.id).label("cnt"))
+        .join(Section, ContentAuditLog.section_id == Section.id)
+        .where(*base)
+        .group_by(Section.name)
+        .order_by(func.count(ContentAuditLog.id).desc())
+        .limit(1)
+    ).first()
+    top_section = top_section_row[0] if top_section_row else "—"
+
+    return {
+        "publishes_30d": publishes,
+        "edits_30d": edits,
+        "editors_30d": editors,
+        "top_section": top_section,
+    }
+
+
 @router.get("/admin/analytics")
 def admin_analytics(
     request: Request,
@@ -1091,11 +1135,9 @@ def admin_analytics(
     else:
         selected_tenant = active
 
-    stats = _content_stats(
-        db,
-        tenant_id=selected_tenant["id"] if selected_tenant else None,
-        all_projects=show_all,
-    )
+    _tid = selected_tenant["id"] if selected_tenant else None
+    stats = _content_stats(db, tenant_id=_tid, all_projects=show_all)
+    activity = _activity_stats(db, tenant_id=_tid, all_projects=show_all)
 
     # Single-project flag (hides Projects nav for clients with one project)
     if active:
@@ -1119,6 +1161,7 @@ def admin_analytics(
             "selected_slug": selected_slug or "all",
             "show_all": show_all,
             "stats": stats,
+            "activity": activity,
         },
     )
 

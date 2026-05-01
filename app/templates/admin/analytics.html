@@ -270,6 +270,49 @@
     {% endif %}
   </div>
 
+  {# ---- Editorial Activity (LIVE) ---- #}
+  <div class="an-section">
+    <div class="an-section-head">
+      <span class="an-section-label">Editorial Activity &mdash; Last 30 Days</span>
+      <span class="an-status live">Live</span>
+    </div>
+
+    {% if activity %}
+    <table class="an-table" aria-label="Editorial activity metrics">
+      <thead>
+        <tr>
+          <th scope="col">Publishes</th>
+          <th scope="col">Edits</th>
+          <th scope="col">Active Editors</th>
+          <th scope="col">Most Edited Section</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="an-value">{{ activity.publishes_30d }}</span>
+            <span class="an-value-sub">Published entries</span>
+          </td>
+          <td>
+            <span class="an-value">{{ activity.edits_30d }}</span>
+            <span class="an-value-sub">Content changes</span>
+          </td>
+          <td>
+            <span class="an-value">{{ activity.editors_30d }}</span>
+            <span class="an-value-sub">Unique contributors</span>
+          </td>
+          <td>
+            <span class="an-value" style="font-size:1.1rem; letter-spacing:0; font-weight:600;">{{ activity.top_section }}</span>
+            <span class="an-value-sub">Most changes</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    {% else %}
+    <div class="an-empty">Select a project to view editorial activity.</div>
+    {% endif %}
+  </div>
+
   {# ---- Traffic & Engagement (COMING SOON) ---- #}
   <div class="an-section">
     <div class="an-section-head">
