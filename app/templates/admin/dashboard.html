@@ -4,46 +4,6 @@
 {% block extra_head %}
 <style>
   /* Dashboard */
-  .z2h-hero{
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: var(--shadow-md);
-    padding: clamp(24px, 4vw, 48px);
-    position: relative;
-    overflow: hidden;
-  }
-  .z2h-hero::before{
-    content:""; position:absolute; inset:0;
-    background:
-      radial-gradient(800px 400px at 10% -10%, rgba(37,99,235,.05), transparent 60%),
-      radial-gradient(600px 350px at 90% -5%,  rgba(96,165,250,.04), transparent 55%);
-    pointer-events: none;
-  }
-  .z2h-hero-title{
-    letter-spacing: .1em; text-transform: uppercase;
-    margin: .2rem 0 0 0;
-    font-size: clamp(1rem, 1.3vw, 1.1rem);
-    position: relative;
-  }
-  .z2h-hero-meta{ margin-top: .5rem; color: var(--text-2); position: relative; }
-
-  .z2h-project-pill{
-    display: inline-flex; align-items: center; gap: .55rem;
-    padding: .38rem .85rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    font-size: .875rem;
-    color: var(--text-1);
-    box-shadow: var(--shadow-sm);
-  }
-  .z2h-project-pill .dot{
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--primary);
-    box-shadow: 0 0 0 4px rgba(37,99,235,.12);
-  }
-
   .z2h-section-head{
     display: flex; align-items: center; justify-content: space-between; gap: .75rem;
   }
@@ -116,33 +76,31 @@
 
 {% block content %}
   <!-- HERO -->
-  <section class="z2h-hero mb-4">
-    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3 w-100">
-      <div class="flex-grow-1">
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <div class="z2h-brand--badge">Dashboard</div>
-          {% if current_tenant %}
-            <span class="z2h-project-pill" title="Active project">
-              <span class="dot" aria-hidden="true"></span>
-              <strong>{{ current_tenant.name }}</strong>
-              {% if current_tenant.slug %}
-                <code class="ms-1">/{{ current_tenant.slug }}</code>
-              {% endif %}
-            </span>
-          {% else %}
-            <div class="text-muted small">no project</div>
-          {% endif %}
-        </div>
-
-        <h1 class="z2h-hero-title m-0">
-          {% if user and (user.email or "") %}Welcome, {{ user.email }}{% else %}Welcome{% endif %}
-        </h1>
-
-        <p class="z2h-hero-meta mb-0">
-          Manage <strong>Projects</strong>, organize <strong>Pages</strong>, and edit <strong>Sections</strong> with preview and controlled publishing.
-        </p>
+  <section class="z2h-admin-hero">
+    <div class="z2h-admin-hero__bar">
+      <div class="z2h-admin-hero__context">
+        <span class="z2h-admin-hero__eyebrow">Dashboard</span>
+        {% if current_tenant %}
+          <span class="z2h-admin-token" title="Active project">
+            <span class="dot" aria-hidden="true"></span>
+            <strong>{{ current_tenant.name }}</strong>
+            {% if current_tenant.slug %}
+              <code class="z2h-admin-code">/{{ current_tenant.slug }}</code>
+            {% endif %}
+          </span>
+        {% else %}
+          <span class="z2h-admin-token is-muted">No project</span>
+        {% endif %}
       </div>
     </div>
+
+    <h1 class="z2h-admin-hero__title">
+      {% if user and (user.email or "") %}Welcome, {{ user.email }}{% else %}Welcome{% endif %}
+    </h1>
+
+    <p class="z2h-admin-hero__meta">
+      Manage <strong>Projects</strong>, organize <strong>Pages</strong>, and edit <strong>Sections</strong> with preview and controlled publishing.
+    </p>
   </section>
 
   <!-- GRID -->

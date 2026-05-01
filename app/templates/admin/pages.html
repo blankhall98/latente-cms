@@ -95,24 +95,22 @@
 <section class="container">
 
   <!-- Header / mini-hero -->
-  <div class="z2h-page-head mb-3">
-    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-      <div class="d-flex align-items-center gap-2">
-        <a href="/admin/projects" class="z2h-chip" aria-label="Back to Projects">&larr; Projects</a>
+  <div class="z2h-admin-hero">
+    <div class="z2h-admin-hero__bar">
+      <div class="z2h-admin-hero__context">
+        <a href="/admin/projects" class="z2h-admin-back" aria-label="Back to Projects">&larr; Projects</a>
+        <span class="z2h-admin-hero__eyebrow">Pages</span>
         {% if active_tenant %}
-          <span class="z2h-project-pill" title="Active project">
+          <span class="z2h-admin-token" title="Active project">
             <span class="dot" aria-hidden="true"></span>
             <strong>{{ active_tenant.name }}</strong>
-            {% if active_tenant.slug %}<code class="ms-1">/{{ active_tenant.slug }}</code>{% endif %}
+            {% if active_tenant.slug %}<code class="z2h-admin-code">/{{ active_tenant.slug }}</code>{% endif %}
           </span>
         {% endif %}
       </div>
-      <div class="ms-md-auto">
-        <div class="z2h-brand--badge text-uppercase">Pages</div>
-      </div>
     </div>
-    <h1 class="z2h-page-title h5 m-0 mt-2">Content pages for your project</h1>
-    <p class="text-muted small mb-0 mt-1">In this MVP, pages are provisioned on deploy. Edit and manage content here.</p>
+    <h1 class="z2h-admin-hero__title">Content pages for your project</h1>
+    <p class="z2h-admin-hero__meta">Pages are provisioned centrally. Edit, preview, and publish project content here.</p>
   </div>
 
   <!-- Filters -->
