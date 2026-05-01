@@ -109,82 +109,112 @@
   .an-ai-convo{
     display: flex;
     flex-direction: column;
-    gap: .55rem;
+    gap: .6rem;
     margin-bottom: .85rem;
   }
-  .an-ai-msg{
+
+  /* User message — right aligned */
+  .an-ai-msg-user{
     display: flex;
-    flex-direction: column;
-    gap: .25rem;
-  }
-  .an-ai-msg-label{
-    font-size: .58rem;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #d4d4d8;
-    padding: 0 .35rem;
+    justify-content: flex-end;
   }
   .an-ai-bubble-user{
-    align-self: flex-end;
-    background: #18181b;
+    background: linear-gradient(135deg, #27272a, #18181b);
     color: #f4f4f5;
     font-size: .73rem;
-    line-height: 1.5;
-    padding: .42rem .68rem;
-    border-radius: 10px 10px 2px 10px;
-    max-width: 88%;
+    line-height: 1.55;
+    padding: .5rem .75rem;
+    border-radius: 12px 12px 3px 12px;
+    max-width: 85%;
     letter-spacing: .005em;
+    box-shadow: 0 1px 3px rgba(0,0,0,.18);
+  }
+
+  /* AI message — left aligned with avatar */
+  .an-ai-msg-ai{
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+  }
+  .an-ai-avatar-dot{
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    flex-shrink: 0;
+    margin-top: 1px;
+    box-shadow: 0 1px 4px rgba(99,102,241,.35);
+  }
+  .an-ai-msg-ai-inner{
+    display: flex;
+    flex-direction: column;
+    gap: .22rem;
+    min-width: 0;
+    flex: 1;
   }
   .an-ai-bubble-ai{
-    align-self: flex-start;
-    background: #f8f8f9;
-    border: 1px solid #ebebed;
-    padding: .5rem .7rem;
-    border-radius: 2px 10px 10px 10px;
-    max-width: 95%;
+    background: #ffffff;
+    border: 1px solid #e8e8ea;
+    padding: .55rem .75rem .65rem;
+    border-radius: 3px 12px 12px 12px;
     position: relative;
-    min-height: 46px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
   }
+  /* Skeleton shimmer lines */
   .an-ai-redacted{
     display: flex;
     flex-direction: column;
-    gap: .28rem;
-    filter: blur(3px);
+    gap: .32rem;
     user-select: none;
     pointer-events: none;
   }
   .an-ai-redacted span{
     display: block;
-    height: 6.5px;
-    background: linear-gradient(90deg, #a1a1aa, #c4c4c8);
-    border-radius: 3px;
-    opacity: .5;
+    height: 7px;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      #e4e4e7 0%,
+      #f0f0f2 40%,
+      #e4e4e7 80%
+    );
+    background-size: 300% 100%;
+    animation: an-shimmer 1.8s ease-in-out infinite;
   }
-  .an-ai-lock{
+  @keyframes an-shimmer{
+    0%  { background-position: 100% 0; }
+    100%{ background-position: -100% 0; }
+  }
+  /* Gradient fade at bottom of bubble */
+  .an-ai-bubble-ai::after{
+    content: "";
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: inherit;
+    bottom: 0; left: 0; right: 0;
+    height: 22px;
+    background: linear-gradient(to bottom, transparent, #ffffff);
+    pointer-events: none;
   }
-  .an-ai-lock-pill{
-    background: rgba(255,255,255,.95);
-    border: 1px solid #e4e4e7;
-    border-radius: 20px;
-    padding: .2rem .6rem;
+  /* Small lock caption below bubble */
+  .an-ai-locked-note{
+    display: inline-flex;
+    align-items: center;
+    gap: .28rem;
     font-size: .6rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: #71717a;
-    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    color: #a1a1aa;
+    font-weight: 500;
+    letter-spacing: .03em;
+    padding-left: .1rem;
+  }
+  .an-ai-locked-note svg{
+    width: 9px; height: 9px;
+    flex-shrink: 0;
+    opacity: .7;
   }
 
   /* Disabled input */
   .an-ai-input-row{
     display: flex;
+    align-items: center;
     gap: .35rem;
     padding-top: .75rem;
     border-top: 1px solid #f4f4f5;
@@ -192,8 +222,8 @@
   .an-ai-input{
     flex: 1;
     border: 1px solid #e4e4e7;
-    border-radius: 7px;
-    padding: .45rem .75rem;
+    border-radius: 8px;
+    padding: .5rem .8rem;
     font-size: .775rem;
     color: #c4c4c8;
     background: #fafafa;
@@ -203,15 +233,16 @@
   }
   .an-ai-send{
     width: 30px; height: 30px;
-    border-radius: 7px;
-    border: 1px solid #e4e4e7;
-    background: #f4f4f5;
-    color: #d4d4d8;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: rgba(255,255,255,.4);
     display: flex; align-items: center; justify-content: center;
     cursor: not-allowed;
-    font-size: .8rem;
     flex-shrink: 0;
+    opacity: .45;
   }
+  .an-ai-send svg{ width: 13px; height: 13px; }
 
   /* Footer note */
   .an-ai-foot{
@@ -904,47 +935,62 @@
       powered by your GA4 traffic data, content history, and editorial activity.
     </p>
 
-    {# Example conversation — one pair #}
+    {# Example conversation #}
     <div class="an-ai-convo">
 
-      <div class="an-ai-msg">
-        <span class="an-ai-msg-label">You</span>
+      {# User #}
+      <div class="an-ai-msg-user">
         <div class="an-ai-bubble-user">
           How did traffic change after our last content publish?
         </div>
       </div>
 
-      <div class="an-ai-msg">
-        <span class="an-ai-msg-label">Analytics AI</span>
-        <div class="an-ai-bubble-ai">
-          <div class="an-ai-redacted">
-            <span style="width:93%"></span>
-            <span style="width:80%"></span>
-            <span style="width:60%"></span>
+      {# AI — skeleton shimmer + gradient fade + lock caption #}
+      <div class="an-ai-msg-ai">
+        <div class="an-ai-avatar-dot" aria-hidden="true"></div>
+        <div class="an-ai-msg-ai-inner">
+          <div class="an-ai-bubble-ai">
+            <div class="an-ai-redacted" aria-hidden="true">
+              <span style="width:94%"></span>
+              <span style="width:82%; animation-delay:.12s"></span>
+              <span style="width:61%; animation-delay:.24s"></span>
+            </div>
           </div>
-          <div class="an-ai-lock">
-            <span class="an-ai-lock-pill">Available soon</span>
-          </div>
+          <span class="an-ai-locked-note">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <rect x="2.5" y="5" width="7" height="5.5" rx="1.2"/>
+              <path d="M4 5V3.5a2 2 0 0 1 4 0V5"/>
+            </svg>
+            Available when connected
+          </span>
         </div>
       </div>
 
-      <div class="an-ai-msg">
-        <span class="an-ai-msg-label">You</span>
+      {# User #}
+      <div class="an-ai-msg-user">
         <div class="an-ai-bubble-user">
           Which pages drive the most returning visitors?
         </div>
       </div>
 
-      <div class="an-ai-msg">
-        <span class="an-ai-msg-label">Analytics AI</span>
-        <div class="an-ai-bubble-ai">
-          <div class="an-ai-redacted">
-            <span style="width:88%"></span>
-            <span style="width:65%"></span>
+      {# AI #}
+      <div class="an-ai-msg-ai">
+        <div class="an-ai-avatar-dot" aria-hidden="true"></div>
+        <div class="an-ai-msg-ai-inner">
+          <div class="an-ai-bubble-ai">
+            <div class="an-ai-redacted" aria-hidden="true">
+              <span style="width:89%"></span>
+              <span style="width:70%; animation-delay:.15s"></span>
+              <span style="width:45%; animation-delay:.3s"></span>
+            </div>
           </div>
-          <div class="an-ai-lock">
-            <span class="an-ai-lock-pill">Available soon</span>
-          </div>
+          <span class="an-ai-locked-note">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <rect x="2.5" y="5" width="7" height="5.5" rx="1.2"/>
+              <path d="M4 5V3.5a2 2 0 0 1 4 0V5"/>
+            </svg>
+            Available when connected
+          </span>
         </div>
       </div>
 
@@ -953,7 +999,11 @@
     {# Disabled input #}
     <div class="an-ai-input-row">
       <input class="an-ai-input" type="text" placeholder="Ask about your analytics…" disabled aria-label="Chat input — coming soon">
-      <div class="an-ai-send" aria-hidden="true">↑</div>
+      <div class="an-ai-send" aria-hidden="true">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 12V2M3 6l4-4 4 4"/>
+        </svg>
+      </div>
     </div>
 
   </div>
