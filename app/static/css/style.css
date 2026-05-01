@@ -250,6 +250,14 @@ a:hover{ color: #1d4ed8; }
   gap: .65rem;
   min-width: 0;
 }
+.z2h-admin-hero__actions{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-left: auto;
+}
 .z2h-admin-hero__eyebrow{
   color: #71717a;
   font-size: .68rem;
@@ -296,6 +304,27 @@ a:hover{ color: #1d4ed8; }
 .z2h-admin-token.is-muted{
   color: var(--text-2);
   background: transparent;
+}
+.z2h-admin-token.z2h-chip-status{
+  font-size: .72rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.z2h-admin-token.z2h-chip-status.published{
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #14532d;
+}
+.z2h-admin-token.z2h-chip-status.draft{
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #713f12;
+}
+.z2h-admin-token.z2h-chip-status.archived{
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-2);
 }
 .z2h-admin-token .dot{
   width: 7px;

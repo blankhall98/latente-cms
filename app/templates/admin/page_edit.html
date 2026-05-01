@@ -21,68 +21,65 @@
   {% endif %}
 
   <!-- Header / toolbar -->
-  <header id="z2h-toolbar" class="mb-3" aria-label="Page header actions">
-    <div class="z2h-toolbar border rounded-3 p-3 bg-white shadow-sm">
-      <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 w-100">
-        <div>
-          <h1 class="h4 m-0 text-capitalize">{{ page.title }}</h1>
-          <div class="z2h-meta row gx-2 gy-1 mt-1">
-            <div class="col-auto"><code class="z2h-chip z2h-chip--lg code">/{{ page.slug }}</code></div>
-            <div class="col-auto"><span class="z2h-chip z2h-chip--lg">Section: <strong>{{ page.section_name }}</strong></span></div>
-            {% set s=(page.status or '')|lower %}
-            <div class="col-auto">
-              <span id="z2h-status-chip" class="z2h-chip z2h-chip--lg z2h-chip-status {{ s }}">{{ s or 'draft' }}</span>
-            </div>
-            <div class="col-auto"><span class="z2h-chip z2h-chip--lg">Schema v{{ page.schema_version }}</span></div>
-            <div class="col-auto d-none d-sm-inline"><span class="z2h-dot"></span><span class="z2h-save-txt">Saved</span></div>
-          </div>
-        </div>
-
-        <!-- Polished actions bar (behaviour unchanged) -->
-        <div class="btn-toolbar z2h-actions gap-2" role="toolbar" aria-label="Primary & advanced actions">
-          <div class="btn-group me-1" role="group" aria-label="Primary actions">
-            <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
-            <button type="button" class="btn btn-outline" id="z2h-publish-btn" title="Save changes first">Publish</button>
-            <a class="btn btn-outline" href="/admin/pages">Cancel</a>
-          </div>
-
-          <!-- Advanced Actions dropdown (contains Delivery JSON + Recover) -->
-          <div class="btn-group" role="group">
-            <button type="button"
-                    class="btn btn-outline dropdown-toggle z2h-adv-toggle"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                    aria-haspopup="true">
-              Advanced Actions
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow z2h-adv-menu" role="menu" aria-label="Advanced actions">
-              {% if is_superadmin %}
-              <li role="none">
-                <a role="menuitem"
-                   class="dropdown-item d-none"
-                   id="z2h-delivery-btn"
-                   target="_blank"
-                   rel="noopener">Delivery JSON</a>
-              </li>
-              {% endif %}
-              <li><hr class="dropdown-divider"></li>
-              <li role="none">
-                <button role="menuitem"
-                        type="button"
-                        class="dropdown-item d-none"
-                        id="z2h-restore-btn"
-                        title="Load from published Delivery JSON">Recover</button>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <!-- /actions -->
+  <header id="z2h-toolbar" class="z2h-admin-hero z2h-editor-hero" aria-label="Page header actions">
+    <div class="z2h-admin-hero__bar">
+      <div class="z2h-admin-hero__context">
+        <a href="/admin/pages" class="z2h-admin-back" aria-label="Back to Pages">&larr; Pages</a>
+        <span class="z2h-admin-hero__eyebrow">Page editor</span>
       </div>
+
+      <!-- Polished actions bar (behaviour unchanged) -->
+      <div class="btn-toolbar z2h-admin-hero__actions z2h-actions" role="toolbar" aria-label="Primary & advanced actions">
+        <div class="btn-group me-1" role="group" aria-label="Primary actions">
+          <button form="z2h-edit-form" class="btn btn-cta" type="submit" id="z2h-save-btn">Save</button>
+          <button type="button" class="btn btn-outline" id="z2h-publish-btn" title="Save changes first">Publish</button>
+          <a class="btn btn-outline" href="/admin/pages">Cancel</a>
+        </div>
+
+        <!-- Advanced Actions dropdown (contains Delivery JSON + Recover) -->
+        <div class="btn-group" role="group">
+          <button type="button"
+                  class="btn btn-outline dropdown-toggle z2h-adv-toggle"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-haspopup="true">
+            Advanced Actions
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow z2h-adv-menu" role="menu" aria-label="Advanced actions">
+            {% if is_superadmin %}
+            <li role="none">
+              <a role="menuitem"
+                 class="dropdown-item d-none"
+                 id="z2h-delivery-btn"
+                 target="_blank"
+                 rel="noopener">Delivery JSON</a>
+            </li>
+            {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li role="none">
+              <button role="menuitem"
+                      type="button"
+                      class="dropdown-item d-none"
+                      id="z2h-restore-btn"
+                      title="Load from published Delivery JSON">Recover</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- /actions -->
+    </div>
+
+    <h1 class="z2h-admin-hero__title text-capitalize">{{ page.title }}</h1>
+
+    <div class="z2h-editor-meta">
+      <code class="z2h-admin-code">/{{ page.slug }}</code>
+      <span class="z2h-admin-token">Section: <strong>{{ page.section_name }}</strong></span>
+      {% set s=(page.status or '')|lower %}
+      <span id="z2h-status-chip" class="z2h-admin-token z2h-chip-status {{ s or 'draft' }}">{{ s or 'draft' }}</span>
+      <span class="z2h-admin-token">Schema v{{ page.schema_version }}</span>
+      <span class="z2h-admin-token z2h-editor-save-state"><span class="z2h-dot"></span><span class="z2h-save-txt">Saved</span></span>
     </div>
   </header>
-
-  <!-- Divisor suave -->
-  <div class="z2h-soft-divider my-3" aria-hidden="true"></div>
 
   <!-- Local toasts (plus any global from base.html) -->
   <div class="toast-container position-fixed top-0 end-0 p-3" id="z2h-toast-host"></div>
@@ -174,11 +171,29 @@
     --nav-height: 64px;
   }
 
-  /* Toolbar */
-  .z2h-toolbar{ background:#fff; }
+  /* Editor header */
+  .z2h-editor-hero{
+    padding-top: .35rem;
+    margin-bottom: 1.2rem;
+  }
+  .z2h-editor-meta{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .75rem;
+  }
+  .z2h-editor-save-state{
+    color: var(--text-2);
+    background: transparent;
+  }
 
   /* Actions bar polish */
-  .z2h-actions .btn{ border-radius: 10px; }
+  .z2h-actions .btn{ border-radius: 8px; }
+  .z2h-actions .btn-group{
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+  }
   .z2h-adv-toggle{ position: relative; }
   .z2h-adv-toggle::after{ transform: translateY(2px); }
   .z2h-adv-menu{ min-width: 220px; border-radius: 12px; border:1px solid var(--border); }
@@ -189,12 +204,6 @@
   .z2h-chip-list .z2h-chip-selected{ background:#fff; color:#111; border:1px solid #d1d5db; }
   .z2h-chip-close{ filter:none !important; opacity:0.8; color:#b91c1c; }
   .z2h-chip-close:hover{ opacity:1; color:#7f1d1d; }
-
-  /* Soft divider (gradiente) */
-  .z2h-soft-divider{
-    height:1px;
-    background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.08), rgba(0,0,0,0));
-  }
 
   /* Chips (header only) */
   .z2h-chip{ display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .5rem; border-radius:999px;

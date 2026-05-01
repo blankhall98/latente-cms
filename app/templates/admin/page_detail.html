@@ -1,34 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Edit Page · {{ page.title }} · Blank CMS{% endblock %}
+{% block title %}Edit Page - {{ page.title }} - Blank CMS{% endblock %}
 
 {% block content %}
 <section class="container my-4">
 
   <!-- Header -->
-  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-    <div>
-      <a href="/admin/pages?tenant_id={{ (active_tenant and active_tenant.id) or '' }}" class="btn btn-link p-0">&larr; Pages</a>
-      <div class="z2h-brand--badge mt-2 mb-1">Edit Page</div>
-      <h1 class="h4 m-0">{{ page.title }}</h1>
-      <div class="text-muted small mt-1">
-        <code>/{{ page.slug }}</code> · Section: <strong>{{ page.section_name }}</strong> ·
-        Status:
-        {% set s=(page.status or "").lower() %}
-        <span class="z2h-badge"
-          style="background: {{ 'rgba(16,185,129,.12)' if s=='published' else 'rgba(250,204,21,.18)' if s=='draft' else 'rgba(148,163,184,.18)' }};
-                 border-color: {{ '#10b98133' if s=='published' else '#f59e0b33' if s=='draft' else '#94a3b833' }};
-                 color: {{ '#065f46' if s=='published' else '#78350f' if s=='draft' else '#334155' }};">
-          {{ s }}
-        </span>
+  <header class="z2h-admin-hero" aria-label="Page header actions">
+    <div class="z2h-admin-hero__bar">
+      <div class="z2h-admin-hero__context">
+        <a href="/admin/pages?tenant_id={{ (active_tenant and active_tenant.id) or '' }}" class="z2h-admin-back">&larr; Pages</a>
+        <span class="z2h-admin-hero__eyebrow">Page editor</span>
+      </div>
+
+      <div class="z2h-admin-hero__actions">
+        <button class="btn btn-outline" disabled title="Preview coming in Step 8D">Preview</button>
+        <button class="btn btn-outline" disabled title="Publish flow in Step 8D">Publish</button>
+        <button class="btn btn-cta" disabled title="Save wired in Step 8D">Save</button>
       </div>
     </div>
 
-    <div class="d-flex gap-2 mt-1">
-      <button class="btn btn-outline" disabled title="Preview coming in Step 8D">Preview</button>
-      <button class="btn btn-outline" disabled title="Publish flow in Step 8D">Publish</button>
-      <button class="btn btn-cta" disabled title="Save wired in Step 8D">Save</button>
+    <h1 class="z2h-admin-hero__title">{{ page.title }}</h1>
+    <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+      <code class="z2h-admin-code">/{{ page.slug }}</code>
+      <span class="z2h-admin-token">Section: <strong>{{ page.section_name }}</strong></span>
+      {% set s=(page.status or "").lower() %}
+      <span class="z2h-admin-token z2h-chip-status {{ s or 'draft' }}">{{ s or 'draft' }}</span>
+      <span class="z2h-admin-token">Schema v{{ page.schema_version }}</span>
     </div>
-  </div>
+  </header>
 
   <div class="row g-3">
     <!-- Left rail: Sections -->
