@@ -33,6 +33,7 @@ from app.services.firebase_storage import is_firebase_configured, upload_file_to
 from app.services.image_processing import should_process_image, process_image_to_webp
 from app.services.mail_service import send_contact_email
 from app.services.versioning_service import create_entry_snapshot
+from app.services.ga_service import fetch_ga4_report
 
 # Optional server-side schema validation toggle
 ENABLE_SERVER_VALIDATION = False
@@ -1136,8 +1137,10 @@ def admin_analytics(
         selected_tenant = active
 
     _tid = selected_tenant["id"] if selected_tenant else None
-    stats = _content_stats(db, tenant_id=_tid, all_projects=show_all)
+    stats    = _content_stats(db, tenant_id=_tid, all_projects=show_all)
     activity = _activity_stats(db, tenant_id=_tid, all_projects=show_all)
+    ga_slug  = selected_tenant["slug"] if selected_tenant and not show_all else None
+    ga       = fetch_ga4_report(ga_slug) if ga_slug else None
 
     # Single-project flag (hides Projects nav for clients with one project)
     if active:
@@ -1162,6 +1165,7 @@ def admin_analytics(
             "show_all": show_all,
             "stats": stats,
             "activity": activity,
+            "ga": ga,
         },
     )
 

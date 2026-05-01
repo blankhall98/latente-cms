@@ -180,6 +180,53 @@
     color: #a1a1aa;
   }
 
+  /* ---- Daily sessions bar chart ---- */
+  .an-chart-wrap{
+    margin-top: .75rem;
+    border: 1px solid #e4e4e7;
+    background: #ffffff;
+    padding: 1rem 1rem .5rem;
+  }
+  .an-chart{
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 72px;
+  }
+  .an-bar-col{
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+    cursor: default;
+  }
+  .an-bar{
+    width: 100%;
+    background: #18181b;
+    border-radius: 1px 1px 0 0;
+    transition: background-color .15s ease;
+    min-height: 2px;
+  }
+  .an-bar-col:hover .an-bar{ background: #71717a; }
+  .an-chart-labels{
+    display: flex;
+    justify-content: space-between;
+    margin-top: .4rem;
+    font-size: .62rem;
+    color: #a1a1aa;
+    letter-spacing: .03em;
+  }
+
+  /* ---- Note code tag ---- */
+  .an-note code{
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    border-radius: 3px;
+    padding: .05rem .25rem;
+    font-size: .78em;
+    color: #3f3f46;
+  }
+
   @media (max-width: 640px){
     .an-table, .an-table thead, .an-table tbody,
     .an-table th, .an-table td, .an-table tr{ display: block; width: 100%; }
@@ -313,49 +360,120 @@
     {% endif %}
   </div>
 
-  {# ---- Traffic & Engagement (COMING SOON) ---- #}
+  {# ---- Traffic & Engagement (GA4) ---- #}
   <div class="an-section">
     <div class="an-section-head">
-      <span class="an-section-label">Traffic &amp; Engagement</span>
-      <span class="an-status soon">Coming soon</span>
+      <span class="an-section-label">Traffic &amp; Engagement &mdash; Last 30 Days</span>
+      {% if ga %}
+        <span class="an-status live">Google Analytics</span>
+      {% else %}
+        <span class="an-status soon">Not connected</span>
+      {% endif %}
     </div>
 
-    <table class="an-table" aria-label="Traffic metrics — not yet available">
+    {% if ga %}
+
+    {# Overview row #}
+    <table class="an-table" aria-label="Traffic overview">
       <thead>
         <tr>
+          <th scope="col">Sessions</th>
+          <th scope="col">Users</th>
           <th scope="col">Page Views</th>
-          <th scope="col">Unique Visitors</th>
-          <th scope="col">Avg. Time on Page</th>
-          <th scope="col">Form Submissions</th>
+          <th scope="col">Avg. Session</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <span class="an-value dim">—</span>
-            <span class="an-value-sub">Last 30 days</span>
+            <span class="an-value">{{ "{:,}".format(ga.sessions) }}</span>
+            <span class="an-value-sub">Total sessions</span>
           </td>
           <td>
-            <span class="an-value dim">—</span>
-            <span class="an-value-sub">Last 30 days</span>
+            <span class="an-value">{{ "{:,}".format(ga.users) }}</span>
+            <span class="an-value-sub">Unique visitors</span>
           </td>
           <td>
-            <span class="an-value dim">—</span>
-            <span class="an-value-sub">Per session</span>
+            <span class="an-value">{{ "{:,}".format(ga.pageviews) }}</span>
+            <span class="an-value-sub">Page views</span>
           </td>
           <td>
-            <span class="an-value dim">—</span>
-            <span class="an-value-sub">Contact &amp; newsletter</span>
+            <span class="an-value" style="font-size:1.5rem;">{{ ga.avg_duration }}</span>
+            <span class="an-value-sub">Avg. duration</span>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <div class="an-note">
-      <strong>Analytics integration in development.</strong>
-      Traffic data, visitor behavior, and conversion tracking will populate this section
-      once the analytics connector is activated for your project.
+    {# Daily sessions chart #}
+    <div class="an-chart-wrap" aria-label="Daily sessions over last 30 days">
+      <div class="an-chart">
+        {% for day in ga.series %}
+          {% set pct = (day.sessions / ga.max_sessions * 100) | round | int %}
+          <div class="an-bar-col" title="{{ day.label }}: {{ day.sessions }} sessions">
+            <div class="an-bar" style="height: {{ [pct, 2] | max }}%"></div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="an-chart-labels">
+        <span>{{ ga.series[0].label }}</span>
+        <span>{{ ga.series[14].label }}</span>
+        <span>{{ ga.series[-1].label }}</span>
+      </div>
     </div>
+
+    {# Top pages #}
+    {% if ga.top_pages %}
+    <div class="an-section-head" style="margin-top:1.5rem;">
+      <span class="an-section-label">Top Pages</span>
+    </div>
+    <table class="an-table" aria-label="Top pages by views">
+      <thead>
+        <tr>
+          <th scope="col" style="width:75%">Page</th>
+          <th scope="col">Views</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for page in ga.top_pages %}
+        <tr>
+          <td style="font-size:.82rem; color:#3f3f46; font-family:monospace; padding-top:.65rem; padding-bottom:.65rem;">{{ page.path }}</td>
+          <td>
+            <span style="font-size:.95rem; font-weight:700; color:#18181b; font-variant-numeric:tabular-nums;">{{ "{:,}".format(page.views) }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% else %}
+
+    {# Placeholder when GA4 not connected #}
+    <table class="an-table" aria-label="Traffic metrics — not connected">
+      <thead>
+        <tr>
+          <th scope="col">Sessions</th>
+          <th scope="col">Users</th>
+          <th scope="col">Page Views</th>
+          <th scope="col">Avg. Session</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="an-value dim">—</span><span class="an-value-sub">Last 30 days</span></td>
+          <td><span class="an-value dim">—</span><span class="an-value-sub">Last 30 days</span></td>
+          <td><span class="an-value dim">—</span><span class="an-value-sub">Last 30 days</span></td>
+          <td><span class="an-value dim">—</span><span class="an-value-sub">Per session</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="an-note">
+      <strong>Google Analytics not connected for this project.</strong>
+      Add a <code>GA4_PROPERTY_ID_&lt;SLUG&gt;</code> config var and grant the service account Viewer access to activate this section.
+    </div>
+
+    {% endif %}
   </div>
 
 </div>
