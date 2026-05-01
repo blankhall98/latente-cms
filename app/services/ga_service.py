@@ -130,12 +130,43 @@ def fetch_ga4_report(tenant_slug: str) -> dict | None:
         series = [
             {
                 "label": (today - timedelta(days=i)).strftime("%b %d"),
+                "weekday": (today - timedelta(days=i)).strftime("%A"),
                 "sessions": raw_series.get(
                     (today - timedelta(days=i)).strftime("%Y%m%d"), 0
                 ),
             }
             for i in range(30, 0, -1)
         ]
+
+        # ── Chart insights (computed from series, no extra API call) ─────────
+        first_half  = sum(d["sessions"] for d in series[:15])
+        second_half = sum(d["sessions"] for d in series[15:])
+        if first_half > 0:
+            trend_pct = round((second_half - first_half) / first_half * 100)
+            trend_dir = "up" if trend_pct >= 0 else "down"
+        else:
+            trend_pct, trend_dir = None, None
+
+        peak = max(series, key=lambda d: d["sessions"])
+
+        daily_avg = round(sum(d["sessions"] for d in series) / 30)
+
+        weekday_totals: dict[str, list[int]] = {}
+        for d in series:
+            weekday_totals.setdefault(d["weekday"], []).append(d["sessions"])
+        busiest_weekday = max(
+            weekday_totals,
+            key=lambda w: sum(weekday_totals[w]) / len(weekday_totals[w]),
+        ) if weekday_totals else None
+
+        insights = {
+            "trend_pct": abs(trend_pct) if trend_pct is not None else None,
+            "trend_dir": trend_dir,
+            "daily_avg": daily_avg,
+            "peak_label": peak["label"],
+            "peak_sessions": peak["sessions"],
+            "busiest_weekday": busiest_weekday,
+        }
 
         # ── Traffic sources ─────────────────────────────────────────────────
         sources_resp = client.run_report(RunReportRequest(
@@ -179,6 +210,7 @@ def fetch_ga4_report(tenant_slug: str) -> dict | None:
             "top_pages": top_pages,
             "series": series,
             "max_sessions": max((d["sessions"] for d in series), default=1) or 1,
+            "insights": insights,
             "sources": sources,
             "devices": devices,
         }
