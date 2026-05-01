@@ -74,10 +74,7 @@
 
   {% block extra_head %}{% endblock %}
 
-  <!-- ================================================================
-       NIGHT MODE — must come after {% block extra_head %} so this
-       block wins the cascade over all template-specific inline styles.
-       ================================================================ -->
+  <!-- Night mode overrides — loaded after extra_head so cascade wins -->
   <style>
     /* ── CSS variable overrides (handles all style.css components) ── */
     html[data-night="1"]{
