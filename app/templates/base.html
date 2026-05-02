@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#f7f4ef">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   {% block meta %}{% endblock %}
-  <!-- Night mode: apply before CSS loads to prevent flash -->
-  <script>if(localStorage.getItem('z2h-night')==='1')document.documentElement.setAttribute('data-night','1');</script>
+  <!-- Night mode: apply before CSS loads to prevent flash (skip on login) -->
+  <script>if(localStorage.getItem('z2h-night')==='1'&&!window.location.pathname.startsWith('/login'))document.documentElement.setAttribute('data-night','1');</script>
 
   <!-- Bootstrap -->
   <link
