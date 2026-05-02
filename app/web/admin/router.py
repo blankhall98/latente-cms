@@ -35,6 +35,7 @@ from app.services.firebase_storage import is_firebase_configured, upload_file_to
 from app.services.image_processing import should_process_image, process_image_to_webp
 from app.services.mail_service import send_contact_email
 from app.services.passwords import verify_password, hash_password
+from app.services.authz import user_has_permission
 from app.services.versioning_service import create_entry_snapshot
 from app.services.ga_service import fetch_ga4_report
 from app.services.report_service import generate_analytics_pdf
@@ -1265,8 +1266,27 @@ def admin_profile(
         ).all()
         my_tenants = [{"id": t.id, "name": t.name, "slug": t.slug} for t, _ in pairs]
 
+    can_manage_team = is_superadmin or (
+        active and user_has_permission(
+            db, user_id=user_id,
+            tenant_id=int(active["id"]),
+            perm_key="org:members:manage",
+        )
+    )
+
+    # Roles available for assignment when inviting
+    # Superadmin can assign any non-platform role; tenant_admin can assign editor/viewer only
+    if is_superadmin:
+        invite_roles = db.scalars(
+            select(Role).where(Role.key.in_(["tenant_admin", "editor", "viewer"])).order_by(Role.id)
+        ).all()
+    else:
+        invite_roles = db.scalars(
+            select(Role).where(Role.key.in_(["editor", "viewer"])).order_by(Role.id)
+        ).all()
+
     team = []
-    if is_superadmin and active:
+    if can_manage_team and active:
         team_rows = db.execute(
             select(User, UserTenant, Role)
             .join(UserTenant, UserTenant.user_id == User.id)
@@ -1283,6 +1303,7 @@ def admin_profile(
                 "email": u.email,
                 "full_name": u.full_name or "",
                 "role": r.label,
+                "role_key": r.key,
                 "is_self": u.id == user_id,
             }
             for u, ut, r in team_rows
@@ -1305,6 +1326,8 @@ def admin_profile(
             "is_superadmin": is_superadmin,
             "current_tenant": active or {"name": "—", "slug": None, "id": None},
             "my_tenants": my_tenants,
+            "can_manage_team": can_manage_team,
+            "invite_roles": [{"key": r.key, "label": r.label} for r in invite_roles],
             "team": team,
             "pw_changed": pw == "changed",
             "invited_email": invited,
@@ -1348,17 +1371,34 @@ def invite_user(
     request: Request,
     db: Session = Depends(get_db),
     email: str = Form(...),
+    role_key: str = Form("editor"),
 ):
     try:
         auth = _require_web_user(request)
     except HTTPException:
         return RedirectResponse(url="/login", status_code=302)
-    if not auth.get("is_superadmin"):
-        raise HTTPException(status_code=403)
 
+    is_superadmin = bool(auth.get("is_superadmin"))
     active = _get_active_tenant(request)
     if not active:
         return RedirectResponse(url="/admin/profile?error=no_project", status_code=302)
+
+    can_manage = is_superadmin or user_has_permission(
+        db, user_id=int(auth["id"]),
+        tenant_id=int(active["id"]),
+        perm_key="org:members:manage",
+    )
+    if not can_manage:
+        raise HTTPException(status_code=403)
+
+    # Non-superadmin cannot assign tenant_admin or super_admin roles
+    allowed_keys = ["tenant_admin", "editor", "viewer"] if is_superadmin else ["editor", "viewer"]
+    if role_key not in allowed_keys:
+        role_key = "editor"
+
+    role_obj = db.scalar(select(Role).where(Role.key == role_key))
+    if not role_obj:
+        role_obj = db.scalar(select(Role).where(Role.key == "editor"))
 
     email = email.strip().lower()
     temp_pw: str | None = None
@@ -1386,14 +1426,12 @@ def invite_user(
     if existing_ut:
         return RedirectResponse(url="/admin/profile?error=already_member", status_code=302)
 
-    editor_role = db.scalar(select(Role).where(Role.key == "editor"))
-    ut = UserTenant(
+    db.add(UserTenant(
         user_id=user_obj.id,
         tenant_id=int(active["id"]),
-        role_id=editor_role.id if editor_role else 3,
+        role_id=role_obj.id,
         status=UserTenantStatus.active,
-    )
-    db.add(ut)
+    ))
     db.commit()
 
     redirect = f"/admin/profile?invited={quote(email)}"
@@ -1412,13 +1450,27 @@ def remove_user_access(
         auth = _require_web_user(request)
     except HTTPException:
         return RedirectResponse(url="/login", status_code=302)
-    if not auth.get("is_superadmin"):
-        raise HTTPException(status_code=403)
+
+    is_superadmin = bool(auth.get("is_superadmin"))
+    active = _get_active_tenant(request)
 
     ut = db.get(UserTenant, user_tenant_id)
-    if ut and ut.user_id != int(auth["id"]):
-        db.delete(ut)
-        db.commit()
+    if ut:
+        can_manage = is_superadmin or (
+            active and ut.tenant_id == int(active["id"]) and
+            user_has_permission(
+                db, user_id=int(auth["id"]),
+                tenant_id=int(active["id"]),
+                perm_key="org:members:manage",
+            )
+        )
+        # Never allow self-removal; tenant_admin cannot remove other tenant_admins
+        target_role = db.get(Role, ut.role_id)
+        is_privileged_target = target_role and target_role.key in ("tenant_admin", "super_admin")
+        if (can_manage and ut.user_id != int(auth["id"])
+                and not (not is_superadmin and is_privileged_target)):
+            db.delete(ut)
+            db.commit()
 
     return RedirectResponse(url="/admin/profile", status_code=302)
 

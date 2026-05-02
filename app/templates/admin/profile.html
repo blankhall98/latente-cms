@@ -182,6 +182,14 @@
     border-color: #18181b;
     box-shadow: 0 0 0 3px rgba(24,24,27,.07); outline: none;
   }
+  .pf-invite-role{
+    border: 1px solid #d4d4d8; border-radius: 6px;
+    padding: .45rem .65rem; font-size: .82rem; color: #18181b;
+    background: #ffffff; font-family: inherit; cursor: pointer;
+    transition: border-color .2s ease;
+    flex-shrink: 0;
+  }
+  .pf-invite-role:focus{ border-color: #18181b; outline: none; box-shadow: 0 0 0 3px rgba(24,24,27,.07); }
   .pf-invite-btn{
     font-size: .72rem; font-weight: 700; letter-spacing: .07em;
     text-transform: uppercase; border-radius: 6px;
@@ -394,8 +402,8 @@
     {% endif %}
   </div>
 
-  {# ---- Team Access (superadmin only) ---- #}
-  {% if is_superadmin and current_tenant and current_tenant.id %}
+  {# ---- Team Access (superadmin or tenant_admin) ---- #}
+  {% if can_manage_team and current_tenant and current_tenant.id %}
   <div class="pf-section">
     <div class="pf-section-head">
       <span class="pf-section-label">Team &mdash; {{ current_tenant.name }}</span>
@@ -421,7 +429,8 @@
           </td>
           <td><span class="pf-team-role">{{ member.role }}</span></td>
           <td class="text-end">
-            {% if not member.is_self %}
+            {% set can_remove = not member.is_self and (is_superadmin or member.role_key not in ('tenant_admin','super_admin')) %}
+            {% if can_remove %}
             <form action="/admin/profile/remove/{{ member.user_tenant_id }}" method="post" style="display:inline">
               <button type="submit" class="pf-remove-btn"
                 onclick="return confirm('Remove {{ member.email }} from {{ current_tenant.name }}?')">
@@ -442,6 +451,15 @@
       <input class="pf-invite-input" type="email" name="email"
              placeholder="colleague@company.com" required maxlength="320"
              aria-label="Email address to invite">
+      {% if invite_roles|length > 1 %}
+      <select class="pf-invite-role" name="role_key" aria-label="Role">
+        {% for r in invite_roles %}
+        <option value="{{ r.key }}">{{ r.label }}</option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <input type="hidden" name="role_key" value="editor">
+      {% endif %}
       <button class="btn btn-dark pf-invite-btn" type="submit">Invite</button>
     </form>
   </div>
