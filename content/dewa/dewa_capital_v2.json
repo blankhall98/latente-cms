@@ -1,0 +1,44 @@
+{
+  "hero": {
+    "heroImage": { "url": "" },
+    "heroText": { "en": "", "es": "" }
+  },
+  "mainSection": {
+    "mainText": { "en": "", "es": "" },
+    "secondaryText": { "en": "", "es": "" }
+  },
+  "scrollSections": {
+    "firstScrollSection": {
+      "sectionName": { "en": "", "es": "" },
+      "sectionImage": { "url": "" },
+      "sectionMainText": { "en": "", "es": "" },
+      "sectionSecondaryText": { "en": "", "es": "" }
+    },
+    "secondScrollSection": {
+      "sectionName": { "en": "", "es": "" },
+      "sectionImage": { "url": "" },
+      "sectionMainText": { "en": "", "es": "" },
+      "sectionSecondaryText": { "en": "", "es": "" }
+    },
+    "thirdScrollSection": {
+      "sectionName": { "en": "", "es": "" },
+      "sectionImage": { "url": "" },
+      "sectionMainText": { "en": "", "es": "" },
+      "sectionSecondaryText": { "en": "", "es": "" }
+    }
+  },
+  "governanceAndStewardship": {
+    "sectionName": { "en": "", "es": "" },
+    "mainText": { "en": "", "es": "" },
+    "leftSecondaryText": { "en": "", "es": "" },
+    "rightSecondaryText": { "en": "", "es": "" }
+  },
+  "investmentDiscipline": {
+    "sectionName": { "en": "", "es": "" }
+  },
+  "bottomHero": {
+    "mainText": { "en": "", "es": "" },
+    "secondaryText": { "en": "", "es": "" },
+    "contactUsText": { "en": "", "es": "" }
+  }
+}
