@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/dewa/dewa_capital/v3.json",
+  "title": "DEWA - Dewa Capital v3",
+  "type": "object",
+  "x-ui": {
+    "label": "Dewa Capital",
+    "order": [
+      "hero",
+      "mainSection",
+      "scrollSections",
+      "governanceAndStewardship",
+      "investmentDiscipline",
+      "bottomHero"
+    ]
+  },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["heroImage", "heroText"] },
+      "properties": {
+        "heroImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hero Image" } },
+        "heroText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Hero Text" } }
+      },
+      "required": ["heroImage", "heroText"]
+    },
+    "mainSection": {
+      "type": "object",
+      "x-ui": { "label": "Main Section", "order": ["mainText", "secondaryText"] },
+      "properties": {
+        "mainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Main Text" } },
+        "secondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Secondary Text" } }
+      },
+      "required": ["mainText", "secondaryText"]
+    },
+    "scrollSections": {
+      "type": "object",
+      "x-ui": {
+        "label": "Scroll Sections",
+        "order": ["firstScrollSection", "secondScrollSection", "thirdScrollSection"]
+      },
+      "properties": {
+        "firstScrollSection": { "$ref": "#/$defs/ScrollSection", "x-ui": { "label": "First Scroll Section" } },
+        "secondScrollSection": { "$ref": "#/$defs/ScrollSection", "x-ui": { "label": "Second Scroll Section" } },
+        "thirdScrollSection": { "$ref": "#/$defs/ScrollSection", "x-ui": { "label": "Third Scroll Section" } }
+      },
+      "required": ["firstScrollSection", "secondScrollSection", "thirdScrollSection"]
+    },
+    "governanceAndStewardship": {
+      "type": "object",
+      "x-ui": {
+        "label": "Governance and Stewardship",
+        "order": ["sectionName", "mainText", "leftSecondaryText", "rightSecondaryText"]
+      },
+      "properties": {
+        "sectionName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Name" } },
+        "mainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Main Text" } },
+        "leftSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Left Secondary Text" } },
+        "rightSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Right Secondary Text" } }
+      },
+      "required": ["sectionName", "mainText", "leftSecondaryText", "rightSecondaryText"]
+    },
+    "investmentDiscipline": {
+      "type": "object",
+      "x-ui": { "label": "Investment Discipline", "order": ["sectionName"] },
+      "properties": {
+        "sectionName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Name" } }
+      },
+      "required": ["sectionName"]
+    },
+    "bottomHero": {
+      "type": "object",
+      "x-ui": {
+        "label": "Bottom Hero",
+        "order": ["mainText", "secondaryText", "contactUsText"]
+      },
+      "properties": {
+        "mainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Main Text" } },
+        "secondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Secondary Text" } },
+        "contactUsText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Contact Us Text" } }
+      },
+      "required": ["mainText", "secondaryText", "contactUsText"]
+    }
+  },
+  "required": [
+    "hero",
+    "mainSection",
+    "scrollSections",
+    "governanceAndStewardship",
+    "investmentDiscipline",
+    "bottomHero"
+  ],
+  "$defs": {
+    "LocalizedText": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English" } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish" } }
+      },
+      "required": ["en", "es"]
+    },
+    "LocalizedTextarea": {
+      "type": "object",
+      "x-ui": { "label": "Text", "order": ["en", "es"] },
+      "properties": {
+        "en": { "type": "string", "x-ui": { "label": "English", "textarea": true } },
+        "es": { "type": "string", "x-ui": { "label": "Spanish", "textarea": true } }
+      },
+      "required": ["en", "es"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        }
+      },
+      "required": ["url"]
+    },
+    "ExternalLink": {
+      "type": "object",
+      "x-ui": { "label": "External Link", "order": ["linkText", "linkUrl"] },
+      "properties": {
+        "linkText": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Link Text" } },
+        "linkUrl": { "type": "string", "x-ui": { "label": "Link URL" } }
+      },
+      "required": ["linkText", "linkUrl"]
+    },
+    "ScrollSection": {
+      "type": "object",
+      "x-ui": {
+        "label": "Scroll Section",
+        "order": [
+          "sectionName",
+          "sectionImage",
+          "sectionMainText",
+          "sectionSecondaryText",
+          "externalLink"
+        ]
+      },
+      "properties": {
+        "sectionName": { "$ref": "#/$defs/LocalizedText", "x-ui": { "label": "Section Name" } },
+        "sectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Image" } },
+        "sectionMainText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Main Text" } },
+        "sectionSecondaryText": { "$ref": "#/$defs/LocalizedTextarea", "x-ui": { "label": "Section Secondary Text" } },
+        "externalLink": { "$ref": "#/$defs/ExternalLink", "x-ui": { "label": "External Link" } }
+      },
+      "required": ["sectionName", "sectionImage", "sectionMainText", "sectionSecondaryText", "externalLink"]
+    }
+  }
+}
