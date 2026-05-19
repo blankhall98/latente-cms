@@ -1317,8 +1317,9 @@
       const hint=panel.querySelector('[data-autoform-hint]'); if(hint) hint.style.display='';
       return;
     }
-    // Special case: projects array
-    if(panelKey==='projects' && schemaUI?.properties?.projects){
+    // Special case: real Projects page array. Other pages can have a normal
+    // subsection named "projects" (for example Ragni-Grady Portfolio).
+    if(sectionKey==='projects' && panelKey==='projects' && schemaUI?.properties?.projects){
       const projSchema = schemaUI.properties.projects;
       let val = Array.isArray(secData) ? secData : (secData && secData.projects && Array.isArray(secData.projects) ? secData.projects : []);
       renderField('projects', projSchema, val, host);
@@ -1643,8 +1644,9 @@
       Object.assign(out, keyed);
     }
 
-    // Always pull fresh Projects data from the projects panel to avoid accidental wipes
-    const projPanel = document.querySelector('[data-section-key="projects"]');
+    // Always pull fresh Projects data from the real Projects page panel to avoid accidental wipes.
+    // Keep normal "projects" subsections on other pages as regular object fields.
+    const projPanel = sectionKey==='projects' ? document.querySelector('[data-section-key="projects"]') : null;
     if(projPanel){
       try{
         const projPatch = serializeAutoForm(projPanel) || {};
