@@ -153,6 +153,10 @@ def _is_owa_active(active: dict | None) -> bool:
     return ((active or {}).get("slug") or "").strip().lower() == "owa"
 
 
+def _is_ragni_grady_active(active: dict | None) -> bool:
+    return ((active or {}).get("slug") or "").strip().lower() == "ragni-grady"
+
+
 def _entry_display_title(
     entry: Entry,
     section: Section,
@@ -536,6 +540,23 @@ def _render_object_page_data(data: Any) -> dict:
         merged.pop("__draft", None)
         return merged
     return data
+
+
+def _render_ragni_object_page_data(section_key: str, data: Any) -> dict:
+    """
+    Ragni-Grady Portfolio has a regular subsection named "projects". Older
+    editor code could save that subsection as a projects array draft. For that
+    one page, keep the published object when the draft shape is invalid.
+    """
+    rendered = _render_object_page_data(data)
+    if section_key != "portfolio" or not isinstance(rendered, dict) or not isinstance(data, dict):
+        return rendered
+
+    root_projects = data.get("projects")
+    if not isinstance(rendered.get("projects"), dict) and isinstance(root_projects, dict):
+        rendered = dict(rendered)
+        rendered["projects"] = root_projects
+    return rendered
 
 
 def _deep_merge_skip_empty_strings(base: Any, override: Any) -> Any:
@@ -1931,6 +1952,8 @@ def page_edit_get(
     else:
         if _is_owa_active(active) and section.key != "landing_pages":
             working_data = _render_owa_object_page_data(base_data) if is_published else base_data
+        elif _is_ragni_grady_active(active):
+            working_data = _render_ragni_object_page_data(section.key, base_data) if is_published else _render_ragni_object_page_data(section.key, base_data)
         else:
             working_data = _render_object_page_data(base_data) if is_published else base_data
 
@@ -2285,6 +2308,8 @@ def page_edit_post(
     elif _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
         # OWA object pages: use merged view where empty draft strings do not override root.
         working_base = _render_owa_object_page_data(base_data) if is_published_now else (base_data if isinstance(base_data, dict) else {})
+    elif _is_ragni_grady_active(active):
+        working_base = _render_ragni_object_page_data(getattr(section, "key", ""), base_data)
     if isinstance(working_base, dict) and "__draft" in working_base:
         working_base = {k: v for k, v in working_base.items() if k != "__draft"}
     if getattr(section, "key", "") == "home" and home_supports_featured:
@@ -2367,6 +2392,8 @@ def page_edit_post(
         working_after = current_base
     if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
         working_after = _normalize_owa_payload(working_after, json_schema)
+    elif _is_ragni_grady_active(active):
+        working_after = _render_ragni_object_page_data(getattr(section, "key", ""), current_base)
 
     if getattr(section, "key", "") == "privacy_policy":
         sections_ui = [{
@@ -2586,6 +2613,8 @@ def admin_publish_page(
         candidate = _render_home_data(data_now)
     elif _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
         candidate = _render_owa_object_page_data(data_now)
+    elif _is_ragni_grady_active(active):
+        candidate = _render_ragni_object_page_data(getattr(section, "key", ""), data_now)
 
     if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
         ss_active = _get_active_schema(db, section.id)
