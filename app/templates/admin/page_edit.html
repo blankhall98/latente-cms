@@ -1613,6 +1613,12 @@
       if(!isEmptySection(merged)){
         const key = (panel.getAttribute('data-section-key')||'').trim();
         if(key){
+          if((root?.dataset?.tenant||'') === 'ragni-grady' && sectionKey === 'portfolio' && key === 'projects' && isPlainObject(merged)){
+            const nested = isPlainObject(merged.projects) ? merged.projects : {};
+            merged = {
+              projectsPageDescription: merged.projectsPageDescription ?? nested.projectsPageDescription ?? ''
+            };
+          }
           if(key === 'privacy_policy' && merged.body !== undefined){
             keyed['body'] = merged.body;
             if(seedEl){ try{ seedEl.textContent = JSON.stringify(merged.body); }catch{} }

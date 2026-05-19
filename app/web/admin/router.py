@@ -556,6 +556,14 @@ def _render_ragni_object_page_data(section_key: str, data: Any) -> dict:
     if not isinstance(rendered.get("projects"), dict) and isinstance(root_projects, dict):
         rendered = dict(rendered)
         rendered["projects"] = root_projects
+    projects = rendered.get("projects")
+    if isinstance(projects, dict):
+        nested = projects.get("projects")
+        desc = projects.get("projectsPageDescription")
+        if not isinstance(desc, str) and isinstance(nested, dict):
+            desc = nested.get("projectsPageDescription")
+        rendered = dict(rendered)
+        rendered["projects"] = {"projectsPageDescription": desc if isinstance(desc, str) else ""}
     return rendered
 
 
@@ -2337,6 +2345,8 @@ def page_edit_post(
 
     if _is_owa_active(active) and getattr(section, "key", "") != "landing_pages":
         merged = _normalize_owa_payload(merged, json_schema)
+    elif _is_ragni_grady_active(active):
+        merged = _render_ragni_object_page_data(getattr(section, "key", ""), merged)
 
     # Clean project lists (DEWA keys only) to avoid null/blank reappearing items
     merged = _sanitize_dewa_projects_payload(merged)
