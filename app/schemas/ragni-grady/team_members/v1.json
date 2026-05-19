@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/team_members/v1.json",
+  "title": "RAGNI-GRADY - Team Members v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Team Members",
+    "order": ["teamMembers"]
+  },
+  "properties": {
+    "teamMembers": {
+      "type": "array",
+      "x-ui": {
+        "label": "Team Members",
+        "addLabel": "Add Team Member",
+        "itemTitlePath": "name"
+      },
+      "items": { "$ref": "#/$defs/TeamMember" }
+    }
+  },
+  "required": ["teamMembers"],
+  "$defs": {
+    "TeamMember": {
+      "type": "object",
+      "x-ui": {
+        "label": "Team Member",
+        "order": ["name", "role", "biography", "profilePicture"]
+      },
+      "properties": {
+        "name": { "type": "string", "x-ui": { "label": "Name" } },
+        "role": { "type": "string", "x-ui": { "label": "Role" } },
+        "biography": { "type": "string", "x-ui": { "label": "Biography", "textarea": true } },
+        "profilePicture": { "$ref": "#/$defs/Image", "x-ui": { "label": "Profile Picture" } }
+      },
+      "required": ["name", "role", "biography", "profilePicture"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt Text" } }
+      },
+      "required": ["url"]
+    }
+  }
+}

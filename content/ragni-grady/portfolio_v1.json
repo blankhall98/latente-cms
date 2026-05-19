@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "projectsPageDescription": "Our portfolio captures the depth of our process, the rigor of our ideas, and the integrity of our collaborations. Each work is an expression of vision carried through with precision, revealing how design can move beyond function to shape experience, meaning, and lasting impact."
+  },
+  "disciplines": {
+    "discipline1": {
+      "disciplineTitle": "",
+      "disciplineText": ""
+    },
+    "discipline2": {
+      "disciplineTitle": "",
+      "disciplineText": ""
+    }
+  }
+}

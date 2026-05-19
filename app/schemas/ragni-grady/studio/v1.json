@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/studio/v1.json",
+  "title": "RAGNI-GRADY - Studio v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Studio",
+    "order": ["ourStudio", "trajectory", "biography"]
+  },
+  "properties": {
+    "ourStudio": {
+      "type": "object",
+      "x-ui": { "label": "Our Studio", "order": ["mainText", "secondaryText", "sectionImage"] },
+      "properties": {
+        "mainText": { "type": "string", "x-ui": { "label": "Main Text", "textarea": true } },
+        "secondaryText": { "type": "string", "x-ui": { "label": "Secondary Text", "textarea": true } },
+        "sectionImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Section Image" } }
+      },
+      "required": ["mainText", "secondaryText", "sectionImage"]
+    },
+    "trajectory": {
+      "type": "object",
+      "x-ui": { "label": "Trajectory", "order": ["content", "timeline"] },
+      "properties": {
+        "content": {
+          "type": "object",
+          "x-ui": { "label": "Content", "order": ["mainText", "trajectoryImage"] },
+          "properties": {
+            "mainText": { "type": "string", "x-ui": { "label": "Main Text", "textarea": true } },
+            "trajectoryImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Trajectory Image" } }
+          },
+          "required": ["mainText", "trajectoryImage"]
+        },
+        "timeline": {
+          "type": "object",
+          "x-ui": { "label": "Timeline", "order": ["timePoints"] },
+          "properties": {
+            "timePoints": {
+              "type": "array",
+              "x-ui": {
+                "label": "Time Points",
+                "addLabel": "Add Time Point",
+                "itemTitlePath": "year"
+              },
+              "items": { "$ref": "#/$defs/TimePoint" }
+            }
+          },
+          "required": ["timePoints"]
+        }
+      },
+      "required": ["content", "timeline"]
+    },
+    "biography": {
+      "type": "object",
+      "x-ui": { "label": "Biography", "order": ["mainText"] },
+      "properties": {
+        "mainText": { "type": "string", "x-ui": { "label": "Main Text", "textarea": true } }
+      },
+      "required": ["mainText"]
+    }
+  },
+  "required": ["ourStudio", "trajectory", "biography"],
+  "$defs": {
+    "TimePoint": {
+      "type": "object",
+      "x-ui": { "label": "Time Point", "order": ["year", "description"] },
+      "properties": {
+        "year": { "type": "string", "x-ui": { "label": "Year" } },
+        "description": { "type": "string", "x-ui": { "label": "Description", "textarea": true } }
+      },
+      "required": ["year", "description"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt Text" } }
+      },
+      "required": ["url"]
+    }
+  }
+}

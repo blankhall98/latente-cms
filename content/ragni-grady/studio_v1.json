@@ -1,0 +1,25 @@
+{
+  "ourStudio": {
+    "mainText": "We are a full service architecture and design practice defined by rigor, narrative, and collaboration. Designing from the inside out, we carry each idea from vision to detail - shaping spaces that feel intentional, coherent, and built to last.",
+    "secondaryText": "\"Our studio philosophy: We believe true architecture is felt. What endures is not only the design, but the experience it creates.\"",
+    "sectionImage": {
+      "url": "",
+      "alt": ""
+    }
+  },
+  "trajectory": {
+    "content": {
+      "mainText": "Based in Houston and working globally, we've spent over two decades uniting architecture and interior design collaborating with private clients, developers, and cultural institutions at every scale.",
+      "trajectoryImage": {
+        "url": "",
+        "alt": ""
+      }
+    },
+    "timeline": {
+      "timePoints": []
+    }
+  },
+  "biography": {
+    "mainText": "Together, Erick and Rachel have a combined five decades of experience yielding numerous award-winning and highly successful projects. Personal and nuanced attention to detail is a hallmark of our design sensibility."
+  }
+}

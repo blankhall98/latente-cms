@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/footer/v1.json",
+  "title": "RAGNI-GRADY - Footer v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Footer",
+    "order": ["contact", "follow", "copyright"]
+  },
+  "properties": {
+    "contact": {
+      "type": "object",
+      "x-ui": {
+        "label": "Contact",
+        "order": ["contactMoto", "address1", "address2", "contactEmail"]
+      },
+      "properties": {
+        "contactMoto": { "type": "string", "x-ui": { "label": "Contact Moto", "textarea": true } },
+        "address1": { "type": "string", "x-ui": { "label": "Address 1" } },
+        "address2": { "type": "string", "x-ui": { "label": "Address 2" } },
+        "contactEmail": { "type": "string", "format": "email", "x-ui": { "label": "Contact Email" } }
+      },
+      "required": ["contactMoto", "address1", "address2", "contactEmail"]
+    },
+    "follow": {
+      "type": "object",
+      "x-ui": { "label": "Follow", "order": ["instagram", "linkedIn"] },
+      "properties": {
+        "instagram": { "type": "string", "format": "uri", "x-ui": { "label": "Instagram" } },
+        "linkedIn": { "type": "string", "format": "uri", "x-ui": { "label": "LinkedIn" } }
+      },
+      "required": ["instagram", "linkedIn"]
+    },
+    "copyright": {
+      "type": "object",
+      "x-ui": { "label": "Copyright", "order": ["copyright"] },
+      "properties": {
+        "copyright": { "type": "string", "x-ui": { "label": "Copyright" } }
+      },
+      "required": ["copyright"]
+    }
+  },
+  "required": ["contact", "follow", "copyright"]
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/privacy_policy/v1.json",
+  "title": "RAGNI-GRADY - Privacy Policy v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Privacy Policy",
+    "order": ["body"]
+  },
+  "properties": {
+    "body": {
+      "type": "string",
+      "x-ui": {
+        "label": "Privacy Policy",
+        "textarea": true
+      }
+    }
+  },
+  "required": ["body"]
+}

@@ -111,6 +111,16 @@ _OWA_SECTION_DASHBOARD_ORDER = [
     "footer",
 ]
 
+_RAGNI_GRADY_SECTION_DASHBOARD_ORDER = [
+    "home",
+    "team_members",
+    "projects",
+    "studio",
+    "portfolio",
+    "footer",
+    "privacy_policy",
+]
+
 
 def _parse_upload_tenant_slugs(raw: str) -> set[str]:
     cleaned = (raw or "").strip().lower()
@@ -162,9 +172,12 @@ def _entry_display_title(
 
 def _section_order_case_for_tenant_slug(tenant_slug: str | None):
     slug = (tenant_slug or "").strip().lower()
-    if slug != "owa":
+    if slug == "owa":
+        order_map = {k: i for i, k in enumerate(_OWA_SECTION_DASHBOARD_ORDER)}
+    elif slug == "ragni-grady":
+        order_map = {k: i for i, k in enumerate(_RAGNI_GRADY_SECTION_DASHBOARD_ORDER)}
+    else:
         return None
-    order_map = {k: i for i, k in enumerate(_OWA_SECTION_DASHBOARD_ORDER)}
     return case(order_map, value=Section.key, else_=len(order_map) + 100)
 
 

@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "heroText": "Shaping spaces from the inside out"
+  },
+  "ourStudio": {
+    "mainText": "We are a full service architecture and design practice defined by rigor, narrative, and human scale based in Houston, USA and operating globally.",
+    "secondaryText": "Architecture that feels as exceptional as it looks - elevating the everyday through thoughtful, integrated design."
+  },
+  "featuredProjects": [],
+  "ourProcess": {
+    "catchPhrase": "Have a project in mind?\nLet's explore it together.",
+    "mainText": "At Ragni Grady, every collaboration begins with listening. We approach each partnership as trusted advisors, shaping ideas with rigor and care. Designing from the inside out, we carry each idea from vision to detail - shaping spaces that feel intentional, coherent, and built to last. Together, we create architecture that is intentional, enduring, and deeply human.",
+    "secondaryText": "Share with us any details about your project - from the site and vision to your goals, budget, and timeline. This will help us understand your priorities and begin shaping a thoughtful response. We look forward to starting the conversation.",
+    "ourProcessImage": {
+      "url": "",
+      "alt": ""
+    }
+  }
+}

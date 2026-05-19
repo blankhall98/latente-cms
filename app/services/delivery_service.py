@@ -114,6 +114,95 @@ def _effective_published_payload(db: Session, entry: Entry) -> Optional[dict]:
     return None
 
 
+def _first_ragni_gallery_image(project: dict) -> dict:
+    gallery = project.get("heroGallery")
+    if not isinstance(gallery, list):
+        return {}
+    for item in gallery:
+        if isinstance(item, dict) and item.get("url"):
+            return dict(item)
+    return {}
+
+
+def _enrich_ragni_home_featured_projects(
+    db: Session,
+    *,
+    tenant_slug: str,
+    section_key: str,
+    slug: str,
+    data: dict,
+) -> dict:
+    """
+    Ragni-Grady stores Home featured project selections as project titles for the
+    admin picker. Public delivery expands those selections into the project
+    fields requested by the frontend.
+    """
+    if (tenant_slug or "").strip().lower() != "ragni-grady":
+        return data
+    if section_key != "home" or slug != "home":
+        return data
+    selections = data.get("featuredProjects")
+    if not isinstance(selections, list):
+        return data
+
+    selected_titles = [str(item).strip() for item in selections if str(item).strip()]
+    out = dict(data)
+    out["featuredProjectTitles"] = selected_titles
+    if not selected_titles:
+        out["featuredProjects"] = []
+        return out
+
+    projects_entry = db.scalars(
+        select(Entry)
+        .join(Section, Section.id == Entry.section_id)
+        .join(Tenant, Tenant.id == Entry.tenant_id)
+        .where(
+            and_(
+                Tenant.slug == "ragni-grady",
+                Section.key == "projects",
+                Entry.slug == "projects",
+            )
+        )
+        .limit(1)
+    ).first()
+    projects_payload = _effective_published_payload(db, projects_entry) if projects_entry else None
+    projects = projects_payload.get("projects") if isinstance(projects_payload, dict) else []
+
+    by_title: dict[str, dict] = {}
+    if isinstance(projects, list):
+        for project in projects:
+            if not isinstance(project, dict):
+                continue
+            title = str(project.get("title") or project.get("projectTitle") or "").strip()
+            if title and title not in by_title:
+                by_title[title] = project
+
+    featured = []
+    for title in selected_titles:
+        project = by_title.get(title)
+        if not isinstance(project, dict):
+            featured.append(
+                {
+                    "projectTitle": title,
+                    "projectHeroDescription": "",
+                    "location": "",
+                    "heroImage": {},
+                }
+            )
+            continue
+        featured.append(
+            {
+                "projectTitle": str(project.get("title") or title),
+                "projectHeroDescription": str(project.get("heroDescription") or ""),
+                "location": str(project.get("location") or ""),
+                "heroImage": _first_ragni_gallery_image(project),
+            }
+        )
+
+    out["featuredProjects"] = featured
+    return out
+
+
 def fetch_published_entries(
     db: Session,
     tenant_slug: str,
@@ -151,6 +240,16 @@ def fetch_published_entries(
 
     items: List[DeliveryEntryOut] = []
     for e in rows:
+        data_payload = strip_internal_delivery_fields(e.data or {})
+        if section_key == "home" and e.slug == "home" and isinstance(data_payload, dict):
+            data_payload = _enrich_ragni_home_featured_projects(
+                db,
+                tenant_slug=tenant_slug,
+                section_key="home",
+                slug=e.slug,
+                data=data_payload,
+            )
+
         items.append(
             DeliveryEntryOut(
                 id=e.id,
@@ -159,7 +258,7 @@ def fetch_published_entries(
                 slug=e.slug,
                 status=e.status,
                 schema_version=e.schema_version,
-                data=strip_internal_delivery_fields(e.data or {}),
+                data=data_payload,
                 updated_at=e.updated_at,
                 published_at=getattr(e, "published_at", None),
             )
@@ -229,6 +328,16 @@ def fetch_single_published_entry(
     if not isinstance(effective, dict) or not effective:
         return None
 
+    data_payload = strip_internal_delivery_fields(effective)
+    if isinstance(data_payload, dict):
+        data_payload = _enrich_ragni_home_featured_projects(
+            db,
+            tenant_slug=tenant_slug,
+            section_key=section_key,
+            slug=slug,
+            data=data_payload,
+        )
+
     return DeliveryEntryOut(
         id=row["id"],
         tenant_id=row["tenant_id"],
@@ -236,7 +345,7 @@ def fetch_single_published_entry(
         slug=row["slug"],
         status="published",
         schema_version=row["schema_version"],
-        data=strip_internal_delivery_fields(effective),
+        data=data_payload,
         updated_at=row["updated_at"],
         published_at=row["published_at"],
     )
