@@ -118,6 +118,7 @@ _RAGNI_GRADY_SECTION_DASHBOARD_ORDER = [
     "studio",
     "portfolio",
     "footer",
+    "settings",
     "privacy_policy",
 ]
 
