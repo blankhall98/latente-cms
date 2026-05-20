@@ -564,6 +564,19 @@ def _render_ragni_object_page_data(section_key: str, data: Any) -> dict:
             desc = nested.get("projectsPageDescription")
         rendered = dict(rendered)
         rendered["projects"] = {"projectsPageDescription": desc if isinstance(desc, str) else ""}
+    disciplines = rendered.get("disciplines")
+    if isinstance(disciplines, dict):
+        rendered = dict(rendered)
+        normalized_disciplines: dict[str, Any] = {}
+        for key, value in disciplines.items():
+            if key in ("discipline1", "discipline2") and isinstance(value, dict):
+                normalized_disciplines[key] = {
+                    "disciplineTitle": value.get("disciplineTitle", ""),
+                    "disciplineText": value.get("disciplineText", ""),
+                }
+            else:
+                normalized_disciplines[key] = value
+        rendered["disciplines"] = normalized_disciplines
     return rendered
 
 

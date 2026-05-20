@@ -203,6 +203,36 @@ def _enrich_ragni_home_featured_projects(
     return out
 
 
+def _normalize_ragni_portfolio_data(
+    *,
+    tenant_slug: str,
+    section_key: str,
+    slug: str,
+    data: dict,
+) -> dict:
+    if (tenant_slug or "").strip().lower() != "ragni-grady":
+        return data
+    if section_key != "portfolio" or slug != "portfolio":
+        return data
+
+    disciplines = data.get("disciplines")
+    if not isinstance(disciplines, dict):
+        return data
+
+    out = dict(data)
+    normalized_disciplines: dict[str, Any] = {}
+    for key, value in disciplines.items():
+        if key in ("discipline1", "discipline2") and isinstance(value, dict):
+            normalized_disciplines[key] = {
+                "disciplineTitle": value.get("disciplineTitle", ""),
+                "disciplineText": value.get("disciplineText", ""),
+            }
+        else:
+            normalized_disciplines[key] = value
+    out["disciplines"] = normalized_disciplines
+    return out
+
+
 def fetch_published_entries(
     db: Session,
     tenant_slug: str,
@@ -246,6 +276,13 @@ def fetch_published_entries(
                 db,
                 tenant_slug=tenant_slug,
                 section_key="home",
+                slug=e.slug,
+                data=data_payload,
+            )
+        if section_key == "portfolio" and e.slug == "portfolio" and isinstance(data_payload, dict):
+            data_payload = _normalize_ragni_portfolio_data(
+                tenant_slug=tenant_slug,
+                section_key="portfolio",
                 slug=e.slug,
                 data=data_payload,
             )
@@ -332,6 +369,12 @@ def fetch_single_published_entry(
     if isinstance(data_payload, dict):
         data_payload = _enrich_ragni_home_featured_projects(
             db,
+            tenant_slug=tenant_slug,
+            section_key=section_key,
+            slug=slug,
+            data=data_payload,
+        )
+        data_payload = _normalize_ragni_portfolio_data(
             tenant_slug=tenant_slug,
             section_key=section_key,
             slug=slug,
