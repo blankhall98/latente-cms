@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.db.session import SessionLocal
 from app.models.auth import Tenant
@@ -71,6 +72,7 @@ def run() -> None:
 
         if changed:
             entry.data = data
+            flag_modified(entry, "data")
             if active_schema:
                 entry.schema_version = active_schema.version
             entry.updated_at = datetime.now(timezone.utc)
