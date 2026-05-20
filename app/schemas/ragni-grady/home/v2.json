@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/home/v2.json",
+  "title": "RAGNI-GRADY - Home v2",
+  "type": "object",
+  "x-ui": {
+    "label": "Home",
+    "order": ["hero", "ourStudio", "featuredProjects", "ourProcess"]
+  },
+  "properties": {
+    "hero": {
+      "type": "object",
+      "x-ui": { "label": "Hero", "order": ["heroText"] },
+      "properties": {
+        "heroText": { "type": "string", "x-ui": { "label": "Hero Text" } }
+      },
+      "required": ["heroText"]
+    },
+    "ourStudio": {
+      "type": "object",
+      "x-ui": { "label": "Our Studio", "order": ["mainText", "secondaryText"] },
+      "properties": {
+        "mainText": { "type": "string", "x-ui": { "label": "Main Text", "textarea": true } },
+        "secondaryText": { "type": "string", "x-ui": { "label": "Secondary Text", "textarea": true } }
+      },
+      "required": ["mainText", "secondaryText"]
+    },
+    "featuredProjects": {
+      "type": "array",
+      "x-ui": {
+        "label": "Featured Projects",
+        "help": "Select projects created on the Projects page. Delivery expands these selections with project title, hero description, location, and the first Hero Gallery image.",
+        "addLabel": "Add Featured Project"
+      },
+      "items": { "type": "string", "x-ui": { "label": "Project", "widget": "project-select" } }
+    },
+    "ourProcess": {
+      "type": "object",
+      "x-ui": {
+        "label": "Our Process",
+        "order": ["catchPhrase", "mainText", "secondaryText", "ourProcessImage", "hoverImage"]
+      },
+      "properties": {
+        "catchPhrase": { "type": "string", "x-ui": { "label": "Catch Phrase", "textarea": true } },
+        "mainText": { "type": "string", "x-ui": { "label": "Main Text", "textarea": true } },
+        "secondaryText": { "type": "string", "x-ui": { "label": "Secondary Text", "textarea": true } },
+        "ourProcessImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Our Process Image" } },
+        "hoverImage": { "$ref": "#/$defs/Image", "x-ui": { "label": "Hover Image" } }
+      },
+      "required": ["catchPhrase", "mainText", "secondaryText", "ourProcessImage"]
+    }
+  },
+  "required": ["hero", "ourStudio", "featuredProjects", "ourProcess"],
+  "$defs": {
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt Text" } }
+      },
+      "required": ["url"]
+    }
+  }
+}

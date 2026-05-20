@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/projects/v2.json",
+  "title": "RAGNI-GRADY - Projects v2",
+  "type": "object",
+  "x-ui": {
+    "label": "Projects",
+    "order": ["projects"]
+  },
+  "properties": {
+    "projects": {
+      "type": "array",
+      "x-ui": {
+        "label": "Projects",
+        "addLabel": "Add Project",
+        "itemTitlePath": "title"
+      },
+      "items": { "$ref": "#/$defs/Project" }
+    }
+  },
+  "required": ["projects"],
+  "$defs": {
+    "Project": {
+      "type": "object",
+      "x-ui": {
+        "label": "Project",
+        "order": [
+          "title",
+          "category",
+          "heroDescription",
+          "overview",
+          "role",
+          "location",
+          "photography",
+          "heroGallery",
+          "featuredImage1",
+          "featuredImage2",
+          "interplayWithTerrain",
+          "featuredImage3",
+          "featuredImage4",
+          "featuredImage5",
+          "bottomDescription"
+        ]
+      },
+      "properties": {
+        "title": { "type": "string", "x-ui": { "label": "Project Title" } },
+        "category": {
+          "type": "string",
+          "enum": ["Commercial", "Residential", "Hospitality"],
+          "x-ui": { "label": "Project Typology" }
+        },
+        "heroDescription": { "type": "string", "x-ui": { "label": "Project Hero Description", "textarea": true } },
+        "overview": { "type": "string", "x-ui": { "label": "Project Overview", "textarea": true } },
+        "role": {
+          "type": "array",
+          "x-ui": { "label": "Role", "addLabel": "Add Role" },
+          "items": { "type": "string", "x-ui": { "label": "Role" } }
+        },
+        "location": { "type": "string", "x-ui": { "label": "Location" } },
+        "photography": { "type": "string", "x-ui": { "label": "Photography" } },
+        "heroGallery": {
+          "type": "array",
+          "x-ui": { "label": "Hero Gallery", "addLabel": "Add Hero Image" },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "featuredImage1": { "$ref": "#/$defs/Image", "x-ui": { "label": "Featured Image 1" } },
+        "featuredImage2": { "$ref": "#/$defs/Image", "x-ui": { "label": "Featured Image 2" } },
+        "interplayWithTerrain": { "type": "string", "x-ui": { "label": "Interplay with Terrain", "textarea": true } },
+        "featuredImage3": { "$ref": "#/$defs/Image", "x-ui": { "label": "Featured Image 3" } },
+        "featuredImage4": { "$ref": "#/$defs/Image", "x-ui": { "label": "Featured Image 4" } },
+        "featuredImage5": { "$ref": "#/$defs/Image", "x-ui": { "label": "Featured Image 5" } },
+        "bottomDescription": { "type": "string", "x-ui": { "label": "Disclaimer", "textarea": true } }
+      },
+      "required": ["title", "category"]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": { "type": "string", "x-ui": { "label": "Alt Text" } }
+      },
+      "required": ["url"]
+    }
+  }
+}
