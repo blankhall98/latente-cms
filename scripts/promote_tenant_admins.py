@@ -7,6 +7,7 @@ PROMOTIONS = [
     ("studio@anro.com",        "anro"),
     ("dewa@cms.com",           "dewa"),
     ("hello@owawellness.com",  "owa"),
+    ("ragni@ragnigrady.com",   "ragni-grady"),
 ]
 
 db = SessionLocal()
