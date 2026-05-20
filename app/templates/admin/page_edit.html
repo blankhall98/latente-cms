@@ -318,6 +318,16 @@
   .z2h-autoform .field{
     width: 100%;
   }
+  .z2h-ragni-discipline-title{
+    margin-bottom: .75rem;
+  }
+  .z2h-ragni-discipline-description{
+    margin-top: 0;
+  }
+  .z2h-ragni-discipline-title + .z2h-ragni-discipline-description{
+    border-top: 1px solid rgba(15, 23, 42, .08);
+    padding-top: 1rem;
+  }
 
   /* Textareas larger by default */
   .textarea-md{ min-height:200px; }
@@ -976,6 +986,12 @@
       if(!maxLen && canonLabel === 'member description'){ maxLen = 200; }
       const autoId = `af-${path.replace(/[^a-zA-Z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
       const isTextarea = !!ui.textarea;
+      if((root?.dataset?.tenant||'') === 'ragni-grady' && sectionKey === 'portfolio' && path.endsWith('.disciplineTitle')){
+        wrap.classList.add('z2h-ragni-discipline-title');
+      }
+      if((root?.dataset?.tenant||'') === 'ragni-grady' && sectionKey === 'portfolio' && path.endsWith('.disciplineText')){
+        wrap.classList.add('z2h-ragni-discipline-description');
+      }
       if(isTextarea){
         const ta=document.createElement('textarea'); ta.className='form-control z2h-dirty textarea-lg';
         ta.name=NAME; ta.placeholder=placeholder; ta.value=coerceStringFieldValue(path, value); if(readOnly) ta.readOnly=true;

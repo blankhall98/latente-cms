@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/ragni-grady/portfolio/v2.json",
+  "title": "RAGNI-GRADY - Portfolio v2",
+  "type": "object",
+  "x-ui": {
+    "label": "Portfolio",
+    "order": ["projects", "disciplines"]
+  },
+  "properties": {
+    "projects": {
+      "type": "object",
+      "x-ui": { "label": "Projects", "order": ["projectsPageDescription"] },
+      "properties": {
+        "projectsPageDescription": {
+          "type": "string",
+          "x-ui": { "label": "Project's Page Description", "textarea": true }
+        }
+      },
+      "required": ["projectsPageDescription"]
+    },
+    "disciplines": {
+      "type": "object",
+      "x-ui": { "label": "Disciplines", "order": ["discipline1", "discipline2"] },
+      "properties": {
+        "discipline1": {
+          "$ref": "#/$defs/Discipline",
+          "x-ui": { "label": "Discipline 1", "order": ["disciplineTitle", "disciplineText"] }
+        },
+        "discipline2": {
+          "$ref": "#/$defs/Discipline",
+          "x-ui": { "label": "Discipline 2", "order": ["disciplineTitle", "disciplineText"] }
+        }
+      },
+      "required": ["discipline1", "discipline2"]
+    }
+  },
+  "required": ["projects", "disciplines"],
+  "$defs": {
+    "Discipline": {
+      "type": "object",
+      "x-ui": { "label": "Discipline", "order": ["disciplineTitle", "disciplineText"] },
+      "properties": {
+        "disciplineTitle": { "type": "string", "x-ui": { "label": "Discipline Title" } },
+        "disciplineText": { "type": "string", "x-ui": { "label": "Discipline Description", "textarea": true } }
+      },
+      "required": ["disciplineTitle", "disciplineText"]
+    }
+  }
+}
