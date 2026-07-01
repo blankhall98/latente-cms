@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/jiribilla/forms/v1.json",
+  "title": "Jiribilla - Forms v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Forms",
+    "order": ["catering", "joinOurTeam"]
+  },
+  "properties": {
+    "catering": {
+      "type": "object",
+      "x-ui": {
+        "label": "Catering",
+        "order": ["mainText", "openQuestion"]
+      },
+      "properties": {
+        "mainText": {
+          "type": "string",
+          "x-ui": {
+            "label": "Main Text",
+            "textarea": true
+          }
+        },
+        "openQuestion": {
+          "type": "string",
+          "x-ui": {
+            "label": "Open Question",
+            "textarea": true
+          }
+        }
+      },
+      "required": ["mainText", "openQuestion"]
+    },
+    "joinOurTeam": {
+      "type": "object",
+      "x-ui": {
+        "label": "Join our Team",
+        "order": ["mainText", "openQuestion"]
+      },
+      "properties": {
+        "mainText": {
+          "type": "string",
+          "x-ui": { "label": "Main Text" }
+        },
+        "openQuestion": {
+          "type": "string",
+          "x-ui": {
+            "label": "Open Question",
+            "textarea": true
+          }
+        }
+      },
+      "required": ["mainText", "openQuestion"]
+    }
+  },
+  "required": ["catering", "joinOurTeam"]
+}

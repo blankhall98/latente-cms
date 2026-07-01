@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/jiribilla/proyectos/v1.json",
+  "title": "Jiribilla - Proyectos v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Proyectos",
+    "order": ["mainText", "projects", "secondaryText", "tertiaryText"]
+  },
+  "properties": {
+    "mainText": {
+      "type": "string",
+      "x-ui": {
+        "label": "Main Text",
+        "textarea": true
+      }
+    },
+    "projects": {
+      "type": "array",
+      "x-ui": {
+        "label": "Projects",
+        "addLabel": "Add Project",
+        "itemTitlePath": "projectName",
+        "help": "Create, update, reorder, and delete Jiribilla projects."
+      },
+      "items": { "$ref": "#/$defs/Project" }
+    },
+    "secondaryText": {
+      "type": "string",
+      "x-ui": {
+        "label": "Secondary Text",
+        "textarea": true
+      }
+    },
+    "tertiaryText": {
+      "type": "string",
+      "x-ui": {
+        "label": "Tertiary Text",
+        "textarea": true
+      }
+    }
+  },
+  "required": ["mainText", "projects", "secondaryText", "tertiaryText"],
+  "$defs": {
+    "Project": {
+      "type": "object",
+      "x-ui": {
+        "label": "Project",
+        "order": [
+          "projectMainImage",
+          "projectSecondaryImage",
+          "projectName",
+          "projectDescription",
+          "projectAwards",
+          "projectLink"
+        ]
+      },
+      "properties": {
+        "projectMainImage": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Project Main Image" }
+        },
+        "projectSecondaryImage": {
+          "$ref": "#/$defs/Image",
+          "x-ui": { "label": "Project Secondary Image" }
+        },
+        "projectName": {
+          "type": "string",
+          "x-ui": { "label": "Project Name" }
+        },
+        "projectDescription": {
+          "type": "string",
+          "x-ui": {
+            "label": "Project Description",
+            "textarea": true
+          }
+        },
+        "projectAwards": {
+          "type": "array",
+          "maxItems": 3,
+          "x-ui": {
+            "label": "Project Awards",
+            "addLabel": "Add Award Icon",
+            "help": "Upload up to three award icons."
+          },
+          "items": { "$ref": "#/$defs/Image" }
+        },
+        "projectLink": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": { "label": "Project Link" }
+        }
+      },
+      "required": [
+        "projectMainImage",
+        "projectSecondaryImage",
+        "projectName",
+        "projectDescription",
+        "projectAwards",
+        "projectLink"
+      ]
+    },
+    "Image": {
+      "type": "object",
+      "x-ui": { "label": "Image" },
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "x-ui": {
+            "label": "Image URL",
+            "widget": "image",
+            "preview": true,
+            "placeholder": "Upload or paste image URL"
+          }
+        },
+        "alt": {
+          "type": "string",
+          "x-ui": { "label": "Alt Text" }
+        }
+      },
+      "required": ["url"]
+    }
+  }
+}

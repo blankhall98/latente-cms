@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/jiribilla/social_links/v1.json",
+  "title": "Jiribilla - Social and Links v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Social and Links",
+    "order": ["substack", "instagram", "spotify", "pressKits"]
+  },
+  "properties": {
+    "substack": {
+      "type": "string",
+      "format": "uri",
+      "x-ui": { "label": "Substack" }
+    },
+    "instagram": {
+      "type": "string",
+      "format": "uri",
+      "x-ui": { "label": "Instagram" }
+    },
+    "spotify": {
+      "type": "string",
+      "format": "uri",
+      "x-ui": { "label": "Spotify" }
+    },
+    "pressKits": {
+      "type": "string",
+      "format": "uri",
+      "x-ui": { "label": "Press Kits" }
+    }
+  },
+  "required": ["substack", "instagram", "spotify", "pressKits"]
+}

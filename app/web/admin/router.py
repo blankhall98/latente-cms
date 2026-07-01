@@ -122,6 +122,20 @@ _RAGNI_GRADY_SECTION_DASHBOARD_ORDER = [
     "privacy_policy",
 ]
 
+_JIRIBILLA_SECTION_DASHBOARD_ORDER = [
+    "hero",
+    "mesa_uno",
+    "proyectos",
+    "eventos_privados",
+    "glosario",
+    "equipo",
+    "footer",
+    "social_links",
+    "forms",
+    "settings",
+    "privacy_policy",
+]
+
 
 def _parse_upload_tenant_slugs(raw: str) -> set[str]:
     cleaned = (raw or "").strip().lower()
@@ -181,6 +195,8 @@ def _section_order_case_for_tenant_slug(tenant_slug: str | None):
         order_map = {k: i for i, k in enumerate(_OWA_SECTION_DASHBOARD_ORDER)}
     elif slug == "ragni-grady":
         order_map = {k: i for i, k in enumerate(_RAGNI_GRADY_SECTION_DASHBOARD_ORDER)}
+    elif slug == "jiribilla":
+        order_map = {k: i for i, k in enumerate(_JIRIBILLA_SECTION_DASHBOARD_ORDER)}
     else:
         return None
     return case(order_map, value=Section.key, else_=len(order_map) + 100)

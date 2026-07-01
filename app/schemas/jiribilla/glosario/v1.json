@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/jiribilla/glosario/v1.json",
+  "title": "Jiribilla - Glosario v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Glosario",
+    "order": ["definitions"]
+  },
+  "properties": {
+    "definitions": {
+      "type": "array",
+      "x-ui": {
+        "label": "Definitions",
+        "addLabel": "Add Definition",
+        "itemTitlePath": "definitionName",
+        "help": "Create, update, reorder, and delete glossary definitions."
+      },
+      "items": { "$ref": "#/$defs/Definition" }
+    }
+  },
+  "required": ["definitions"],
+  "$defs": {
+    "Definition": {
+      "type": "object",
+      "x-ui": {
+        "label": "Definition",
+        "order": ["definitionName", "definitionSymbology", "definitionText"]
+      },
+      "properties": {
+        "definitionName": {
+          "type": "string",
+          "x-ui": { "label": "Definition Name" }
+        },
+        "definitionSymbology": {
+          "type": "string",
+          "x-ui": {
+            "label": "Definition Symbology",
+            "help": "Latin and Greek symbols are allowed."
+          }
+        },
+        "definitionText": {
+          "type": "string",
+          "x-ui": {
+            "label": "Definition Text",
+            "textarea": true
+          }
+        }
+      },
+      "required": ["definitionName", "definitionSymbology", "definitionText"]
+    }
+  }
+}

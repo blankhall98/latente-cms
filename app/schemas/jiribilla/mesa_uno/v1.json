@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/jiribilla/mesa_uno/v1.json",
+  "title": "Jiribilla - Mesa Uno v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Mesa Uno",
+    "order": ["mainText"]
+  },
+  "properties": {
+    "mainText": {
+      "type": "string",
+      "x-ui": {
+        "label": "Main Text",
+        "textarea": true
+      }
+    }
+  },
+  "required": ["mainText"]
+}

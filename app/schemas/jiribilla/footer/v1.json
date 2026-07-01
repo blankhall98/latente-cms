@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latente.app/schemas/jiribilla/footer/v1.json",
+  "title": "Jiribilla - Footer v1",
+  "type": "object",
+  "x-ui": {
+    "label": "Footer",
+    "order": ["footerPhrase", "address", "mail1", "mail2"]
+  },
+  "properties": {
+    "footerPhrase": {
+      "type": "string",
+      "maxLength": 40,
+      "x-ui": { "label": "Footer Phrase" }
+    },
+    "address": {
+      "type": "string",
+      "x-ui": {
+        "label": "Address",
+        "textarea": true
+      }
+    },
+    "mail1": {
+      "type": "string",
+      "format": "email",
+      "x-ui": { "label": "Mail 1" }
+    },
+    "mail2": {
+      "type": "string",
+      "format": "email",
+      "x-ui": { "label": "Mail 2" }
+    }
+  },
+  "required": ["footerPhrase", "address", "mail1", "mail2"]
+}
