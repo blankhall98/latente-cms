@@ -1,5 +1,8 @@
 # Jiribilla — Integración de formularios (Front-End)
 
+> Para poblar el **contenido** del sitio (textos, imágenes, proyectos, glosario) ver la guía
+> complementaria: [`jiribilla-frontend-integration.md`](./jiribilla-frontend-integration.md).
+
 Guía para conectar los dos formularios del sitio de Jiribilla al CMS de Latente.
 Cada envío se guarda en el CMS (visible en el dashboard, sección **Mensajes**) y se
 reenvía por correo al equipo de Jiribilla. El front solo necesita hacer los `POST`
