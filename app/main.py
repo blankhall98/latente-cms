@@ -12,6 +12,7 @@ from app.api.delivery.jiribilla_forms import router as jiribilla_forms_router
 from app.api.delivery.newsletter import router as newsletter_router
 from app.api.delivery.preview import router as delivery_preview_router
 from app.api.delivery.router import router as delivery_router
+from app.api.delivery.site import router as site_router
 from app.api.v1.router import api_router
 from app.core.config import create_app
 from app.core.logging import configure_logging
@@ -103,6 +104,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Delivery pública + Preview pública (con tokens) + Contact form + Newsletter
 app.include_router(delivery_router)
+app.include_router(site_router)
 app.include_router(delivery_preview_router)
 app.include_router(contact_router)
 app.include_router(jiribilla_forms_router)

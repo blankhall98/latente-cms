@@ -107,8 +107,25 @@ This is what makes the rollout safe given that the front-end already consumes th
 
 1. **Phase 1** — ship `/delivery/v1/sites/{slug}` against today's 13 sections. Nothing breaks;
    the front-end can migrate to the single call whenever it wants.
-2. **Phase 2** — consolidate the content model. Invisible to the front-end, including the
-   sections it already consumes.
+2. **Phase 2** — consolidate the content model, **gated on the front-end having migrated**.
+
+### Correction (2026-07-20, after adversarial review)
+
+An earlier draft of this spec claimed Phase 2 would be "invisible to the front-end, including the
+sections it already consumes", and that the per-section endpoints would "keep working
+indefinitely". **Both claims were false.** Archiving the legacy entries breaks both public reads:
+
+- List — `app/services/delivery_service.py:45-55` hard-filters `Entry.status == "published"`.
+- Detail — flipping the status fires `Entry.updated_at`'s `onupdate` (`app/models/content.py:70`),
+  which invalidates the publish snapshot (`delivery_service.py:85-92`) and falls through to
+  `return None` (`:361-362`) → 404.
+
+Payload stability therefore holds for **the new endpoint only**. Phase 2 is consequently gated on
+written confirmation that the front-end reads solely `/delivery/v1/sites/jiribilla`.
+
+Keeping the legacy entries published during a transition was considered and rejected: the
+container becomes the editing source of truth, so the legacy copies would silently serve stale
+content — worse for a live site than an explicit, coordinated cutover.
 
 ## Migration
 
@@ -175,4 +192,5 @@ revised (e.g. `proyectos` stays its own page, giving 5 entries instead of 4).
 - Front-end implementation; the integration doc is updated separately once Phase 1 ships.
 - Any change to `/delivery/v1/contact`, the Jiribilla form endpoints, or other tenants' content.
 - Exposing JSON Schema to the public API (content only, per the approved option).
-- Retiring the per-section delivery endpoints — they keep working indefinitely.
+- Serving the site payload for tenants other than Jiribilla: the endpoint is opt-in via
+  `SITE_PAYLOAD_TENANTS`, so no other project gains a public whole-content aggregate.

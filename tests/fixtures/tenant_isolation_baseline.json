@@ -1,0 +1,45 @@
+{
+  "anro": [
+    "about",
+    "home",
+    "navigation",
+    "privacy_policy",
+    "projects",
+    "settings"
+  ],
+  "owa": [
+    "discover_owa",
+    "events",
+    "footer",
+    "hero",
+    "landing_pages",
+    "memberships",
+    "moto_final_text",
+    "moto_image",
+    "moto_text",
+    "pop_up",
+    "settings",
+    "therapies"
+  ],
+  "dewa": [
+    "about",
+    "artha_legacy",
+    "dewa_legacy",
+    "dewa_signature",
+    "frontier",
+    "home",
+    "limited_edition",
+    "navigation",
+    "newsroom",
+    "settings"
+  ],
+  "ragni-grady": [
+    "footer",
+    "home",
+    "portfolio",
+    "privacy_policy",
+    "projects",
+    "studio",
+    "team_members"
+  ]
+}
