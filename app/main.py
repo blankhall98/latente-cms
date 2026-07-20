@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.delivery.contact import router as contact_router
+from app.api.delivery.jiribilla_forms import router as jiribilla_forms_router
 from app.api.delivery.newsletter import router as newsletter_router
 from app.api.delivery.preview import router as delivery_preview_router
 from app.api.delivery.router import router as delivery_router
@@ -104,6 +105,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(delivery_router)
 app.include_router(delivery_preview_router)
 app.include_router(contact_router)
+app.include_router(jiribilla_forms_router)
 app.include_router(newsletter_router)
 
 # Web (login/admin)

@@ -25,6 +25,11 @@ from app.models.auth import Tenant, User, UserTenant, UserTenantStatus, Role
 from app.models.content import Section, Entry, SectionSchema
 from app.models.audit import ContentAuditLog
 from app.models.owa_popup import OwaPopupSubmission
+from app.models.jiribilla_forms import (
+    FORM_TYPE_BOLSA,
+    FORM_TYPE_EVENTOS,
+    JiribillaFormSubmission,
+)
 
 # Enriched JSON Schema (with x-ui) for the auto-form
 from app.services.ui_schema_service import (
@@ -132,9 +137,42 @@ _JIRIBILLA_SECTION_DASHBOARD_ORDER = [
     "footer",
     "social_links",
     "forms",
+    "mensajes_eventos",
+    "mensajes_bolsa",
     "settings",
     "privacy_policy",
 ]
+
+# Jiribilla inbox sections → stored form_type they display.
+_JIRIBILLA_INBOX_SECTIONS = {
+    "mensajes_eventos": FORM_TYPE_EVENTOS,
+    "mensajes_bolsa": FORM_TYPE_BOLSA,
+}
+
+_JIRIBILLA_INBOX_META = {
+    FORM_TYPE_EVENTOS: {
+        "form_label": "Eventos Privados",
+        "endpoint": "/delivery/v1/jiribilla/eventos-privados",
+        "email_setting_key": "eventos_email",
+    },
+    FORM_TYPE_BOLSA: {
+        "form_label": "Bolsa de Trabajo",
+        "endpoint": "/delivery/v1/jiribilla/bolsa-trabajo",
+        "email_setting_key": "bolsa_trabajo_email",
+    },
+}
+
+_JIRIBILLA_FIELD_LABELS = {
+    "tipo_evento": "Tipo de Evento",
+    "fecha": "Fecha del evento",
+    "hora": "Hora",
+    "propuesta": "Propuesta",
+    "num_personas": "No. de Personas",
+    "descripcion": "Descripción",
+    "area_interes": "Área de interés",
+    "respuesta": "Respuesta",
+    "cv_filename": "Archivo CV",
+}
 
 
 def _parse_upload_tenant_slugs(raw: str) -> set[str]:
@@ -367,6 +405,113 @@ def _owa_popup_template_response(
             "analytics_note": analytics_note,
             "popup_endpoint": f"{settings.API_V1_STR}/owa/popup-submissions",
             "popup_metrics": metrics,
+            **_upload_context(active),
+        },
+    )
+
+
+def _jiribilla_inbox_template_response(
+    *,
+    request: Request,
+    db: Session,
+    user: dict,
+    active: dict,
+    is_superadmin: bool,
+    entry: Entry,
+    section: Section,
+):
+    form_type = _JIRIBILLA_INBOX_SECTIONS[section.key]
+    meta = _JIRIBILLA_INBOX_META[form_type]
+
+    submissions = db.scalars(
+        select(JiribillaFormSubmission)
+        .where(
+            JiribillaFormSubmission.tenant_id == int(active["id"]),
+            JiribillaFormSubmission.form_type == form_type,
+        )
+        .order_by(JiribillaFormSubmission.created_at.desc())
+    ).all()
+
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    rows = []
+    unread = 0
+    month_count = 0
+    for s in submissions:
+        if not s.is_read:
+            unread += 1
+        created = s.created_at
+        if created is not None:
+            created_utc = created if created.tzinfo else created.replace(tzinfo=timezone.utc)
+            if created_utc >= month_start:
+                month_count += 1
+        data = s.data if isinstance(s.data, dict) else {}
+        details = [
+            (_JIRIBILLA_FIELD_LABELS.get(key, key), value)
+            for key, value in data.items()
+            if value not in (None, "")
+        ]
+        rows.append(
+            {
+                "id": int(s.id),
+                "name": s.name,
+                "email": s.email,
+                "phone": s.phone,
+                "details": details,
+                "cv_url": s.cv_url,
+                "email_sent": bool(s.email_sent),
+                "is_read": bool(s.is_read),
+                "created_at": s.created_at,
+            }
+        )
+
+    # Which address currently receives this form (form-specific → contact fallback).
+    settings_entry = db.scalar(
+        select(Entry)
+        .join(Section, Section.id == Entry.section_id)
+        .where(
+            Entry.tenant_id == int(active["id"]),
+            Section.key == "settings",
+            Entry.status == "published",
+        )
+        .order_by(Entry.updated_at.desc())
+        .limit(1)
+    )
+    settings_data = settings_entry.data if settings_entry and isinstance(settings_entry.data, dict) else {}
+    form_email = (settings_data.get(meta["email_setting_key"]) or "").strip()
+    fallback_email = (settings_data.get("contact_email") or "").strip()
+    destination_email = form_email or fallback_email
+
+    page_data = entry.data if isinstance(entry.data, dict) else {}
+    page_title = page_data.get("title") or section.name
+
+    return templates.TemplateResponse(
+        "admin/jiribilla_inbox.html",
+        {
+            "request": request,
+            "user": {"id": int(user["id"]), "email": user.get("email")},
+            "active_tenant": {"id": int(active["id"]), "slug": active["slug"], "name": active["name"]},
+            "is_superadmin": is_superadmin,
+            "page": {
+                "id": entry.id,
+                "slug": entry.slug,
+                "title": page_title,
+                "status": entry.status,
+                "section_name": section.name,
+                "section_key": section.key,
+                "section_id": int(section.id),
+            },
+            "form_label": meta["form_label"],
+            "form_endpoint": meta["endpoint"],
+            "destination_email": destination_email,
+            "destination_is_fallback": bool(not form_email and fallback_email),
+            "email_setting_key": meta["email_setting_key"],
+            "inbox_metrics": {
+                "total": len(rows),
+                "unread": unread,
+                "this_month": month_count,
+            },
+            "messages": rows,
             **_upload_context(active),
         },
     )
@@ -1976,6 +2121,17 @@ def page_edit_get(
             section=section,
         )
 
+    if section.key in _JIRIBILLA_INBOX_SECTIONS:
+        return _jiribilla_inbox_template_response(
+            request=request,
+            db=db,
+            user=user,
+            active=active,
+            is_superadmin=is_superadmin,
+            entry=entry,
+            section=section,
+        )
+
     # If page is published and has __draft, edit the draft (except projects)
     base_data = entry.data or {}
     is_published = (getattr(entry, "status", "draft") == "published")
@@ -2528,6 +2684,66 @@ def owa_popup_submission_delete(
         db.delete(row)
         db.commit()
 
+    return RedirectResponse(url=f"/admin/pages/{entry_id}/edit", status_code=302)
+
+
+def _load_jiribilla_message_or_404(
+    db: Session,
+    request: Request,
+    entry_id: int,
+    submission_id: int,
+) -> tuple[JiribillaFormSubmission | None, int]:
+    _require_web_user(request)
+    active = _get_active_tenant(request)
+    tid = int((active or {}).get("id") or 0)
+    if not tid:
+        return None, 0
+
+    entry, section = _load_entry_or_404(db, entry_id, tid)
+    if section.key not in _JIRIBILLA_INBOX_SECTIONS:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    row = db.scalar(
+        select(JiribillaFormSubmission).where(
+            and_(
+                JiribillaFormSubmission.id == submission_id,
+                JiribillaFormSubmission.tenant_id == tid,
+                JiribillaFormSubmission.form_type == _JIRIBILLA_INBOX_SECTIONS[section.key],
+            )
+        )
+    )
+    return row, tid
+
+
+@router.post("/admin/pages/{entry_id}/jiribilla-messages/{submission_id}/toggle-read")
+def jiribilla_message_toggle_read(
+    entry_id: int,
+    submission_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    row, tid = _load_jiribilla_message_or_404(db, request, entry_id, submission_id)
+    if not tid:
+        return RedirectResponse(url="/admin/projects", status_code=302)
+    if row:
+        row.is_read = not bool(row.is_read)
+        db.commit()
+    return RedirectResponse(url=f"/admin/pages/{entry_id}/edit", status_code=302)
+
+
+@router.post("/admin/pages/{entry_id}/jiribilla-messages/{submission_id}/delete")
+def jiribilla_message_delete(
+    entry_id: int,
+    submission_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    row, tid = _load_jiribilla_message_or_404(db, request, entry_id, submission_id)
+    if not tid:
+        return RedirectResponse(url="/admin/projects", status_code=302)
+    if row:
+        db.delete(row)
+        db.commit()
     return RedirectResponse(url=f"/admin/pages/{entry_id}/edit", status_code=302)
 
 
