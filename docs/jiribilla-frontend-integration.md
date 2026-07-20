@@ -6,6 +6,18 @@ obtiene en **una sola llamada**, sin autenticación.
 Para los dos formularios (Eventos Privados y Bolsa de Trabajo) ver la guía aparte:
 [`jiribilla-forms-frontend.md`](./jiribilla-forms-frontend.md).
 
+> ### ⚠️ Lee esto antes de empezar
+>
+> Si el sitio ya está consumiendo el CMS con los endpoints **por sección**
+> (`/delivery/v1/tenants/jiribilla/sections/...`), tienes que migrarlos todos al endpoint único
+> que describe esta guía, y **avisar a Latente cuando termines**.
+>
+> Ese aviso no es un trámite: dispara una reestructuración dentro del CMS que hace que los
+> endpoints por sección devuelvan `404`. Si se ejecuta antes de que hayas migrado, las secciones
+> que sigan usándolos se quedan sin contenido en producción. Por eso está detenida esperando tu
+> confirmación. Los detalles y cómo verificar que ya migraste están en la
+> [sección 6](#6-migración-desde-los-endpoints-por-sección).
+
 ---
 
 ## 1. El endpoint
@@ -246,14 +258,42 @@ module.exports = {
 ## 6. Migración desde los endpoints por sección
 
 Si hoy estás llamando a `/delivery/v1/tenants/jiribilla/sections/{seccion}/entries/{seccion}`,
-esos endpoints **siguen funcionando por ahora**, así que puedes migrar bloque por bloque.
-
-Pero léelo con atención: **van a retirarse**. Cuando el sitio lea únicamente
-`/delivery/v1/sites/jiribilla`, avísanos — ese es el disparador para consolidar las secciones
-dentro del CMS, y a partir de ese momento los endpoints por sección devolverán `404`.
+esos endpoints **siguen funcionando por ahora**, así que puedes migrar bloque por bloque sin prisa.
 
 La equivalencia es directa: lo que antes obtenías en el campo `data` de la sección `hero` es ahora
 `blocks.hero`. Mismos nombres de campo, misma forma. Solo cambia de dónde lo tomas.
+
+### Por qué esos endpoints van a dejar de funcionar
+
+Dentro del CMS, el sitio de Jiribilla está partido en trece secciones para algo que en realidad es
+una sola página. Se van a consolidar en cuatro, para que el cliente no tenga que navegar trece
+pantallas al editar.
+
+Al consolidar, las secciones viejas quedan **archivadas** (no se borran: el contenido se conserva).
+Pero la API pública solo entrega contenido en estado *publicado*, así que en cuanto se archiven,
+`/delivery/v1/tenants/jiribilla/sections/hero/entries/hero` y sus nueve hermanas empiezan a
+responder `404`. No es una decisión de diseño que se pueda evitar: es cómo funciona la capa de
+entrega.
+
+El endpoint `/sites/jiribilla` **no se ve afectado**: sus claves de bloque son las mismas antes y
+después de la consolidación. Por eso es el destino de la migración.
+
+### Qué necesitamos de ti
+
+1. Migra todas las llamadas al endpoint único.
+2. Comprueba que ya no queda ninguna llamada por sección. Desde la raíz del proyecto:
+
+   ```bash
+   grep -rn "sections/" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" .
+   ```
+
+   No debe arrojar ninguna URL del CMS. Revisa también variables de entorno y cualquier URL
+   construida por concatenación, que el grep anterior no detecta.
+3. **Avisa a Latente** (a quien te compartió este documento) de que el sitio ya lee únicamente
+   `/delivery/v1/sites/jiribilla`.
+
+Hasta que llegue ese aviso, la consolidación queda detenida y nada se rompe. Puedes tomarte el
+tiempo que necesites.
 
 ---
 
@@ -277,4 +317,5 @@ build**. Si usas ISR, Next conserva la última versión generada cuando la reval
 - Diez bloques con claves estables; imágenes siempre `{ url, alt }`.
 - Arreglos vacíos y URLs en blanco son estados normales hoy: renderiza a la defensiva.
 - ISR con `revalidate: 60` es la estrategia recomendada.
-- Avísanos cuando ya no uses los endpoints por sección.
+- **Si venías usando los endpoints por sección, migra todo y avisa a Latente cuando termines.**
+  Ese aviso destraba la consolidación del CMS, que hará que esos endpoints devuelvan `404`.
