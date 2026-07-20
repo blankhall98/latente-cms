@@ -3,160 +3,204 @@
 
 {% block extra_head %}
 <style>
-  .jir-head {
+  /* All colors come from the shared design tokens, so this page follows the
+     light/night theme automatically — no per-theme overrides needed. */
+
+  .jir-card{
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1rem 1.2rem;
-    background: #fff;
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.2rem;
     margin-bottom: 1rem;
   }
-  .jir-subtle {
-    color: var(--text-2);
-    font-size: .92rem;
-  }
-  .jir-card {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: #fff;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  .jir-kpi-grid {
+
+  .jir-config{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: .85rem;
+  }
+  .jir-config-item .k{
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-2);
+    margin-bottom: .3rem;
+  }
+  .jir-config-item .v{
+    color: var(--text-1);
+    font-size: .9rem;
+    overflow-wrap: anywhere;
+  }
+  .jir-code{
+    display: inline-block;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .15rem .45rem;
+    font-size: .82rem;
+    color: var(--text-1);
+  }
+  .jir-hint{ color: var(--text-2); font-size: .82rem; margin-top: .35rem; }
+  .jir-warn{ color: var(--danger-text); }
+
+  .jir-kpis{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: .75rem;
     margin-bottom: 1rem;
   }
-  .jir-kpi {
+  .jir-kpi{
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    background: #fff;
-    padding: .8rem 1rem;
+    border-radius: var(--radius-lg);
+    padding: .85rem 1rem;
   }
-  .jir-kpi .v {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-1);
-  }
-  .jir-kpi .k {
-    font-size: .8rem;
+  .jir-kpi .k{
+    font-size: .72rem;
     text-transform: uppercase;
     letter-spacing: .08em;
     color: var(--text-2);
   }
-  .jir-endpoint {
-    padding: .7rem .8rem;
-    border: 1px dashed var(--border);
-    border-radius: 10px;
-    background: #fcfaf6;
+  .jir-kpi .v{
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text-1);
   }
-  .jir-msg {
+  .jir-kpi.is-unread .v{ color: var(--primary-2); }
+
+  /* ---- Message list ---- */
+  .jir-msg{
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    background: #fff;
-    margin-bottom: .75rem;
+    border-radius: var(--radius);
+    margin-bottom: .6rem;
     overflow: hidden;
+    transition: border-color .15s ease;
   }
-  .jir-msg.unread {
-    border-left: 4px solid #6e9ee6;
-    background: #f7faff;
+  .jir-msg:hover{ border-color: var(--muted); }
+  .jir-msg.is-unread{
+    border-left: 3px solid var(--primary-2);
+    background: var(--accent-soft);
   }
-  .jir-msg summary {
+
+  .jir-msg > summary{
     cursor: pointer;
     list-style: none;
     padding: .8rem 1rem;
     display: flex;
     flex-wrap: wrap;
-    gap: .5rem 1rem;
+    gap: .4rem 1rem;
     align-items: center;
     justify-content: space-between;
   }
-  .jir-msg summary::-webkit-details-marker { display: none; }
-  .jir-msg-body {
+  .jir-msg > summary::-webkit-details-marker{ display: none; }
+  .jir-msg > summary:focus-visible{
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--primary-2);
+  }
+  .jir-msg-who{ display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+  .jir-msg-name{ font-weight: 600; color: var(--text-1); }
+  .jir-msg-mail{ color: var(--text-2); font-size: .85rem; }
+  .jir-msg-side{ display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .jir-msg-date{ color: var(--text-2); font-size: .82rem; white-space: nowrap; }
+  .jir-msg-caret{ color: var(--text-2); font-size: .7rem; transition: transform .15s ease; }
+  .jir-msg[open] .jir-msg-caret{ transform: rotate(90deg); }
+
+  .jir-tag{
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    font-size: .7rem;
+    padding: .15rem .6rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .jir-tag--new{ background: var(--primary); color: var(--primary-ink); }
+  .jir-tag--mailfail{
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-text);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .jir-msg-body{
     border-top: 1px solid var(--border);
     padding: .9rem 1rem;
+    background: var(--surface);
   }
-  .jir-detail-row {
+  .jir-row{
     display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: .6rem;
-    padding: .3rem 0;
-    border-bottom: 1px dashed #eee7da;
+    grid-template-columns: minmax(120px, 190px) 1fr;
+    gap: .75rem;
+    padding: .45rem 0;
   }
-  .jir-detail-row .k {
+  .jir-row + .jir-row{ border-top: 1px solid var(--border); }
+  .jir-row .k{
     color: var(--text-2);
-    font-size: .85rem;
+    font-size: .74rem;
     text-transform: uppercase;
     letter-spacing: .06em;
+    padding-top: .12rem;
   }
-  .jir-detail-row .v {
+  .jir-row .v{
+    color: var(--text-1);
     overflow-wrap: anywhere;
     white-space: pre-wrap;
   }
-  .jir-msg-actions {
+  .jir-row .v a{ color: var(--primary-2); }
+
+  .jir-actions{
     display: flex;
     gap: .5rem;
     flex-wrap: wrap;
-    margin-top: .8rem;
+    margin-top: .9rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--border);
   }
-  .jir-badge-unread {
-    background: #6e9ee6;
-    color: #fff;
-    border-radius: 999px;
-    font-size: .72rem;
-    padding: .15rem .6rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
-  .jir-badge-mailfail {
-    background: #f5e0e0;
-    color: #a33;
-    border-radius: 999px;
-    font-size: .72rem;
-    padding: .15rem .6rem;
+  .jir-actions .btn{ padding: .4rem .8rem; font-size: .82rem; }
+
+  @media (max-width: 560px){
+    .jir-row{ grid-template-columns: 1fr; gap: .15rem; }
+    .jir-row + .jir-row{ padding-top: .6rem; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="container my-4">
-  <div class="jir-head d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-    <div>
-      <a class="small text-decoration-none" href="/admin/pages">&larr; Back to pages</a>
-      <h1 class="h5 m-0 mt-1">{{ page.title }}</h1>
-      <p class="jir-subtle m-0">Mensajes recibidos desde el formulario de <strong>{{ form_label }}</strong> del sitio.</p>
-    </div>
-    <div class="d-flex gap-2 align-items-center flex-wrap">
-      <span class="badge rounded-pill text-bg-light border">Section: {{ page.section_name }}</span>
-      <a class="btn btn-outline" href="/admin/pages">Close</a>
-    </div>
-  </div>
+<section class="container">
 
-  <div class="jir-card">
-    <h2 class="h6">Configuración</h2>
-    <div class="jir-endpoint mb-2">
-      <div><strong>Endpoint:</strong> <code>POST {{ form_endpoint }}</code></div>
-      <div>
-        <strong>Correo destino:</strong>
-        {% if destination_email %}
-          <code>{{ destination_email }}</code>
-          {% if destination_is_fallback %}
-            <span class="jir-subtle">(usando el correo de contacto general — configura <code>{{ email_setting_key }}</code> en Settings para usar uno propio)</span>
-          {% endif %}
-        {% else %}
-          <span class="text-danger">Sin configurar — edita <code>{{ email_setting_key }}</code> o <code>contact_email</code> en la página de Settings.</span>
+  <!-- Header / mini-hero -->
+  <div class="z2h-admin-hero">
+    <div class="z2h-admin-hero__bar">
+      <div class="z2h-admin-hero__context">
+        <a href="/admin/pages" class="z2h-admin-back" aria-label="Volver a Pages">&larr; Pages</a>
+        <span class="z2h-admin-hero__eyebrow">Mensajes</span>
+        {% if active_tenant %}
+          <span class="z2h-admin-token" title="Proyecto activo">
+            <span class="dot" aria-hidden="true"></span>
+            {{ active_tenant.name }}
+          </span>
         {% endif %}
       </div>
     </div>
-    <div class="small text-muted">El correo destino se edita en la página <strong>Site Settings</strong> de este proyecto.</div>
+    <h1 class="z2h-admin-hero__title">{{ form_label }}</h1>
+    <p class="z2h-admin-hero__meta">
+      Mensajes recibidos desde el formulario de <strong>{{ form_label }}</strong> del sitio.
+      Esta página es de solo lectura: el contenido visible del formulario se edita en la página <strong>Forms</strong>.
+    </p>
   </div>
 
-  <div class="jir-kpi-grid">
+  <!-- Stats -->
+  <div class="jir-kpis">
     <div class="jir-kpi">
       <div class="k">Total de mensajes</div>
       <div class="v">{{ inbox_metrics.total }}</div>
     </div>
-    <div class="jir-kpi">
+    <div class="jir-kpi {{ 'is-unread' if inbox_metrics.unread else '' }}">
       <div class="k">Sin leer</div>
       <div class="v">{{ inbox_metrics.unread }}</div>
     </div>
@@ -166,48 +210,96 @@
     </div>
   </div>
 
+  <!-- Configuration -->
   <div class="jir-card">
-    <h2 class="h6 mb-3">Mensajes</h2>
+    <div class="z2h-section-head mb-3">
+      <h2 class="h6 m-0">Configuración</h2>
+    </div>
+    <div class="jir-config">
+      <div class="jir-config-item">
+        <div class="k">Endpoint del sitio</div>
+        <div class="v"><span class="jir-code">POST {{ form_endpoint }}</span></div>
+      </div>
+      <div class="jir-config-item">
+        <div class="k">Correo destino</div>
+        <div class="v">
+          {% if destination_email %}
+            <span class="jir-code">{{ destination_email }}</span>
+            {% if destination_is_fallback %}
+              <div class="jir-hint">
+                Usando el correo de contacto general. Define
+                <span class="jir-code">{{ email_setting_key }}</span> en Site Settings para usar uno propio.
+              </div>
+            {% endif %}
+          {% else %}
+            <span class="jir-warn">Sin configurar</span>
+            <div class="jir-hint">
+              Define <span class="jir-code">{{ email_setting_key }}</span> o
+              <span class="jir-code">contact_email</span> en la página Site Settings.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="jir-card">
+    <div class="z2h-section-head mb-3">
+      <h2 class="h6 m-0">Mensajes</h2>
+    </div>
+
     {% for msg in messages %}
-      <details class="jir-msg {{ 'unread' if not msg.is_read else '' }}">
+      <details class="jir-msg {{ 'is-unread' if not msg.is_read else '' }}">
         <summary>
-          <span>
-            <strong>{{ msg.name }}</strong>
-            <span class="jir-subtle">&lt;{{ msg.email }}&gt;</span>
+          <span class="jir-msg-who">
+            <span class="jir-msg-caret" aria-hidden="true">&#9654;</span>
+            <span class="jir-msg-name">{{ msg.name }}</span>
+            <span class="jir-msg-mail">{{ msg.email }}</span>
           </span>
-          <span class="d-flex gap-2 align-items-center flex-wrap">
-            {% if not msg.is_read %}<span class="jir-badge-unread">Nuevo</span>{% endif %}
-            {% if not msg.email_sent %}<span class="jir-badge-mailfail" title="El reenvío por correo falló; el mensaje solo está aquí.">Correo no enviado</span>{% endif %}
-            <span class="jir-subtle">{% if msg.created_at %}{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}&mdash;{% endif %}</span>
+          <span class="jir-msg-side">
+            {% if not msg.is_read %}<span class="jir-tag jir-tag--new">Nuevo</span>{% endif %}
+            {% if not msg.email_sent %}
+              <span class="jir-tag jir-tag--mailfail" title="El reenvío por correo falló; el mensaje solo está disponible aquí.">
+                Correo no enviado
+              </span>
+            {% endif %}
+            <span class="jir-msg-date">
+              {% if msg.created_at %}{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}&mdash;{% endif %}
+            </span>
           </span>
         </summary>
+
         <div class="jir-msg-body">
-          <div class="jir-detail-row"><span class="k">Correo</span><span class="v">{{ msg.email }}</span></div>
-          <div class="jir-detail-row"><span class="k">Teléfono</span><span class="v">{{ msg.phone }}</span></div>
+          <div class="jir-row"><span class="k">Correo</span><span class="v">{{ msg.email }}</span></div>
+          <div class="jir-row"><span class="k">Teléfono</span><span class="v">{{ msg.phone }}</span></div>
           {% for label, value in msg.details %}
-            <div class="jir-detail-row"><span class="k">{{ label }}</span><span class="v">{{ value }}</span></div>
+            <div class="jir-row"><span class="k">{{ label }}</span><span class="v">{{ value }}</span></div>
           {% endfor %}
           {% if msg.cv_url %}
-            <div class="jir-detail-row">
+            <div class="jir-row">
               <span class="k">CV</span>
               <span class="v"><a href="{{ msg.cv_url }}" target="_blank" rel="noopener">Descargar CV (PDF)</a></span>
             </div>
           {% endif %}
-          <div class="jir-msg-actions">
+
+          <div class="jir-actions">
             <form method="post" action="/admin/pages/{{ page.id }}/jiribilla-messages/{{ msg.id }}/toggle-read">
-              <button class="btn btn-sm btn-outline" type="submit">
+              <button class="btn btn-outline" type="submit">
                 {{ 'Marcar como leído' if not msg.is_read else 'Marcar como no leído' }}
               </button>
             </form>
-            <form method="post" action="/admin/pages/{{ page.id }}/jiribilla-messages/{{ msg.id }}/delete" onsubmit="return confirm('¿Eliminar este mensaje? Esta acción no se puede deshacer.');">
-              <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+            <form method="post" action="/admin/pages/{{ page.id }}/jiribilla-messages/{{ msg.id }}/delete"
+                  onsubmit="return confirm('¿Eliminar este mensaje? Esta acción no se puede deshacer.');">
+              <button class="btn btn-delete" type="submit">Eliminar</button>
             </form>
           </div>
         </div>
       </details>
     {% else %}
-      <p class="text-muted small m-0">Aún no hay mensajes.</p>
+      <div class="z2h-empty">Aún no hay mensajes de este formulario.</div>
     {% endfor %}
   </div>
+
 </section>
 {% endblock %}
